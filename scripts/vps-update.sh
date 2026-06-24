@@ -28,17 +28,21 @@ git pull --ff-only origin "$BRANCH"
 echo "==> Apply production .env (VPS_MYSQL_* → MYSQL_*)"
 node scripts/vps-apply-production-env.mjs
 
-# Prisma (and some other tools) read .env only from the directory they run in.
-# The repo-root .env is not auto-discovered when npm changes cwd into apps/api.
-# Source it into the shell environment so all child processes (npm, prisma,
-# nest build) inherit DATABASE_URL and friends.
+# Install deps BEFORE exporting the production .env into the shell.
+# vps-apply-production-env.mjs writes NODE_ENV=production into .env, and
+# if that variable is in the shell environment, `npm ci` skips
+# devDependencies — which means @nestjs/cli, typescript, etc. wouldn't be
+# installed, so `nest build` would fail with "nest: not found".
+echo "==> Install dependencies (devDependencies included)"
+npm ci --include=dev
+
+# Prisma and Nest both need DATABASE_URL etc. The repo-root .env isn't
+# auto-discovered when npm changes cwd into apps/api, so source it into
+# the shell environment now that `npm ci` has finished.
 set -a
 # shellcheck disable=SC1091
 . ./.env
 set +a
-
-echo "==> Install dependencies"
-npm ci
 
 echo "==> Prisma + database"
 npm run prisma:generate
