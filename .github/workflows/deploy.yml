@@ -30,8 +30,9 @@ jobs:
           ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/deploy_key \
             "${VPS_USER}@${VPS_HOST}" \
             "VPS_APP_DIR='${VPS_APP_DIR}' VPS_REPO_URL='https://github.com/mcmcmax437/MiniApp_Bot_Volleyball.git' bash -s" <<'REMOTE'
-          set -euo pipefail
+          set -eo pipefail
           APP_DIR="$VPS_APP_DIR"
+          VPS_USER="${VPS_USER:-root}"
 
           # If the repo is not yet cloned (or the existing directory is not a
           # valid git checkout, e.g. just a placeholder), run the bootstrap
