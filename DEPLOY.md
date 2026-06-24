@@ -66,7 +66,44 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/mcmcmax437/MiniApp_Bot_V
 > by hand (copy the one from your local machine) before the first deploy will
 > succeed.
 
-## 4. Configure GitHub deploy (Option A — recommended)
+## 4. Create the `volleyball` database + `deploy` MySQL user (one-time)
+
+Run this **once** on the VPS as a MySQL admin. It creates:
+
+- The `volleyball` database (used by the API)
+- The `volley` app user (used by the API at runtime)
+- The `deploy` user with `CREATE/ALTER/DROP/INDEX/REFERENCES` privileges — used **only** by the CI/CD pipeline to run `CREATE DATABASE IF NOT EXISTS volleyball` before every Prisma migration. It is a separate, locked-down user so the GitHub secret for it can't read or modify your other databases (`taxi`, `medstuff_db`, etc.).
+
+```bash
+ssh root@173.242.52.16
+sudo mysql <<'SQL'
+CREATE DATABASE IF NOT EXISTS volleyball CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- App user (used by the API process at runtime; read/write only on volleyball).
+CREATE USER IF NOT EXISTS 'volley'@'localhost'     IDENTIFIED BY 'volley';
+CREATE USER IF NOT EXISTS 'volley'@'127.0.0.1'     IDENTIFIED BY 'volley';
+GRANT ALL PRIVILEGES ON volleyball.* TO 'volley'@'localhost';
+GRANT ALL PRIVILEGES ON volleyball.* TO 'volley'@'127.0.0.1';
+
+-- Deploy user (used by the CI/CD pipeline; can create databases but
+-- has no GRANT/SELECT/INSERT on your other DBs, so a leaked secret
+-- can't read taxi/medstuff data).
+CREATE USER IF NOT EXISTS 'deploy'@'localhost'     IDENTIFIED BY '<set-a-strong-password-here>';
+CREATE USER IF NOT EXISTS 'deploy'@'127.0.0.1'     IDENTIFIED BY '<set-a-strong-password-here>';
+GRANT CREATE, ALTER, DROP, INDEX, REFERENCES ON *.* TO 'deploy'@'localhost';
+GRANT CREATE, ALTER, DROP, INDEX, REFERENCES ON *.* TO 'deploy'@'127.0.0.1';
+
+FLUSH PRIVILEGES;
+SELECT user, host FROM mysql.user WHERE user IN ('volley','deploy');
+SHOW DATABASES;
+SQL
+```
+
+You should see two `volley` rows, two `deploy` rows, and `volleyball` in the database list. **Pick a strong password for the `deploy` user** (e.g. `openssl rand -hex 24`) — you'll put it in GitHub secrets next.
+
+> ⚠️ Replacing the password later means re-running the `ALTER USER` lines for `deploy@localhost` and `deploy@127.0.0.1`, **and** updating the GitHub secret.
+
+## 5. Configure GitHub deploy (Option A — recommended)
 
 **Normal workflow:** commit → `git push` → GitHub Actions SSHs to the VPS → `git pull` → build → PM2 restart.
 
@@ -79,10 +116,22 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/mcmcmax437/MiniApp_Bot_V
    | `VPS_HOST` | `173.242.52.16` |
    | `VPS_USER` | the user that owns `/usr/src/...` (e.g. `root` or your sudo user) |
    | `VPS_SSH_PRIVATE_KEY` | contents of the **private** key (the one matching the public key in the VPS's `~/.ssh/authorized_keys`) |
+   | `VPS_MYSQL_DEPLOY_USER` | `deploy` |
+   | `VPS_MYSQL_DEPLOY_PASSWORD` | the strong password you set in §4 |
 
-3. Push to `main`. The workflow `.github/workflows/deploy.yml` runs `scripts/vps-update.sh` on the server.
+3. Also fill in your local `.env` (the one on your PC that the deploy uses as the source of truth):
 
-## 5. Configure nginx + HTTPS (Option A2 — manual from PC)
+   ```bash
+   # Uncomment and set in D:\Tereshkovych-WebSite\Application\MiniApp_Bot_Volleyball\.env
+   VPS_MYSQL_DEPLOY_USER=deploy
+   VPS_MYSQL_DEPLOY_PASSWORD=<same password as in GitHub secret>
+   ```
+
+4. Push to `main`. The workflow `.github/workflows/deploy.yml` runs `scripts/vps-update.sh` on the server. On every run, `vps-update.sh` first executes `CREATE DATABASE IF NOT EXISTS volleyball` as the `deploy` user, so the database is always present before Prisma runs migrations.
+
+> If you ever change `VPS_MYSQL_DEPLOY_PASSWORD`, you only need to update the GitHub secret and your local `.env` — the `deploy` user itself doesn't need to be re-created on the VPS.
+
+## 6. Configure nginx + HTTPS (Option A2 — manual from PC)
 
 If you'd rather drive the deploy from your local machine, or you want to set up
 nginx + SSL before the first push:
@@ -103,7 +152,7 @@ npm run deploy:vps -- ssl  # configure nginx + Let's Encrypt cert
 
 In @BotFather → **Menu button → Web App URL**, point at `PUBLIC_URL`.
 
-## 6. Backups
+## 7. Backups
 
 MySQL data lives in `/var/lib/mysql/volleyball` on the host:
 
@@ -113,7 +162,7 @@ MySQL data lives in `/var/lib/mysql/volleyball` on the host:
 
 Snapshot `/var/lib/mysql` and `/usr/src/volleyball_miniApp/MiniApp_Bot_Volleyball` via your VPS provider's snapshot feature for full recovery.
 
-## 7. Rollback
+## 8. Rollback
 
 PM2 keeps the previous build on disk if you `pm2 save` after every deploy.
 The pipeline does not roll back automatically — to roll back manually on the VPS:
@@ -136,6 +185,6 @@ pm2 startOrReload deploy/ecosystem.config.cjs
 ## How it works
 
 - `npm run deploy:vps` packages the project source as a `.tar.gz` (excluding `node_modules`, `.env`, `dist/`), uploads it via SCP, then renders `deploy/nginx-site.conf.template` and `deploy/mysql-init.sql.template` and writes a fresh `.env` from your local one (with `VPS_MYSQL_*` overrides applied) to the VPS.
-- `scripts/vps-update.sh` (called by the GitHub Action or manually) runs `git pull`, applies the env substitution, then `npm ci` → `prisma generate` → `prisma migrate deploy` → `npm run build:api` → `npm run build:web` → `pm2 startOrReload`.
+- `scripts/vps-update.sh` (called by the GitHub Action or manually) runs `git pull`, applies the env substitution, then runs `CREATE DATABASE IF NOT EXISTS volleyball` as the `deploy` MySQL user (so a brand-new VPS or a wiped DB never blocks the deploy), then `npm ci` → `prisma generate` → `prisma migrate deploy` → `npm run build:api` → `npm run build:web` → `pm2 startOrReload`.
 - The Mini App is built with `VITE_API_BASE=/api` so the SPA hits `https://<your-domain>/api/v1/...`, which nginx proxies to the API process on port 4017.
 - All runtime secrets (`BOT_TOKEN`, `JWT_SECRET`, etc.) live in the server's `.env` and never enter GitHub. Only SSH creds do.

@@ -64,6 +64,13 @@ lines = setLine(lines, "MYSQL_HOST", "127.0.0.1");
 lines = setLine(lines, "DATABASE_URL", databaseUrl);
 lines = setLine(lines, "NODE_ENV", "production");
 
+// Deploy-only MySQL user (used by vps-update.sh to CREATE DATABASE IF NOT EXISTS).
+// Forwarded from VPS_MYSQL_DEPLOY_* in the source .env, or left blank if not set.
+const deployUser = vars.VPS_MYSQL_DEPLOY_USER || vars.MYSQL_DEPLOY_USER || "";
+const deployPassword = vars.VPS_MYSQL_DEPLOY_PASSWORD || vars.MYSQL_DEPLOY_PASSWORD || "";
+lines = setLine(lines, "MYSQL_DEPLOY_USER", deployUser);
+lines = setLine(lines, "MYSQL_DEPLOY_PASSWORD", deployPassword);
+
 if (vars.PUBLIC_URL && !vars.CORS_ORIGINS) {
   lines = setLine(lines, "CORS_ORIGINS", vars.PUBLIC_URL);
 }
