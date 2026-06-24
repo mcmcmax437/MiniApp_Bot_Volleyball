@@ -36,9 +36,13 @@ jobs:
 
           # If the repo is not yet cloned (or the existing directory is not a
           # valid git checkout, e.g. just a placeholder), run the bootstrap
-          # (clone + first build). Otherwise run the normal update.
+          # (clone + first build). Also bootstrap if scripts/vps-update.sh
+          # is missing — that means the directory is a stale clone from before
+          # the deploy pipeline was added.
           NEEDS_BOOTSTRAP=true
-          if [[ -d "$APP_DIR/.git" ]] && git -C "$APP_DIR" rev-parse --git-dir >/dev/null 2>&1; then
+          if [[ -d "$APP_DIR/.git" ]] \
+             && git -C "$APP_DIR" rev-parse --git-dir >/dev/null 2>&1 \
+             && [[ -x "$APP_DIR/scripts/vps-update.sh" ]]; then
             NEEDS_BOOTSTRAP=false
           fi
 

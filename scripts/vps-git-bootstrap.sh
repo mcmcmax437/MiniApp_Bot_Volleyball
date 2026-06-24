@@ -6,9 +6,18 @@ APP_DIR="${VPS_APP_DIR:-/usr/src/volleyball_miniApp/MiniApp_Bot_Volleyball}"
 REPO_URL="${VPS_REPO_URL:-https://github.com/mcmcmax437/MiniApp_Bot_Volleyball.git}"
 BRANCH="${DEPLOY_BRANCH:-main}"
 
-if [[ -d "$APP_DIR/.git" ]] && git -C "$APP_DIR" rev-parse --git-dir >/dev/null 2>&1; then
-  echo "Already a git repo at $APP_DIR"
+# Skip bootstrap only if the directory has a valid git checkout AND the
+# deploy script exists (a stale clone from before the pipeline was added
+# still has .git but is missing scripts/).
+if [[ -d "$APP_DIR/.git" ]] \
+   && git -C "$APP_DIR" rev-parse --git-dir >/dev/null 2>&1 \
+   && [[ -x "$APP_DIR/scripts/vps-update.sh" ]]; then
+  echo "Already a fully-set-up repo at $APP_DIR"
   exec bash "$APP_DIR/scripts/vps-update.sh"
+fi
+
+if [[ -d "$APP_DIR/.git" ]]; then
+  echo "==> $APP_DIR has a stale .git (missing scripts/vps-update.sh) — will replace"
 fi
 
 ENV_BACKUP=""
