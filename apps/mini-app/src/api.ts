@@ -75,9 +75,10 @@ export interface CreateVenuePayload {
   city?: string;
 }
 
-// In production nginx proxies /api/* to the NestJS API on port 3000, so the
-// build only needs the relative path. Set VITE_API_BASE in .env to override
-// (e.g. http://localhost:3000/api/v1 for a local dev backend on a different port).
+// Base path for API calls. The NestJS API lives at /api/v1/* (see
+// apps/api/src/main.ts `app.setGlobalPrefix('api/v1')`), so the default is
+// /api/v1. nginx on the VPS proxies /api/* to the API process unchanged.
+// Override with VITE_API_BASE in .env for local dev against a different port.
 const BASE =
   (import.meta.env.VITE_API_BASE as string | undefined) ?? '/api/v1';
 

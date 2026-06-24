@@ -98,7 +98,7 @@ function buildServerEnv(source) {
     DEFAULT_CITY: source.DEFAULT_CITY?.trim() || "Kyiv",
     DEFAULT_CITY_LAT: source.DEFAULT_CITY_LAT?.trim() || "50.4501",
     DEFAULT_CITY_LNG: source.DEFAULT_CITY_LNG?.trim() || "30.5234",
-    VITE_API_BASE: source.VITE_API_BASE?.trim() || "/api",
+    VITE_API_BASE: source.VITE_API_BASE?.trim() || "/api/v1",
   };
 
   return Object.fromEntries(
@@ -255,7 +255,7 @@ function remoteBuildAndStart() {
     `npm run prisma:generate`,
     `npm run prisma:deploy`,
     `npm run build:api`,
-    `VITE_API_BASE=/api npm run build:web`,
+    `VITE_API_BASE=/api/v1 npm run build:web`,
     `mkdir -p apps/api/uploads`,
     `chmod o+rx '${appDir}'`,
     `chmod -R a+rX apps/mini-app/dist`,

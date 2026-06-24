@@ -13,7 +13,7 @@ COPY apps/api ./apps/api
 
 # Default to the relative /api path so nginx in this stack can proxy to the
 # `api` service. Override at build time: --build-arg VITE_API_BASE=...
-ARG VITE_API_BASE=/api
+ARG VITE_API_BASE=/api/v1
 ENV VITE_API_BASE=${VITE_API_BASE}
 
 RUN npm run build:web

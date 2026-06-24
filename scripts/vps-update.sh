@@ -52,7 +52,9 @@ echo "==> Build API"
 npm run build:api
 
 echo "==> Build Mini App"
-VITE_API_BASE=/api npm run build:web
+# Must include /api/v1 — the NestJS API uses `app.setGlobalPrefix('api/v1')`
+# (see apps/api/src/main.ts). nginx proxies the full path through to port 4017.
+VITE_API_BASE=/api/v1 npm run build:web
 
 # nginx (www-data) must traverse the project root to serve dist/
 chmod o+rx "$APP_DIR"
