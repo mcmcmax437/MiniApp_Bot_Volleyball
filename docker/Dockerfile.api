@@ -1,0 +1,40 @@
+# Multi-stage build for the NestJS API.
+# Stage 1: install deps, generate Prisma client, run build.
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Copy workspace root
+COPY package.json package-lock.json* ./
+COPY apps/api/package.json apps/api/package.json
+COPY apps/mini-app/package.json apps/mini-app/package.json
+COPY prisma ./prisma
+
+RUN npm install --legacy-peer-deps --workspaces=false \
+      --workspace=apps/api \
+      --include-workspace-root
+
+# Now install everything as a workspace
+RUN npm install --legacy-peer-deps
+
+# Copy sources
+COPY apps/api ./apps/api
+COPY apps/mini-app ./apps/mini-app
+
+# Generate Prisma client + build API
+RUN npx --workspace apps/api prisma generate
+RUN npm run build:api
+
+# Stage 2: lean runtime image
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
+COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/package.json ./package.json
+
+# Run migrations and start the server. We use `node` to run the compiled main.
+CMD ["sh", "-c", "npx --workspace apps/api prisma migrate deploy && node apps/api/dist/main.js"]

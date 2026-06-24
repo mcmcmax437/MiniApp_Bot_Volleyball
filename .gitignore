@@ -1,0 +1,26 @@
+node_modules/
+dist/
+build/
+.output/
+*.log
+npm-debug.log*
+
+.env
+.env.*
+!.env.example
+
+deploy/.deploy-bundle.tgz
+
+# Prisma
+apps/api/prisma/*.db
+
+# Build caches
+apps/mini-app/tsconfig.tsbuildinfo
+*.tsbuildinfo
+.vite/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

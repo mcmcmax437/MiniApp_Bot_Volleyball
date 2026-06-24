@@ -1,0 +1,44 @@
+# Rendered on the VPS by scripts/deploy-vps.mjs (DOMAIN and APP_DIR substituted).
+# Serves the Mini App SPA and proxies /api to the NestJS process.
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name __DOMAIN__;
+
+    client_max_body_size 20M;
+
+    # API + uploaded media. Do not buffer large files on disk.
+    # Port 4017 — chosen to never collide with anything else. The taxi project
+    # on this VPS uses 3000.
+    location /api/ {
+        client_max_body_size 20M;
+        proxy_pass http://127.0.0.1:4017;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection "";
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_pass_header Content-Type;
+        proxy_pass_header Content-Disposition;
+        proxy_pass_header Cache-Control;
+    }
+
+    location /api/v1/healthz {
+        proxy_pass http://127.0.0.1:4017/api/v1/healthz;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+
+    root __APP_DIR__/apps/mini-app/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

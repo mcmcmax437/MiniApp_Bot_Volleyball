@@ -1,0 +1,12 @@
+-- Applied once on the VPS via sudo mysql (see scripts/deploy-vps.mjs setup).
+CREATE DATABASE IF NOT EXISTS `__MYSQL_DATABASE__`
+  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE USER IF NOT EXISTS '__MYSQL_USER__'@'localhost'
+  IDENTIFIED WITH mysql_native_password BY '__MYSQL_PASSWORD__';
+
+ALTER USER '__MYSQL_USER__'@'localhost'
+  IDENTIFIED WITH mysql_native_password BY '__MYSQL_PASSWORD__';
+
+GRANT ALL PRIVILEGES ON `__MYSQL_DATABASE__`.* TO '__MYSQL_USER__'@'localhost';
+FLUSH PRIVILEGES;

@@ -1,0 +1,26 @@
+{
+  "name": "volleyball-bot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Telegram Mini App for scheduling volleyball games",
+  "scripts": {
+    "dev:api": "npm --workspace apps/api run start:dev",
+    "dev:web": "npm --workspace apps/mini-app run dev",
+    "build:api": "npm --workspace apps/api run build",
+    "build:web": "npm --workspace apps/mini-app run build",
+    "build": "npm run build:api && npm run build:web",
+    "prisma:generate": "npm --workspace apps/api exec prisma generate",
+    "prisma:deploy": "npm --workspace apps/api exec prisma migrate deploy",
+    "prisma:migrate": "npm --workspace apps/api exec prisma migrate dev",
+    "prisma:seed": "npm --workspace apps/api exec prisma db seed",
+    "lint": "npm --workspace apps/api run lint",
+    "deploy:vps": "node scripts/deploy-vps.mjs",
+    "deploy:vps:ssl": "node scripts/deploy-vps.mjs ssl"
+  },
+  "workspaces": [
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  }
+}

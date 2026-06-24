@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  PRO
+}
+
+enum GameStatus {
+  OPEN
+  FULL
+  CANCELLED
+  FINISHED
+}
+
+enum VenueStatus {
+  PUBLISHED
+  HIDDEN
+}
+
+model User {
+  id              String   @id @default(cuid())
+  telegramId      BigInt   @unique
+  firstName       String
+  lastName        String?
+  username        String?
+  age             Int?
+  skillLevel      SkillLevel?
+  city            String
+  lat             Float?
+  lng             Float?
+  // minutes before game start, e.g. [1440, 120, 30]
+  reminderOffsets Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  hostedGames     Game[]              @relation("hostedBy")
+  participations  GameParticipant[]
+  submittedVenues Venue[]             @relation("venueSubmitter")
+
+  @@index([city])
+}
+
+model Venue {
+  id            String      @id @default(cuid())
+  name          String
+  address       String
+  lat           Float
+  lng           Float
+  indoor        Boolean     @default(false)
+  surface       String?
+  // total court cost per hour, in minor currency units (e.g. cents)
+  hourlyPrice   Int
+  capacity      Int
+  status        VenueStatus @default(PUBLISHED)
+  city          String
+  submittedById String?
+  submittedBy   User?       @relation("venueSubmitter", fields: [submittedById], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  games Game[]
+
+  @@index([city])
+  @@index([lat, lng])
+}
+
+model Game {
+  id          String     @id @default(cuid())
+  venueId     String
+  venue       Venue      @relation(fields: [venueId], references: [id])
+  hostId      String
+  host        User       @relation("hostedBy", fields: [hostId], references: [id])
+  startAt     DateTime
+  endAt       DateTime
+  skillLevel  SkillLevel
+  spotsTotal  Int
+  notes       String?
+  // total court cost for this specific slot, in minor units
+  totalCost   Int
+  status      GameStatus @default(OPEN)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  participants GameParticipant[]
+
+  @@index([startAt])
+  @@index([status, startAt])
+  @@index([venueId, startAt])
+}
+
+model GameParticipant {
+  id       String   @id @default(cuid())
+  gameId   String
+  userId   String
+  joinedAt DateTime @default(now())
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([gameId, userId])
+  @@index([userId])
+}
