@@ -27,7 +27,7 @@ const step = process.argv[2] || "all";
 const sshTarget = process.env.VPS_SSH_TARGET?.trim() || "vps";
 const appDir =
   process.env.VPS_APP_DIR?.trim() ||
-  "/usr/src/volleyball-miniApp/MiniApp_Bot_Volleyball";
+  "/usr/src/volleyball_miniApp/MiniApp_Bot_Volleyball";
 
 function loadEnvFile() {
   if (!fs.existsSync(envPath)) {

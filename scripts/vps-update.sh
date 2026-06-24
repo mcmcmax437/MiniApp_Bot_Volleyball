@@ -2,31 +2,12 @@
 # Runs ON the VPS after git pull. Called by GitHub Actions or manually.
 set -euo pipefail
 
-APP_DIR="${VPS_APP_DIR:-/usr/src/volleyball-miniApp/MiniApp_Bot_Volleyball}"
+APP_DIR="${VPS_APP_DIR:-/usr/src/volleyball_miniApp/MiniApp_Bot_Volleyball}"
 BRANCH="${DEPLOY_BRANCH:-main}"
 
 cd "$APP_DIR"
 
 if [[ ! -f .env ]]; then
-  echo "==========================================================="
-  echo "DEBUG: .env missing diagnostic"
-  echo "==========================================================="
-  echo "APP_DIR          = $APP_DIR"
-  echo "pwd              = $(pwd)"
-  echo "whoami           = $(whoami)"
-  echo "ls -la $APP_DIR:"
-  ls -la "$APP_DIR" || true
-  echo "-----------------------------------------------------------"
-  echo "Looking for .env anywhere in the parent tree:"
-  find "$(dirname "$APP_DIR")" -maxdepth 3 -name ".env*" 2>/dev/null || true
-  echo "-----------------------------------------------------------"
-  echo "stat .env (if it exists):"
-  stat .env 2>&1 || true
-  echo "-----------------------------------------------------------"
-  echo "First 4 bytes of .env (xxd):"
-  if [[ -e .env ]]; then xxd .env 2>/dev/null | head -1 || od -c .env 2>/dev/null | head -1; else echo "(no file named .env in cwd)"; fi
-  echo "==========================================================="
-  echo ""
   echo "Missing $APP_DIR/.env on the server."
   echo "Either copy your local .env here, or run:"
   echo "  scp .env ${VPS_USER:-root}@\${VPS_HOST}:$APP_DIR/.env"

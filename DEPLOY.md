@@ -56,13 +56,13 @@ Use the bootstrap script. It clones the repo and runs the first build in one sho
 
 ```bash
 ssh vps
-sudo mkdir -p /usr/src/volleyball-miniApp
-sudo chown $USER /usr/src/volleyball-miniApp
+sudo mkdir -p /usr/src/volleyball_miniApp
+sudo chown $USER /usr/src/volleyball_miniApp
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/mcmcmax437/MiniApp_Bot_Volleyball/main/scripts/vps-git-bootstrap.sh)"
 ```
 
 > The script keeps an existing `.env` if one is present, but on a fresh VPS
-> you'll need to create `/usr/src/volleyball-miniApp/MiniApp_Bot_Volleyball/.env`
+> you'll need to create `/usr/src/volleyball_miniApp/MiniApp_Bot_Volleyball/.env`
 > by hand (copy the one from your local machine) before the first deploy will
 > succeed.
 
@@ -111,7 +111,7 @@ MySQL data lives in `/var/lib/mysql/volleyball` on the host:
 0 3 * * * /usr/bin/mysqldump -u<user> -p<pass> volleyball | gzip > /backups/volleyball-$(date +\%F).sql.gz
 ```
 
-Snapshot `/var/lib/mysql` and `/usr/src/volleyball-miniApp/MiniApp_Bot_Volleyball` via your VPS provider's snapshot feature for full recovery.
+Snapshot `/var/lib/mysql` and `/usr/src/volleyball_miniApp/MiniApp_Bot_Volleyball` via your VPS provider's snapshot feature for full recovery.
 
 ## 7. Rollback
 
@@ -119,7 +119,7 @@ PM2 keeps the previous build on disk if you `pm2 save` after every deploy.
 The pipeline does not roll back automatically — to roll back manually on the VPS:
 
 ```bash
-cd /usr/src/volleyball-miniApp/MiniApp_Bot_Volleyball
+cd /usr/src/volleyball_miniApp/MiniApp_Bot_Volleyball
 git log --oneline -5
 git checkout <good-sha>
 npm ci --legacy-peer-deps
