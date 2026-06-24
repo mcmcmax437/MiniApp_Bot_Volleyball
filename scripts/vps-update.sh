@@ -28,6 +28,15 @@ git pull --ff-only origin "$BRANCH"
 echo "==> Apply production .env (VPS_MYSQL_* → MYSQL_*)"
 node scripts/vps-apply-production-env.mjs
 
+# Prisma (and some other tools) read .env only from the directory they run in.
+# The repo-root .env is not auto-discovered when npm changes cwd into apps/api.
+# Source it into the shell environment so all child processes (npm, prisma,
+# nest build) inherit DATABASE_URL and friends.
+set -a
+# shellcheck disable=SC1091
+. ./.env
+set +a
+
 echo "==> Install dependencies"
 npm ci
 
