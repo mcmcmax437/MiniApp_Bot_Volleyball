@@ -13,6 +13,7 @@
     "prisma:deploy": "npm --workspace apps/api exec prisma migrate deploy",
     "prisma:migrate": "npm --workspace apps/api exec prisma migrate dev",
     "prisma:seed": "npm --workspace apps/api exec prisma db seed",
+    "db:push": "npm --workspace apps/api exec prisma db push --accept-data-loss",
     "lint": "npm --workspace apps/api run lint",
     "deploy:vps": "node scripts/deploy-vps.mjs",
     "deploy:vps:ssl": "node scripts/deploy-vps.mjs ssl"

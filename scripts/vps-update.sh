@@ -46,7 +46,18 @@ set +a
 
 echo "==> Prisma + database"
 npm run prisma:generate
-npm run prisma:deploy
+# Apply schema to MySQL. If a migration file exists, use migrate deploy
+# (preserves history). If no migrations folder exists yet (first deploy),
+# fall back to `prisma db push` which creates tables directly from
+# schema.prisma without writing a migration file. Once any migration
+# exists, `migrate deploy` will run instead.
+if [[ -d prisma/migrations ]] && [[ -n "$(ls -A prisma/migrations 2>/dev/null)" ]]; then
+  echo "Applying Prisma migrations..."
+  npm run prisma:deploy
+else
+  echo "No prisma/migrations yet — pushing schema directly (one-time bootstrap)."
+  npm run db:push
+fi
 
 echo "==> Build API"
 npm run build:api
