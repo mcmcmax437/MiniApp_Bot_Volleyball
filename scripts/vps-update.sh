@@ -8,7 +8,10 @@ BRANCH="${DEPLOY_BRANCH:-main}"
 cd "$APP_DIR"
 
 if [[ ! -f .env ]]; then
-  echo "Missing $APP_DIR/.env — create it once on the server (not in git)."
+  echo "Missing $APP_DIR/.env on the server."
+  echo "Either copy your local .env here, or run:"
+  echo "  scp .env ${VPS_USER:-root}@\${VPS_HOST}:$APP_DIR/.env"
+  echo "See DEPLOY.md §3 for the first-time .env contents."
   exit 1
 fi
 

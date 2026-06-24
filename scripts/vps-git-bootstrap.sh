@@ -6,7 +6,7 @@ APP_DIR="${VPS_APP_DIR:-/usr/src/volleyball-miniApp/MiniApp_Bot_Volleyball}"
 REPO_URL="${VPS_REPO_URL:-https://github.com/mcmcmax437/MiniApp_Bot_Volleyball.git}"
 BRANCH="${DEPLOY_BRANCH:-main}"
 
-if [[ -d "$APP_DIR/.git" ]]; then
+if [[ -d "$APP_DIR/.git" ]] && git -C "$APP_DIR" rev-parse --git-dir >/dev/null 2>&1; then
   echo "Already a git repo at $APP_DIR"
   exec bash "$APP_DIR/scripts/vps-update.sh"
 fi
