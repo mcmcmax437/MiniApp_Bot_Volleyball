@@ -18,19 +18,10 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           VPS_APP_DIR: /usr/src/volleyball_miniApp/MiniApp_Bot_Volleyball
-          # Forwarded into the remote shell so vps-update.sh can run
-          # `CREATE DATABASE IF NOT EXISTS` against MySQL before Prisma migrations.
-          MYSQL_DEPLOY_USER: ${{ secrets.VPS_MYSQL_DEPLOY_USER }}
-          MYSQL_DEPLOY_PASSWORD: ${{ secrets.VPS_MYSQL_DEPLOY_PASSWORD }}
         run: |
           if [ -z "$VPS_HOST" ] || [ -z "$VPS_USER" ] || [ -z "$VPS_SSH_KEY" ]; then
             echo "Missing GitHub secrets: VPS_HOST, VPS_USER, VPS_SSH_PRIVATE_KEY"
             exit 1
-          fi
-          if [ -z "$MYSQL_DEPLOY_USER" ] || [ -z "$MYSQL_DEPLOY_PASSWORD" ]; then
-            echo "::warning::VPS_MYSQL_DEPLOY_USER/PASSWORD not set — vps-update.sh will"
-            echo "  skip CREATE DATABASE IF NOT EXISTS. Make sure the 'volleyball'"
-            echo "  database already exists on the VPS or set the two secrets."
           fi
           mkdir -p ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
@@ -38,11 +29,7 @@ jobs:
 
           ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/deploy_key \
             "${VPS_USER}@${VPS_HOST}" \
-            "VPS_APP_DIR='${VPS_APP_DIR}' \
-             VPS_REPO_URL='https://github.com/mcmcmax437/MiniApp_Bot_Volleyball.git' \
-             MYSQL_DEPLOY_USER='${MYSQL_DEPLOY_USER}' \
-             MYSQL_DEPLOY_PASSWORD='${MYSQL_DEPLOY_PASSWORD}' \
-             bash -s" <<'REMOTE'
+            "VPS_APP_DIR='${VPS_APP_DIR}' VPS_REPO_URL='https://github.com/mcmcmax437/MiniApp_Bot_Volleyball.git' bash -s" <<'REMOTE'
           set -eo pipefail
           APP_DIR="$VPS_APP_DIR"
           VPS_USER="${VPS_USER:-root}"

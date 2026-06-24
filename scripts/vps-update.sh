@@ -37,28 +37,6 @@ set -a
 . ./.env
 set +a
 
-echo "==> Ensure MySQL database exists (idempotent)"
-# The deploy user (MYSQL_DEPLOY_USER) has CREATE on *.*, so it can ensure the
-# volleyball database exists before Prisma tries to migrate it. If the secret
-# isn't set, we don't try (the manual `npm run deploy:vps -- setup` flow
-# handles that case instead).
-if [[ -n "${MYSQL_DEPLOY_USER:-}" && -n "${MYSQL_DEPLOY_PASSWORD:-}" ]]; then
-  DB_NAME="${MYSQL_DATABASE:-volleyball}"
-  if ! mysql \
-      --user="$MYSQL_DEPLOY_USER" \
-      --password="$MYSQL_DEPLOY_PASSWORD" \
-      --host=127.0.0.1 \
-      --execute "CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"; then
-    echo "Failed to ensure database '$DB_NAME' exists."
-    echo "Check that MYSQL_DEPLOY_USER has CREATE on *.* (run DEPLOY.md §4 once)."
-    exit 1
-  fi
-  echo "Database '$DB_NAME' present (or just created)."
-else
-  echo "MYSQL_DEPLOY_USER/PASSWORD not set — assuming DB already exists."
-  echo "(See DEPLOY.md §4 for the one-time 'deploy' MySQL user setup.)"
-fi
-
 echo "==> Install dependencies"
 npm ci
 
