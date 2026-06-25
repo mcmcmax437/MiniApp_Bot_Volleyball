@@ -1,12 +1,23 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
-import { useApi } from '../api';
+import {
+  useApi,
+  SkillLevel,
+  SKILL_LEVELS,
+  SKILL_LEVEL_LABELS,
+} from '../api';
 import { Icon, IconName } from '../Icon';
 import './CreateGame.css';
 
-const SKILLS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PRO'] as const;
-type Skill = (typeof SKILLS)[number];
+const SKILL_ICONS: Record<SkillLevel, IconName> = {
+  LEVEL_1: "tennis-ball",
+  LEVEL_2: "user-account",
+  LEVEL_3: "user-group",
+  LEVEL_4: "award-01",
+  LEVEL_5: "crown",
+  LEVEL_6: "fire",
+};
 
 function toIsoLocal(value: string): string {
   return new Date(value).toISOString();
@@ -18,15 +29,6 @@ function defaultStartAt(): string {
   d.setHours(d.getHours() + 24);
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function skillIcon(s: Skill): IconName {
-  switch (s) {
-    case "BEGINNER": return "user-account";
-    case "INTERMEDIATE": return "user-group";
-    case "ADVANCED": return "award-01";
-    case "PRO": return "fire";
-  }
 }
 
 export function CreateGamePage() {
@@ -42,7 +44,7 @@ export function CreateGamePage() {
   const [venueId, setVenueId] = useState('');
   const [startAt, setStartAt] = useState(defaultStartAt());
   const [durationHours, setDurationHours] = useState(2);
-  const [skill, setSkill] = useState<Skill>('INTERMEDIATE');
+  const [skill, setSkill] = useState<SkillLevel>('LEVEL_3');
   const [spotsTotal, setSpotsTotal] = useState(10);
   const [totalCost, setTotalCost] = useState(0);
   const [notes, setNotes] = useState('');
@@ -202,7 +204,7 @@ export function CreateGamePage() {
             Skill level
           </label>
           <div className="skillGrid">
-            {SKILLS.map((s) => (
+            {SKILL_LEVELS.map((s, i) => (
               <button
                 type="button"
                 key={s}
@@ -210,8 +212,9 @@ export function CreateGamePage() {
                 onClick={() => setSkill(s)}
                 aria-pressed={skill === s}
               >
-                <Icon name={skillIcon(s)} size={18} />
-                <span>{s.charAt(0) + s.slice(1).toLowerCase()}</span>
+                <div className="skillCard-num">{i + 1}</div>
+                <Icon name={SKILL_ICONS[s]} size={18} />
+                <span className="skillCard-label">{SKILL_LEVEL_LABELS[s]}</span>
               </button>
             ))}
           </div>

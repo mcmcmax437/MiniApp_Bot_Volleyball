@@ -1,22 +1,24 @@
-import { useEffect } from 'react';
-import { NavLink, Route, Routes, useNavigate } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from 'react-query';
-import { useTelegram } from './tg';
-import { useApi } from './api';
-import { Icon } from './Icon';
-import { HomePage } from './pages/Home';
-import { GamesPage } from './pages/Games';
-import { GameDetailPage } from './pages/GameDetail';
-import { CreateGamePage } from './pages/CreateGame';
-import { VenuesPage } from './pages/Venues';
-import { ProfilePage } from './pages/Profile';
-import './App.css';
+import { useEffect } from "react";
+import { NavLink, Route, Routes, useNavigate } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "react-query";
+import { useTelegram } from "./tg";
+import { useApi } from "./api";
+import { Icon } from "./Icon";
+import { HomePage } from "./pages/Home";
+import { GamesPage } from "./pages/Games";
+import { GameDetailPage } from "./pages/GameDetail";
+import { CreateGamePage } from "./pages/CreateGame";
+import { VenuesPage } from "./pages/Venues";
+import { ProfilePage } from "./pages/Profile";
+import { WelcomePage } from "./pages/Welcome";
+import { AdminPage } from "./pages/Admin";
+import "./App.css";
 
 function LoadingScreen() {
   return (
     <div className="app-container">
       <div className="empty-state">
-        <div className="empty-state-icon skeleton" style={{ width: 56, height: 56, borderRadius: '50%' }} />
+        <div className="empty-state-icon skeleton" style={{ width: 56, height: 56, borderRadius: "50%" }} />
         <div className="empty-state-title skeleton" style={{ width: 140, height: 16 }} />
         <div className="empty-state-text skeleton" style={{ width: 200, height: 12, marginTop: 8 }} />
       </div>
@@ -30,13 +32,13 @@ export function App() {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
-  const meQ = useQuery(['me'], () => api.me(), {
+  const meQ = useQuery(["me"], () => api.me(), {
     enabled: ready,
     retry: false,
   });
 
   const loginMut = useMutation(() => api.login(initData), {
-    onSuccess: () => qc.invalidateQueries(['me']),
+    onSuccess: () => qc.invalidateQueries(["me"]),
   });
 
   useEffect(() => {
@@ -46,9 +48,13 @@ export function App() {
     }
   }, [ready, initData, meQ.isFetched, meQ.data, loginMut.isLoading]);
 
+  // Onboarding: only redirect to /welcome if the user is signed in, has no
+  // skill level, AND is on the homepage. Don't auto-redirect from /profile,
+  // /games, etc. — let the user browse freely and just gently nudge them.
   useEffect(() => {
-    if (meQ.data && (meQ.data.age == null || meQ.data.skillLevel == null)) {
-      navigate('/profile');
+    if (!meQ.data) return;
+    if (meQ.data.skillLevel == null && window.location.pathname === "/") {
+      navigate("/welcome", { replace: true });
     }
   }, [meQ.data]);
 
@@ -64,12 +70,12 @@ export function App() {
               Open from Telegram
             </h3>
           </div>
-          <p style={{ color: 'var(--text-tertiary)', fontSize: 14, lineHeight: 1.6 }}>
+          <p style={{ color: "var(--text-tertiary)", fontSize: 14, lineHeight: 1.6 }}>
             This Mini App must be opened from a Telegram bot to work. If you're a developer, run it
             inside the Telegram client to get <code>initData</code>.
           </p>
-          <p style={{ color: 'var(--text-secondary)', marginTop: 12 }}>
-            Hello{user ? `, ${user.first_name}` : ''}.
+          <p style={{ color: "var(--text-secondary)", marginTop: 12 }}>
+            Hello{user ? `, ${user.first_name}` : ""}.
           </p>
         </div>
       </div>
@@ -109,38 +115,43 @@ export function App() {
           <Route path="/create" element={<CreateGamePage />} />
           <Route path="/venues" element={<VenuesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="*" element={
-            <div className="empty-state">
-              <div className="empty-state-icon">
-                <Icon name="maps" size={24} />
+          <Route path="/welcome" element={<WelcomePage />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route
+            path="*"
+            element={
+              <div className="empty-state">
+                <div className="empty-state-icon">
+                  <Icon name="maps" size={24} />
+                </div>
+                <div className="empty-state-title">Page not found</div>
+                <div className="empty-state-text">The page you're looking for doesn't exist.</div>
               </div>
-              <div className="empty-state-title">Page not found</div>
-              <div className="empty-state-text">The page you're looking for doesn't exist.</div>
-            </div>
-          } />
+            }
+          />
         </Routes>
       </div>
 
       <nav className="bottom-nav" aria-label="Main navigation">
-        <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>
+        <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : "")}>
           <span className="nav-icon">
             <Icon name="home-01" size={20} />
           </span>
           <span>Home</span>
         </NavLink>
-        <NavLink to="/games" className={({ isActive }) => (isActive ? 'active' : '')}>
+        <NavLink to="/games" className={({ isActive }) => (isActive ? "active" : "")}>
           <span className="nav-icon">
             <Icon name="tennis-ball" size={20} />
           </span>
           <span>Games</span>
         </NavLink>
-        <NavLink to="/create" className={({ isActive }) => (isActive ? 'active' : '')}>
+        <NavLink to="/create" className={({ isActive }) => (isActive ? "active" : "")}>
           <span className="nav-icon">
             <Icon name="plus-sign" size={20} />
           </span>
           <span>Create</span>
         </NavLink>
-        <NavLink to="/profile" className={({ isActive }) => (isActive ? 'active' : '')}>
+        <NavLink to="/profile" className={({ isActive }) => (isActive ? "active" : "")}>
           <span className="nav-icon">
             <Icon name="user-account" size={20} />
           </span>

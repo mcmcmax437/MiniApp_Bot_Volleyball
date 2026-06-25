@@ -272,3 +272,93 @@
   background: var(--border);
   margin: 4px 0;
 }
+
+/* ============================================================
+   Hero avatar variant (when user has Telegram photo)
+   ============================================================ */
+.home-hero-avatar {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.home-hero-avatar::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  background: var(--gradient-brand);
+  filter: blur(20px);
+  opacity: 0.4;
+  border-radius: 50%;
+  z-index: -1;
+}
+
+/* ============================================================
+   Onboarding banner (shown when user has no skillLevel)
+   ============================================================ */
+.home-onboardBanner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  width: 100%;
+  background: var(--brand-soft);
+  border: 1.5px solid var(--brand);
+  border-radius: var(--radius-lg);
+  text-align: left;
+  font-family: inherit;
+  color: var(--text-primary);
+  cursor: pointer;
+  box-shadow: 0 4px 16px var(--brand-glow);
+  animation: onboard-pulse 2.4s ease-in-out infinite;
+  transition: transform var(--dur-fast) var(--ease-out);
+  margin-bottom: 16px;
+}
+
+.home-onboardBanner:hover {
+  transform: translateY(-1px);
+}
+
+.home-onboardBanner:active {
+  transform: scale(0.99);
+}
+
+@keyframes onboard-pulse {
+  0%, 100% { box-shadow: 0 4px 16px var(--brand-glow); }
+  50% { box-shadow: 0 6px 24px var(--brand-glow); }
+}
+
+.home-onboardBanner-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--gradient-brand);
+  color: var(--text-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.home-onboardBanner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.home-onboardBanner-title {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.home-onboardBanner-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.home-onboardBanner i {
+  color: var(--text-tertiary);
+}

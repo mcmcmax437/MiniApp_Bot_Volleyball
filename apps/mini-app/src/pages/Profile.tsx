@@ -1,11 +1,17 @@
-import { useEffect, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from 'react-query';
-import { useApi, ApiUser } from '../api';
-import { Icon, IconName } from '../Icon';
-import './Profile.css';
-
-const SKILLS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PRO'] as const;
-type Skill = (typeof SKILLS)[number];
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "react-query";
+import {
+  useApi,
+  ApiUser,
+  SkillLevel,
+  SKILL_LEVELS,
+  SKILL_LEVEL_LABELS,
+  SKILL_LEVEL_DESCRIPTIONS,
+} from "../api";
+import { Icon, IconName } from "../Icon";
+import { Photo } from "../Photo";
+import "./Profile.css";
 
 const REMINDER_PRESETS: {
   label: string;
@@ -13,35 +19,35 @@ const REMINDER_PRESETS: {
   icon: string;
   offsets: number[];
 }[] = [
-  { label: '24h + 2h + 30m', description: 'All the reminders', icon: 'bell-dot', offsets: [1440, 120, 30] },
-  { label: '2h + 30m', description: 'Just before the game', icon: 'clock-01', offsets: [120, 30] },
-  { label: '1h only', description: 'Last-minute heads-up', icon: 'clock-01', offsets: [60] },
-  { label: 'Off', description: "Don't notify me", icon: 'cancel-01', offsets: [] },
+  { label: "24h + 2h + 30m", description: "All the reminders", icon: "bell-dot", offsets: [1440, 120, 30] },
+  { label: "2h + 30m", description: "Just before the game", icon: "clock-01", offsets: [120, 30] },
+  { label: "1h only", description: "Last-minute heads-up", icon: "clock-01", offsets: [60] },
+  { label: "Off", description: "Don't notify me", icon: "cancel-01", offsets: [] },
 ];
 
-function skillIcon(s: Skill): IconName {
-  switch (s) {
-    case "BEGINNER": return "user-account";
-    case "INTERMEDIATE": return "user-group";
-    case "ADVANCED": return "award-01";
-    case "PRO": return "fire";
-  }
-}
+const SKILL_ICONS: Record<SkillLevel, IconName> = {
+  LEVEL_1: "tennis-ball",
+  LEVEL_2: "user-account",
+  LEVEL_3: "user-group",
+  LEVEL_4: "award-01",
+  LEVEL_5: "crown",
+  LEVEL_6: "fire",
+};
 
 export function ProfilePage() {
   const api = useApi();
   const qc = useQueryClient();
-  const meQ = useQuery<ApiUser | null>(['me'], () => api.me());
+  const meQ = useQuery<ApiUser | null>(["me"], () => api.me());
 
-  const [age, setAge] = useState<number | ''>('');
-  const [skill, setSkill] = useState<Skill | ''>('');
-  const [city, setCity] = useState('');
+  const [age, setAge] = useState<number | "">("");
+  const [skill, setSkill] = useState<SkillLevel | "">("");
+  const [city, setCity] = useState("");
   const [offsets, setOffsets] = useState<number[]>([]);
 
   useEffect(() => {
     if (!meQ.data) return;
-    setAge(meQ.data.age ?? '');
-    setSkill(meQ.data.skillLevel ?? '');
+    setAge(meQ.data.age ?? "");
+    setSkill(meQ.data.skillLevel ?? "");
     setCity(meQ.data.city);
     setOffsets(meQ.data.reminderOffsets ?? []);
   }, [meQ.data]);
@@ -49,14 +55,14 @@ export function ProfilePage() {
   const save = useMutation(
     () =>
       api.updateMe({
-        age: age === '' ? undefined : Number(age),
-        skillLevel: skill === '' ? undefined : (skill as Skill),
+        age: age === "" ? undefined : Number(age),
+        skillLevel: skill === "" ? undefined : skill,
         city: city || undefined,
         reminderOffsets: offsets,
       }),
     {
       onSuccess: () => {
-        qc.invalidateQueries(['me']);
+        qc.invalidateQueries(["me"]);
       },
     },
   );
@@ -64,9 +70,9 @@ export function ProfilePage() {
   if (meQ.isLoading) {
     return (
       <div className="profilePage">
-        <div className="skeleton" style={{ width: '60%', height: 24, marginBottom: 24 }} />
-        <div className="skeleton" style={{ width: '100%', height: 80, marginBottom: 16, borderRadius: 16 }} />
-        <div className="skeleton" style={{ width: '100%', height: 200, borderRadius: 16 }} />
+        <div className="skeleton" style={{ width: "60%", height: 24, marginBottom: 24 }} />
+        <div className="skeleton" style={{ width: "100%", height: 80, marginBottom: 16, borderRadius: 16 }} />
+        <div className="skeleton" style={{ width: "100%", height: 200, borderRadius: 16 }} />
       </div>
     );
   }
@@ -82,26 +88,31 @@ export function ProfilePage() {
     );
   }
 
-  const initials = `${meQ.data.firstName?.[0] ?? ''}${meQ.data.lastName?.[0] ?? ''}`.toUpperCase();
   const canSave = !save.isLoading;
+  const fullName =
+    `${meQ.data.firstName}${meQ.data.lastName ? " " + meQ.data.lastName : ""}`;
+  const isAdmin = meQ.data.role === "ADMIN";
 
   return (
     <div className="profilePage">
-      {/* === Hero: avatar + name === */}
+      {/* === Hero: real photo + name === */}
       <header className="profileHero">
-        <div className="profileAvatar" aria-hidden="true">
-          <span>{initials || <Icon name="user-account" size={28} />}</span>
-        </div>
+        <Photo src={meQ.data.photoUrl} name={fullName} size={84} />
         <div className="profileHero-info">
           <h1 className="profileHero-name">
-            {meQ.data.firstName} {meQ.data.lastName ?? ''}
+            {meQ.data.firstName} {meQ.data.lastName ?? ""}
           </h1>
-          {meQ.data.username && (
-            <div className="profileHero-username">
-              <Icon name="user-account" size={12} className="icon-inline" />
-              @{meQ.data.username}
-            </div>
-          )}
+          <div className="profileHero-meta">
+            {meQ.data.username && (
+              <span className="profileHero-username">@{meQ.data.username}</span>
+            )}
+            {isAdmin && (
+              <span className="profileHero-badge profileHero-badge-admin">
+                <Icon name="crown" size={11} />
+                Admin
+              </span>
+            )}
+          </div>
         </div>
       </header>
 
@@ -126,12 +137,12 @@ export function ProfilePage() {
               min={5}
               max={120}
               value={age}
-              onChange={(e) => setAge(e.target.value === '' ? '' : Number(e.target.value))}
+              onChange={(e) => setAge(e.target.value === "" ? "" : Number(e.target.value))}
               placeholder="Optional"
             />
           </div>
 
-          <div className="field" style={{ marginBottom: 14 }}>
+          <div className="field">
             <label className="field-label" htmlFor="city">
               <Icon name="map-pin" size={12} className="icon-inline" />
               City
@@ -146,7 +157,7 @@ export function ProfilePage() {
         </div>
       </section>
 
-      {/* === Section: Skill === */}
+      {/* === Section: Skill (6 levels) === */}
       <section className="formSection">
         <h2 className="formSection-title">
           <span className="formSection-num">
@@ -154,8 +165,9 @@ export function ProfilePage() {
           </span>
           Your skill
         </h2>
+        <p className="formSection-hint">Tap a level to see its description.</p>
         <div className="skillGrid">
-          {SKILLS.map((s) => (
+          {SKILL_LEVELS.map((s, i) => (
             <button
               type="button"
               key={s}
@@ -163,11 +175,18 @@ export function ProfilePage() {
               onClick={() => setSkill(s)}
               aria-pressed={skill === s}
             >
-              <Icon name={skillIcon(s)} size={18} />
-              <span>{s.charAt(0) + s.slice(1).toLowerCase()}</span>
+              <div className="skillCard-num">{i + 1}</div>
+              <Icon name={SKILL_ICONS[s]} size={18} />
+              <span className="skillCard-label">{SKILL_LEVEL_LABELS[s]}</span>
             </button>
           ))}
         </div>
+        {skill && (
+          <div className="skillDescription">
+            <Icon name="information-circle" size={14} />
+            <span>{SKILL_LEVEL_DESCRIPTIONS[skill as SkillLevel]}</span>
+          </div>
+        )}
       </section>
 
       {/* === Section: Reminders === */}
@@ -228,6 +247,45 @@ export function ProfilePage() {
       >
         <Icon name="check-unread-01" size={18} />
         {save.isLoading ? "Saving…" : "Save changes"}
+      </button>
+
+      {/* === Admin panel (only for admins) === */}
+      {isAdmin && (
+        <section className="formSection profileAdminSection">
+          <h2 className="formSection-title">
+            <span className="formSection-num formSection-num-admin">
+              <Icon name="crown" size={12} />
+            </span>
+            Admin
+          </h2>
+          <Link
+            to="/admin"
+            className="adminPanelLink"
+          >
+            <div className="adminPanelLink-icon">
+              <Icon name="security" size={20} />
+            </div>
+            <div className="adminPanelLink-text">
+              <div className="adminPanelLink-title">Admin panel</div>
+              <div className="adminPanelLink-desc">Manage users, games, and venues.</div>
+            </div>
+            <Icon name="arrow-right-01" size={18} />
+          </Link>
+        </section>
+      )}
+
+      <button
+        type="button"
+        className="btn profileLogout"
+        onClick={async () => {
+          try {
+            await fetch("/api/v1/auth/logout", { method: "POST", credentials: "include" });
+          } catch {}
+          window.location.reload();
+        }}
+      >
+        <Icon name="logout-01" size={18} />
+        Sign out
       </button>
     </div>
   );

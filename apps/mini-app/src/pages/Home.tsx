@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { useApi } from "../api";
 import { useTelegram } from "../tg";
 import { Icon } from "../Icon";
+import { Photo } from "../Photo";
 import { GameCard } from "./GameCard";
 import "./Home.css";
 
 export function HomePage() {
   const api = useApi();
-  const { user, webApp } = useTelegram();
+  const { user, webApp, photoUrl } = useTelegram();
   const meQ = useQuery(["me"], () => api.me());
   const cityQ = useQuery(["default-city"], () => api.defaultCity());
   const gamesQ = useQuery(
@@ -22,12 +23,17 @@ export function HomePage() {
   const city = meQ.data?.city ?? cityQ.data?.city ?? "your city";
   const openGames = (gamesQ.data ?? []).filter((g) => g.status === "OPEN");
   const nextGames = (gamesQ.data ?? []).slice(0, 3);
+  const needsOnboarding = meQ.data != null && meQ.data.skillLevel == null;
 
   const goCreate = () => {
     webApp?.HapticFeedback?.impactOccurred?.("medium");
     navigate("/create");
   };
   const goGames = () => navigate("/games");
+  const goWelcome = () => {
+    webApp?.HapticFeedback?.impactOccurred?.("light");
+    navigate("/welcome");
+  };
 
   return (
     <div className="home">
@@ -48,12 +54,36 @@ export function HomePage() {
               : "No games yet — be the first to organize one."}
           </p>
         </div>
-        <div className="home-hero-mascot" aria-hidden="true">
-          <div className="mascot-glow" />
-          <div className="mascot-orbit" />
-          <img className="mascot-img" src="/robot.png" alt="" />
-        </div>
+        {meQ.data?.photoUrl || photoUrl ? (
+          <div className="home-hero-avatar">
+            <Photo
+              src={meQ.data?.photoUrl ?? photoUrl}
+              name={firstName}
+              size={56}
+            />
+          </div>
+        ) : (
+          <div className="home-hero-mascot" aria-hidden="true">
+            <div className="mascot-glow" />
+            <div className="mascot-orbit" />
+            <img className="mascot-img" src="/robot.png" alt="" />
+          </div>
+        )}
       </header>
+
+      {/* === Onboarding banner (only if user hasn't picked a level yet) === */}
+      {needsOnboarding && (
+        <button type="button" className="home-onboardBanner" onClick={goWelcome}>
+          <div className="home-onboardBanner-icon">
+            <Icon name="award-01" size={18} />
+          </div>
+          <div className="home-onboardBanner-text">
+            <div className="home-onboardBanner-title">Pick your playing level</div>
+            <div className="home-onboardBanner-sub">Get matched with the right games in 30 seconds</div>
+          </div>
+          <Icon name="arrow-right-01" size={16} />
+        </button>
+      )}
 
       {/* === Quick action card with robot's job === */}
       <button className="hero-cta" onClick={goCreate}>

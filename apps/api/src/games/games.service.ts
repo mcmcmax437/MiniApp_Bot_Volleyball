@@ -56,9 +56,9 @@ export class GamesService {
       where: { id },
       include: {
         venue: true,
-        host: { select: { id: true, firstName: true, lastName: true, username: true, skillLevel: true } },
+        host: { select: { id: true, firstName: true, lastName: true, username: true, skillLevel: true, photoUrl: true } },
         participants: {
-          include: { user: { select: { id: true, firstName: true, lastName: true, username: true } } },
+          include: { user: { select: { id: true, firstName: true, lastName: true, username: true, photoUrl: true } } },
           orderBy: { joinedAt: 'asc' },
         },
       },
@@ -88,7 +88,7 @@ export class GamesService {
       orderBy: { startAt: 'asc' },
       include: {
         venue: { select: { id: true, name: true, address: true, lat: true, lng: true, indoor: true, city: true } },
-        host: { select: { id: true, firstName: true, username: true, skillLevel: true } },
+        host: { select: { id: true, firstName: true, lastName: true, username: true, skillLevel: true, photoUrl: true } },
         participants: { select: { userId: true } },
       },
       take: 100,

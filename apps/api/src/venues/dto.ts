@@ -1,6 +1,8 @@
 import { IsBoolean, IsIn, IsInt, IsLatitude, IsLongitude, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
-export const SKILL_LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PRO'] as const;
+export { SKILL_LEVELS, SKILL_LEVEL_LABELS, SKILL_LEVEL_DESCRIPTIONS } from '../shared/skill-levels';
+export type { SkillLevel } from '../shared/skill-levels';
+import { SKILL_LEVELS } from '../shared/skill-levels';
 
 export class CreateVenueDto {
   @IsString()
@@ -63,4 +65,4 @@ export class ListVenuesQuery {
   maxLng?: number;
 }
 
-export const SkillLevelParam = (): PropertyDecorator => IsIn(SKILL_LEVELS);
+export const SkillLevelParam = (): PropertyDecorator => IsIn(SKILL_LEVELS as unknown as string[]);

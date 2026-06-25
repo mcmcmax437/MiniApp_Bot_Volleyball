@@ -13,8 +13,15 @@ class UpdateMeDto {
   age?: number;
 
   @IsOptional()
-  @IsIn(['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PRO'])
-  skillLevel?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'PRO';
+  @IsIn(['LEVEL_1', 'LEVEL_2', 'LEVEL_3', 'LEVEL_4', 'LEVEL_5', 'LEVEL_6', null])
+  skillLevel?:
+    | 'LEVEL_1'
+    | 'LEVEL_2'
+    | 'LEVEL_3'
+    | 'LEVEL_4'
+    | 'LEVEL_5'
+    | 'LEVEL_6'
+    | null;
 
   @IsOptional()
   @IsString()
@@ -43,7 +50,7 @@ export class MeController {
       where: { id: me.id },
       data: {
         age: dto.age ?? undefined,
-        skillLevel: dto.skillLevel ?? undefined,
+        skillLevel: dto.skillLevel === undefined ? undefined : dto.skillLevel,
         city: dto.city ?? undefined,
         reminderOffsets: dto.reminderOffsets ?? undefined,
       },

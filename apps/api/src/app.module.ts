@@ -8,6 +8,7 @@ import { VenuesModule } from './venues/venues.module';
 import { GamesModule } from './games/games.module';
 import { BotModule } from './bot/bot.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
+import { AdminModule } from './admin/admin.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -21,6 +22,7 @@ import { HealthController } from './health.controller';
     GamesModule,
     BotModule,
     SchedulerModule,
+    AdminModule,
   ],
   controllers: [HealthController],
 })

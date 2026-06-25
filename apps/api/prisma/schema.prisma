@@ -7,11 +7,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// 6-level player skill scale, per project requirements.
+// LEVEL_1 = Beginner — knows the rules, basic elements inconsistent
+// LEVEL_2 = Beginner (Amateur) — overhand serve, positional defense, simple receive
+// LEVEL_3 = Intermediate — consistent reception, confident attacks, first group block
+// LEVEL_4 = Advanced — confident play with setter, first-tempo attacks, tactical serves
+// LEVEL_5 = Semi-Pro — deep tactical understanding, powerful serves/gliders, rehearsed combos
+// LEVEL_6 = Professional — former pros, MS/CMS holders, excellent technique, fast teamwork
 enum SkillLevel {
-  BEGINNER
-  INTERMEDIATE
-  ADVANCED
-  PRO
+  LEVEL_1
+  LEVEL_2
+  LEVEL_3
+  LEVEL_4
+  LEVEL_5
+  LEVEL_6
 }
 
 enum GameStatus {
@@ -26,9 +35,14 @@ enum VenueStatus {
   HIDDEN
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
 model User {
-  id              String   @id @default(cuid())
-  telegramId      BigInt   @unique
+  id              String      @id @default(cuid())
+  telegramId      BigInt      @unique
   firstName       String
   lastName        String?
   username        String?
@@ -39,14 +53,19 @@ model User {
   lng             Float?
   // minutes before game start, e.g. [1440, 120, 30]
   reminderOffsets Json
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  // Telegram profile photo URL, refreshed on every login
+  photoUrl        String?
+  role            UserRole    @default(USER)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
-  hostedGames     Game[]              @relation("hostedBy")
+  hostedGames     Game[]            @relation("hostedBy")
   participations  GameParticipant[]
-  submittedVenues Venue[]             @relation("venueSubmitter")
+  submittedVenues Venue[]           @relation("venueSubmitter")
+  auditActions    AuditLog[]        @relation("auditActor")
 
   @@index([city])
+  @@index([role])
 }
 
 model Venue {
@@ -71,30 +90,32 @@ model Venue {
 
   @@index([city])
   @@index([lat, lng])
+  @@index([status])
 }
 
 model Game {
-  id          String     @id @default(cuid())
-  venueId     String
-  venue       Venue      @relation(fields: [venueId], references: [id])
-  hostId      String
-  host        User       @relation("hostedBy", fields: [hostId], references: [id])
-  startAt     DateTime
-  endAt       DateTime
-  skillLevel  SkillLevel
-  spotsTotal  Int
-  notes       String?
+  id         String     @id @default(cuid())
+  venueId    String
+  venue      Venue      @relation(fields: [venueId], references: [id])
+  hostId     String
+  host       User       @relation("hostedBy", fields: [hostId], references: [id])
+  startAt    DateTime
+  endAt      DateTime
+  skillLevel SkillLevel
+  spotsTotal Int
+  notes      String?
   // total court cost for this specific slot, in minor units
-  totalCost   Int
-  status      GameStatus @default(OPEN)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  totalCost  Int
+  status     GameStatus @default(OPEN)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   participants GameParticipant[]
 
   @@index([startAt])
   @@index([status, startAt])
   @@index([venueId, startAt])
+  @@index([hostId])
 }
 
 model GameParticipant {
@@ -108,4 +129,20 @@ model GameParticipant {
 
   @@unique([gameId, userId])
   @@index([userId])
+}
+
+// Records every privileged action taken by an admin.
+// targetType + targetId reference whatever entity was changed.
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  actor      User     @relation("auditActor", fields: [actorId], references: [id])
+  action     String // e.g. "user.update", "game.cancel", "venue.hide"
+  targetType String // "user" | "game" | "venue"
+  targetId   String
+  meta       Json? // optional before/after or extra context
+  createdAt  DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([targetType, targetId])
 }

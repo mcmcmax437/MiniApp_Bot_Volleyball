@@ -6,6 +6,7 @@ interface TelegramContextValue {
   colorScheme: 'light' | 'dark';
   ready: boolean;
   webApp: TelegramWebApp | null;
+  photoUrl: string | null;
 }
 
 const TelegramContext = createContext<TelegramContextValue>({
@@ -14,6 +15,7 @@ const TelegramContext = createContext<TelegramContextValue>({
   colorScheme: 'dark',
   ready: false,
   webApp: null,
+  photoUrl: null,
 });
 
 export interface TelegramUser {
@@ -22,6 +24,7 @@ export interface TelegramUser {
   last_name?: string;
   username?: string;
   language_code?: string;
+  photo_url?: string;
 }
 
 interface TelegramWebApp {
@@ -52,12 +55,15 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [colorScheme, setColorScheme] = useState<'light' | 'dark'>('dark');
   const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp ?? null;
     if (tg) {
       setInitData(tg.initData ?? '');
-      setUser(tg.initDataUnsafe?.user ?? null);
+      const u = tg.initDataUnsafe?.user ?? null;
+      setUser(u);
+      setPhotoUrl(u?.photo_url ?? null);
       setColorScheme(tg.colorScheme);
       setWebApp(tg);
       tg.ready();
@@ -67,7 +73,7 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <TelegramContext.Provider value={{ initData, user, colorScheme, ready, webApp }}>
+    <TelegramContext.Provider value={{ initData, user, colorScheme, ready, webApp, photoUrl }}>
       {children}
     </TelegramContext.Provider>
   );

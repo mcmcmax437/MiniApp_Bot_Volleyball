@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { Icon } from "../Icon";
+import { Photo } from "../Photo";
+import { SKILL_LEVEL_LABELS, SkillLevel } from "../api";
 import type { ApiGame } from "../api";
 import "./GameCard.css";
 
@@ -15,6 +17,10 @@ function statusLabel(status: ApiGame["status"]): string {
     case "FINISHED": return "Finished";
     default: return status;
   }
+}
+
+function skillLabel(level: SkillLevel): string {
+  return SKILL_LEVEL_LABELS[level];
 }
 
 function formatGameTime(iso: string): string {
@@ -52,8 +58,6 @@ interface GameCardProps {
 export function GameCard({ game }: GameCardProps) {
   const spotsLeft = game.spotsTotal - game.participantsCount;
   const fillPercent = Math.min((game.participantsCount / game.spotsTotal) * 100, 100);
-  const shownPlayers = Math.min(game.participantsCount, 4);
-  const extraPlayers = Math.max(game.participantsCount - 4, 0);
 
   return (
     <Link to={`/games/${game.id}`} className="gameCard-link">
@@ -71,8 +75,25 @@ export function GameCard({ game }: GameCardProps) {
           </div>
         </div>
 
-        {/* Title */}
-        <h3 className="gameCard-title">{game.venue.name}</h3>
+        {/* Host row with real photo */}
+        <div className="gameCard-host">
+          <Photo
+            src={game.host.photoUrl ?? null}
+            name={game.host.firstName}
+            size={36}
+          />
+          <div className="gameCard-hostInfo">
+            <div className="gameCard-title">{game.venue.name}</div>
+            <div className="gameCard-hostName">
+              Hosted by {game.host.firstName}
+              {game.host.skillLevel && (
+                <span className="gameCard-hostLevel">
+                  · {skillLabel(game.host.skillLevel)}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* Location */}
         <div className="gameCard-location">
@@ -80,37 +101,32 @@ export function GameCard({ game }: GameCardProps) {
           <span>{game.venue.address}</span>
         </div>
 
-        {/* Avatars + count */}
-        <div className="gameCard-players">
-          <div className="avatars">
-            {Array.from({ length: shownPlayers }).map((_, i) => (
-              <div key={i} className="avatar" aria-hidden="true">
-                {i + 1}
-              </div>
-            ))}
-            {extraPlayers > 0 && <span className="more">+{extraPlayers}</span>}
-          </div>
-          <div className="gameCard-playerCount">
-            <span className="gameCard-playerCountNum">
-              {game.participantsCount}
-              <span className="gameCard-playerCountMax">/{game.spotsTotal}</span>
+        {/* Player count + capacity bar */}
+        <div className="gameCard-capacity">
+          <div className="gameCard-capacityLabel">
+            <Icon name="user-group" size={14} />
+            <span>
+              <strong>{game.participantsCount}</strong>/{game.spotsTotal} players
             </span>
-            <span className="gameCard-playerCountLabel">players</span>
+            {spotsLeft > 0 && (
+              <span className="gameCard-capacityFree">· {spotsLeft} free</span>
+            )}
           </div>
-        </div>
-
-        {/* Capacity bar */}
-        <div className="capacity-bar">
-          <div
-            className={`capacity-bar-fill capacity-bar-fill-${game.status.toLowerCase()}`}
-            style={{ width: `${fillPercent}%` }}
-          />
+          <div className="capacity-bar">
+            <div
+              className={`capacity-bar-fill capacity-bar-fill-${game.status.toLowerCase()}`}
+              style={{ width: `${fillPercent}%` }}
+            />
+          </div>
         </div>
 
         {/* Meta: tags + price */}
         <div className="gameCard-meta">
           <div className="gameCard-tags">
-            <span className="tag accent">{game.skillLevel}</span>
+            <span className="tag accent">
+              <Icon name="award-01" size={10} className="icon-inline" style={{ marginRight: 2 }} />
+              {skillLabel(game.skillLevel)}
+            </span>
             <span className="tag info">
               <Icon name="building-01" size={10} className="icon-inline" style={{ marginRight: 2 }} />
               {game.venue.indoor ? "Indoor" : "Outdoor"}

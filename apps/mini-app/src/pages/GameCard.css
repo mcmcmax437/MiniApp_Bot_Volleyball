@@ -105,6 +105,36 @@
 }
 
 /* ============================================================
+   Host row
+   ============================================================ */
+.gameCard-host {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 2px;
+}
+
+.gameCard-hostInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.gameCard-hostName {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gameCard-hostLevel {
+  color: var(--brand-300);
+  font-weight: 600;
+}
+
+/* ============================================================
    Location
    ============================================================ */
 .gameCard-location {

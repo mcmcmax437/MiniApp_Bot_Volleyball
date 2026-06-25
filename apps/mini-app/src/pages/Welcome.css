@@ -1,0 +1,326 @@
+.welcome {
+  min-height: 100vh;
+  padding: 24px 20px calc(120px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  animation: page-fade-in var(--dur-base) var(--ease-out);
+}
+
+/* ============================================================
+   Progress dots
+   ============================================================ */
+.welcome-progress {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.welcome-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  transition: all var(--dur-base) var(--ease-out);
+}
+
+.welcome-dot-active {
+  background: var(--brand);
+  width: 24px;
+  border-radius: 4px;
+  box-shadow: 0 0 8px var(--brand-glow);
+}
+
+.welcome-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome-fadeIn {
+  animation: welcome-fadeIn var(--dur-base) var(--ease-out);
+}
+
+@keyframes welcome-fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   Intro step
+   ============================================================ */
+.welcome-hero {
+  text-align: center;
+  margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.welcome-avatar {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  margin-bottom: 16px;
+}
+
+.welcome-avatarGlow {
+  position: absolute;
+  inset: -10px;
+  background: var(--gradient-brand);
+  filter: blur(24px);
+  opacity: 0.4;
+  border-radius: 50%;
+  z-index: -1;
+  animation: float 4s ease-in-out infinite;
+}
+
+.welcome-title {
+  font-size: 28px;
+  font-weight: 800;
+  font-family: var(--font-display);
+  color: var(--text-primary);
+  margin: 0 0 8px;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.welcome-sub {
+  font-size: 14px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  line-height: 1.55;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.welcome-features {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.welcome-feature {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.welcome-featureIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--brand-soft);
+  color: var(--brand-300);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.welcome-featureTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  margin-bottom: 2px;
+}
+
+.welcome-featureDesc {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.welcome-cta {
+  margin-top: auto;
+}
+
+.welcome-foot {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-top: 12px;
+}
+
+/* ============================================================
+   Skill step
+   ============================================================ */
+.welcome-skillHeader {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.welcome-skillHeader .welcome-title {
+  font-size: 24px;
+}
+
+.welcome-skillHeader .welcome-sub {
+  text-align: left;
+  max-width: none;
+  margin: 0;
+}
+
+.welcome-levelList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.welcome-level {
+  width: 100%;
+  background: var(--surface-1);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: var(--text-primary);
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.welcome-level:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+
+.welcome-level:active {
+  transform: scale(0.99);
+}
+
+.welcome-level-active {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  box-shadow: 0 4px 16px var(--brand-glow);
+}
+
+.welcome-levelRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.welcome-levelNum {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-weight: 800;
+  font-family: var(--font-display);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.welcome-level-active .welcome-levelNum {
+  background: var(--gradient-brand);
+  color: var(--text-inverse);
+}
+
+.welcome-levelIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.welcome-level-active .welcome-levelIcon {
+  background: var(--gradient-brand);
+  color: var(--text-inverse);
+}
+
+.welcome-levelText {
+  flex: 1;
+  min-width: 0;
+}
+
+.welcome-levelLabel {
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+.welcome-levelInfo {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: none;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.welcome-levelInfo:hover {
+  background: var(--surface-3);
+  color: var(--text-secondary);
+}
+
+.welcome-levelDesc {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  font-weight: 500;
+  animation: welcome-fadeIn var(--dur-fast) var(--ease-out);
+}
+
+.welcome-actions {
+  margin-top: auto;
+}
+
+/* ============================================================
+   Done step
+   ============================================================ */
+.welcome-done {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding-top: 80px;
+}
+
+.welcome-doneCheck {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--gradient-success);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px rgba(52, 211, 153, 0.4);
+  animation: welcome-pop var(--dur-slow) var(--ease-spring);
+}
+
+@keyframes welcome-pop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}

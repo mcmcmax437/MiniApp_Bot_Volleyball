@@ -44,7 +44,15 @@ export type IconName =
   | "menu-01"
   | "more-horizontal"
   | "cancel-01"
-  | "image-01";
+  | "image-01"
+  | "security"
+  | "chart-line-data-01"
+  | "user-add-01"
+  | "delete-01"
+  | "view"
+  | "view-off"
+  | "minus-sign"
+  | "information-circle";
 
 interface IconProps {
   name: IconName;

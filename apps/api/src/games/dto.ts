@@ -1,5 +1,5 @@
 import { IsDateString, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
-import { SKILL_LEVELS } from '../venues/dto';
+import { SKILL_LEVELS } from '../shared/skill-levels';
 
 export class CreateGameDto {
   @IsString()

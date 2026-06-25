@@ -13,7 +13,7 @@ async function main() {
       lastName: 'Host',
       username: 'demo_host',
       age: 25,
-      skillLevel: 'INTERMEDIATE',
+      skillLevel: 'LEVEL_3',
       city: 'Kyiv',
       lat: 50.4501,
       lng: 30.5234,

@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useApi } from '../api';
+import { useApi, SKILL_LEVEL_LABELS, SkillLevel } from '../api';
 import { Icon } from '../Icon';
+import { Photo } from '../Photo';
 import './GameDetail.css';
 
 function formatGameTime(iso: string): string {
@@ -70,7 +71,7 @@ export function GameDetailPage() {
         </div>
         <div className="detailRow">
           <span>
-            <span className="tag accent">{g.skillLevel}</span>
+            <span className="tag accent">{SKILL_LEVEL_LABELS[g.skillLevel as SkillLevel]}</span>
             <span className="tag">{g.venue.indoor ? 'Indoor' : 'Outdoor'}</span>
             {g.status === 'CANCELLED' && <span className="tag warn">Cancelled</span>}
             {g.status === 'FULL' && <span className="tag warn">Full</span>}
@@ -94,20 +95,22 @@ export function GameDetailPage() {
 
       <div className="detailCard">
         <h3>Players</h3>
-        <div className="detailRow">
+        <div className="detailPlayer">
+          <Photo src={g.host.photoUrl} name={g.host.firstName} size={32} />
           <span>
-            <Icon name="user-account" className="icon-inline" />
-            {g.host.firstName} (host)
+            {g.host.firstName} {g.host.lastName ?? ''} <em style={{ color: 'var(--brand-300)', fontStyle: 'normal', fontSize: 12 }}>· host</em>
           </span>
         </div>
         {g.participants
           .filter((p) => p.userId !== g.host.id)
           .map((p) => (
-            <div className="detailRow" key={p.id}>
-              <span>
-                <Icon name="user-account" className="icon-inline" />
-                {p.user.firstName}{p.user.lastName ? ` ${p.user.lastName}` : ''}
-              </span>
+            <div className="detailPlayer" key={p.id}>
+              <Photo
+                src={p.user.photoUrl}
+                name={`${p.user.firstName}${p.user.lastName ?? ''}`}
+                size={32}
+              />
+              <span>{p.user.firstName}{p.user.lastName ? ` ${p.user.lastName}` : ''}</span>
             </div>
           ))}
         {g.participants.length === 1 && (

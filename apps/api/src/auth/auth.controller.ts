@@ -55,6 +55,8 @@ export class AuthController {
       lat: u.lat,
       lng: u.lng,
       reminderOffsets: u.reminderOffsets,
+      photoUrl: u.photoUrl ?? null,
+      role: u.role ?? 'USER',
     };
   }
 }
