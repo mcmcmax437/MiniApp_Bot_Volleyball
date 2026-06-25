@@ -7,6 +7,20 @@ import { Photo } from "../Photo";
 import { GameCard } from "./GameCard";
 import "./Home.css";
 
+/**
+ * Returns true if the user has already completed onboarding on this device.
+ * Paired with the same flag in App.tsx — this is the authoritative local
+ * "the user has picked a level" signal, immune to transient API hiccups
+ * where /auth/me returns skillLevel=null.
+ */
+function hasOnboardedLocally(): boolean {
+  try {
+    return localStorage.getItem("volley:onboarded:v1") === "1";
+  } catch {
+    return false;
+  }
+}
+
 export function HomePage() {
   const api = useApi();
   const { user, webApp, photoUrl } = useTelegram();
@@ -28,7 +42,13 @@ export function HomePage() {
   const city = meQ.data?.city ?? cityQ.data?.city ?? "your city";
   const openGames = (gamesQ.data ?? []).filter((g) => g.status === "OPEN");
   const nextGames = (gamesQ.data ?? []).slice(0, 3);
-  const needsOnboarding = meQ.data != null && meQ.data.skillLevel == null;
+  // Only show the onboarding banner if BOTH the API and local state agree the
+  // user hasn't picked a level. If we've ever onboarded locally we trust
+  // that — even if /auth/me momentarily returns skillLevel=null.
+  const needsOnboarding =
+    meQ.data != null &&
+    meQ.data.skillLevel == null &&
+    !hasOnboardedLocally();
 
   const goCreate = () => {
     webApp?.HapticFeedback?.impactOccurred?.("medium");

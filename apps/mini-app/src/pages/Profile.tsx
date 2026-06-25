@@ -308,6 +308,11 @@ export function ProfilePage() {
           try {
             await fetch("/api/v1/auth/logout", { method: "POST", credentials: "include" });
           } catch {}
+          // Reset the local onboarded flag too, so the next sign-in shows the
+          // welcome flow again (in case the user re-onboards as someone else).
+          try {
+            localStorage.removeItem("volley:onboarded:v1");
+          } catch {}
           window.location.reload();
         }}
       >
