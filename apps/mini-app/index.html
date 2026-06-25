@@ -8,18 +8,21 @@
     <title>VolleyBot — find volleyball games near you</title>
 
     <!-- Preconnect to required origins (cuts handshake time) -->
-    <link rel="preconnect" href="https://use.hugeicons.com" crossorigin="anonymous" />
+    <link rel="preconnect" href="https://use.hugeicons.com" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
 
-    <!-- Hugeicons Stroke Rounded (UI icons) -->
+    <!-- Hugeicons Stroke Rounded (UI icons).
+         IMPORTANT: no `crossorigin` attribute here. The icons.css endpoint
+         doesn't return CORS headers, so crossorigin="anonymous" would cause
+         the browser to silently drop the response → no icons render. -->
     <link
       rel="stylesheet"
       href="https://use.hugeicons.com/font/icons.css"
-      crossorigin="anonymous"
     />
 
-    <!-- Google Fonts: Outfit (display) + Inter (body) + JetBrains Mono (numeric) -->
+    <!-- Google Fonts: Outfit (display) + Inter (body) + JetBrains Mono (numeric).
+         Google Fonts DOES return proper CORS headers, so crossorigin is fine. -->
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&family=Outfit:wght@500;600;700;800&display=swap"
