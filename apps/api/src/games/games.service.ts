@@ -1,8 +1,17 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SchedulerService } from '../scheduler/scheduler.service';
-import { CreateGameDto } from './dto';
+import { CreateGameDto, ListGamesQuery } from './dto';
+import { SKILL_BUCKETS, SKILL_LEVELS } from '../shared/skill-levels';
 import type { User } from '@prisma/client';
+
+const SUPPORTED_CURRENCIES = new Set(['UAH', 'PLN', 'EUR', 'USD']);
 
 @Injectable()
 export class GamesService {
@@ -30,6 +39,11 @@ export class GamesService {
       throw new BadRequestException(`spotsTotal exceeds venue capacity (${venue.capacity})`);
     }
 
+    const currency = dto.currency ?? 'UAH';
+    if (!SUPPORTED_CURRENCIES.has(currency)) {
+      throw new BadRequestException(`Unsupported currency: ${currency}`);
+    }
+
     const game = await this.prisma.game.create({
       data: {
         venueId: dto.venueId,
@@ -41,6 +55,11 @@ export class GamesService {
         notes: dto.notes ?? null,
         totalCost: dto.totalCost,
         status: 'OPEN',
+        currency,
+        isPaid: !!dto.isPaid,
+        isClosed: !!dto.isClosed,
+        coverImageUrl: dto.coverImageUrl ?? null,
+        addressHint: dto.addressHint ?? null,
         participants: {
           create: { userId: me.id },
         },
@@ -56,10 +75,48 @@ export class GamesService {
       where: { id },
       include: {
         venue: true,
-        host: { select: { id: true, firstName: true, lastName: true, username: true, skillLevel: true, photoUrl: true } },
+        host: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+            skillLevel: true,
+            photoUrl: true,
+          },
+        },
         participants: {
-          include: { user: { select: { id: true, firstName: true, lastName: true, username: true, photoUrl: true } } },
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                username: true,
+                photoUrl: true,
+                skillLevel: true,
+              },
+            },
+          },
           orderBy: { joinedAt: 'asc' },
+        },
+        joinRequests: {
+          where: { status: 'PENDING' },
+          select: { id: true, userId: true, createdAt: true },
+        },
+        invitations: {
+          where: { status: 'PENDING' },
+          select: { id: true, inviteeId: true, inviterId: true, createdAt: true },
+        },
+        payments: {
+          select: {
+            id: true,
+            userId: true,
+            amount: true,
+            currency: true,
+            isPaid: true,
+            paidAt: true,
+          },
         },
       },
     });
@@ -72,8 +129,9 @@ export class GamesService {
     };
   }
 
-  async list(opts: { city?: string; from?: string; to?: string; skillLevel?: string }) {
+  async list(opts: ListGamesQuery) {
     const where: any = { status: { in: ['OPEN', 'FULL'] } };
+
     if (opts.from || opts.to) {
       where.startAt = {};
       if (opts.from) where.startAt.gte = new Date(opts.from);
@@ -81,22 +139,70 @@ export class GamesService {
     } else {
       where.startAt = { gte: new Date() };
     }
-    if (opts.skillLevel) where.skillLevel = opts.skillLevel;
 
+    if (opts.skillLevel) where.skillLevel = opts.skillLevel;
+    if (opts.venueId) where.venueId = opts.venueId;
+    if (opts.hostId) where.hostId = opts.hostId;
+    if (typeof opts.isPaid === 'boolean') where.isPaid = opts.isPaid;
+    if (typeof opts.isClosed === 'boolean') where.isClosed = opts.isClosed;
+    if (opts.q) where.notes = { contains: opts.q };
+
+    // Bucket quick filter (Beginner/Intermediate/Advanced)
+    if (opts.bucket) {
+      where.skillLevel = { in: SKILL_BUCKETS[opts.bucket] };
+    }
+
+    // Hide closed games by default unless explicitly requested
+    const includeClosed = opts.includeClosed ?? false;
+    if (!includeClosed && typeof opts.isClosed !== 'boolean') {
+      where.isClosed = false;
+    }
+
+    // Pre-fetch to allow JS-side filtering on participants count
     const games = await this.prisma.game.findMany({
       where,
       orderBy: { startAt: 'asc' },
       include: {
-        venue: { select: { id: true, name: true, address: true, lat: true, lng: true, indoor: true, city: true } },
-        host: { select: { id: true, firstName: true, lastName: true, username: true, skillLevel: true, photoUrl: true } },
+        venue: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            lat: true,
+            lng: true,
+            indoor: true,
+            city: true,
+          },
+        },
+        host: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+            skillLevel: true,
+            photoUrl: true,
+          },
+        },
         participants: { select: { userId: true } },
       },
-      take: 100,
+      take: 200,
     });
 
-    const filtered = opts.city
-      ? games.filter((g) => g.venue.city === opts.city)
-      : games;
+    let filtered = opts.city ? games.filter((g) => g.venue.city === opts.city) : games;
+
+    if (typeof opts.hasSpots === 'boolean') {
+      filtered = filtered.filter((g) =>
+        opts.hasSpots ? g.participants.length < g.spotsTotal : g.participants.length >= g.spotsTotal,
+      );
+    }
+
+    if (typeof opts.minSpots === 'number') {
+      filtered = filtered.filter((g) => g.spotsTotal >= opts.minSpots!);
+    }
+    if (typeof opts.maxSpots === 'number') {
+      filtered = filtered.filter((g) => g.spotsTotal <= opts.maxSpots!);
+    }
 
     return filtered.map((g) => ({
       ...g,
@@ -113,10 +219,30 @@ export class GamesService {
       });
       if (!game) throw new NotFoundException('Game not found');
       if (game.status !== 'OPEN') throw new BadRequestException(`Game is ${game.status}`);
-      if (game.participants.length >= game.spotsTotal) throw new ConflictException('Game is full');
 
       const already = game.participants.find((p) => p.userId === me.id);
       if (already) return this.findOne(gameId);
+
+      // Closed lobbies: host must approve. Re-route to GameJoinRequest.
+      if (game.isClosed) {
+        const existing = await tx.gameJoinRequest.findUnique({
+          where: { gameId_userId: { gameId, userId: me.id } },
+        });
+        if (existing) {
+          if (existing.status === 'REJECTED') {
+            throw new ForbiddenException('Your join request was declined');
+          }
+          return this.findOne(gameId);
+        }
+        await tx.gameJoinRequest.create({
+          data: { gameId, userId: me.id, status: 'PENDING' },
+        });
+        return this.findOne(gameId);
+      }
+
+      if (game.participants.length >= game.spotsTotal) {
+        throw new ConflictException('Game is full');
+      }
 
       await tx.gameParticipant.create({ data: { gameId, userId: me.id } });
 
@@ -127,6 +253,17 @@ export class GamesService {
       if (updated && updated.participants.length >= updated.spotsTotal) {
         await tx.game.update({ where: { id: gameId }, data: { status: 'FULL' } });
       }
+
+      // Auto-create a payment record when this is a paid game
+      if (game.isPaid) {
+        const amount = this.perPlayerCost(game.totalCost, updated!.participants.length);
+        await tx.gamePayment.upsert({
+          where: { gameId_userId: { gameId, userId: me.id } },
+          create: { gameId, userId: me.id, amount, currency: game.currency },
+          update: { amount },
+        });
+      }
+
       return this.findOne(gameId);
     });
   }
@@ -144,6 +281,10 @@ export class GamesService {
       if (!isHost && !isParticipant) throw new ForbiddenException('Not a participant');
 
       await tx.gameParticipant.deleteMany({ where: { gameId, userId: me.id } });
+      // Drop the payment record so it doesn't pollute the host's tracker.
+      await tx.gamePayment.deleteMany({ where: { gameId, userId: me.id } });
+      // Drop any pending invitation
+      await tx.gameInvitation.deleteMany({ where: { gameId, inviteeId: me.id } });
 
       const updated = await tx.game.findUnique({
         where: { id: gameId },
@@ -171,6 +312,70 @@ export class GamesService {
     if (game.hostId !== me.id) throw new ForbiddenException('Only host can cancel');
     await this.prisma.game.update({ where: { id: gameId }, data: { status: 'CANCELLED' } });
     await this.scheduler.notifyCancelled(gameId).catch(() => undefined);
+    return this.findOne(gameId);
+  }
+
+  async update(me: User, gameId: string, patch: {
+    startAt?: string;
+    endAt?: string;
+    notes?: string | null;
+    skillLevel?: (typeof SKILL_LEVELS)[number];
+    spotsTotal?: number;
+    totalCost?: number;
+    currency?: string;
+    isPaid?: boolean;
+    isClosed?: boolean;
+    coverImageUrl?: string | null;
+    addressHint?: string | null;
+  }) {
+    const game = await this.prisma.game.findUnique({ where: { id: gameId } });
+    if (!game) throw new NotFoundException('Game not found');
+    if (game.hostId !== me.id && me.role !== 'ADMIN') {
+      throw new ForbiddenException('Only the host or an admin can edit');
+    }
+
+    const data: any = {};
+    if (patch.startAt) data.startAt = new Date(patch.startAt);
+    if (patch.endAt) data.endAt = new Date(patch.endAt);
+    if (patch.notes !== undefined) data.notes = patch.notes;
+    if (patch.skillLevel) data.skillLevel = patch.skillLevel;
+    if (typeof patch.spotsTotal === 'number') {
+      if (patch.spotsTotal < game.spotsTotal && patch.spotsTotal < 2) {
+        throw new BadRequestException('spotsTotal must be at least 2');
+      }
+      data.spotsTotal = patch.spotsTotal;
+    }
+    if (typeof patch.totalCost === 'number') data.totalCost = patch.totalCost;
+    if (patch.currency && SUPPORTED_CURRENCIES.has(patch.currency)) data.currency = patch.currency;
+    if (typeof patch.isPaid === 'boolean') data.isPaid = patch.isPaid;
+    if (typeof patch.isClosed === 'boolean') data.isClosed = patch.isClosed;
+    if (patch.coverImageUrl !== undefined) data.coverImageUrl = patch.coverImageUrl;
+    if (patch.addressHint !== undefined) data.addressHint = patch.addressHint;
+
+    if (data.startAt && data.endAt && !(data.startAt < data.endAt)) {
+      throw new BadRequestException('startAt must be before endAt');
+    }
+
+    await this.prisma.game.update({ where: { id: gameId }, data });
+    return this.findOne(gameId);
+  }
+
+  /**
+   * Host (or admin) marks a game as FINISHED. This unlocks the post-game
+   * evaluation flow for everyone who attended, and moves the game out of
+   * the active queue. Allowed even when the game is not "full" — organizers
+   * may finalize a partial game if players didn't show up.
+   */
+  async finish(me: User, gameId: string) {
+    const game = await this.prisma.game.findUnique({ where: { id: gameId } });
+    if (!game) throw new NotFoundException('Game not found');
+    if (game.hostId !== me.id && me.role !== 'ADMIN') {
+      throw new ForbiddenException('Only the host or an admin can finish the game');
+    }
+    await this.prisma.game.update({
+      where: { id: gameId },
+      data: { status: 'FINISHED' },
+    });
     return this.findOne(gameId);
   }
 }

@@ -6,11 +6,13 @@ import {
   SKILL_LEVELS,
   SKILL_LEVEL_LABELS,
 } from "../api";
+import { useI18n } from "../i18n";
 import { GameCard } from "./GameCard";
 import { Icon, IconName } from "../Icon";
 import "./Games.css";
 
 type SkillFilter = "ALL" | SkillLevel;
+type BucketFilter = "ALL" | "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 
 const SKILL_ICONS: Record<SkillFilter, IconName> = {
   ALL: "tennis-ball",
@@ -31,36 +33,76 @@ function skillFilterLabel(s: SkillFilter): string {
 
 export function GamesPage() {
   const api = useApi();
+  const { t } = useI18n();
   const [skill, setSkill] = useState<SkillFilter>("ALL");
+  const [bucket, setBucket] = useState<BucketFilter>("ALL");
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
+  const [spotsMin, setSpotsMin] = useState<string>('');
+  const [search, setSearch] = useState<string>('');
+  const [showFilters, setShowFilters] = useState(false);
+
   const cityQ = useQuery(["default-city"], () => api.defaultCity());
+
+  const listArgs = {
+    city: cityQ.data?.city ?? undefined,
+    skillLevel: skill !== "ALL" ? skill : undefined,
+    bucket: bucket !== "ALL" ? bucket : undefined,
+    from: dateFrom ? new Date(dateFrom).toISOString() : undefined,
+    to: dateTo ? new Date(dateTo + 'T23:59:59').toISOString() : undefined,
+    minSpots: spotsMin ? Number(spotsMin) : undefined,
+    q: search.trim() || undefined,
+    hasSpots: true,
+  };
+
   const gamesQ = useQuery(
-    ["games", cityQ.data?.city, skill],
-    () =>
-      api.listGames({
-        city: cityQ.data?.city ?? undefined,
-        skillLevel: skill !== "ALL" ? skill : undefined,
-      }),
+    ["games", "list", JSON.stringify(listArgs)],
+    () => api.listGames(listArgs),
     { enabled: !!cityQ.data },
   );
 
   const count = gamesQ.data?.length ?? 0;
+  const filtersActive =
+    skill !== "ALL" ||
+    bucket !== "ALL" ||
+    !!dateFrom ||
+    !!dateTo ||
+    !!spotsMin ||
+    !!search.trim();
+
+  const clearAll = () => {
+    setSkill("ALL");
+    setBucket("ALL");
+    setDateFrom("");
+    setDateTo("");
+    setSpotsMin("");
+    setSearch("");
+  };
 
   return (
     <div className="gamesPage">
-      {/* === Featured header === */}
-      <header className="gamesHeader">
-        <div className="gamesHeader-icon">
+      <header className="page-header">
+        <div className="page-header-icon">
           <Icon name="tennis-ball" size={20} />
         </div>
-        <div>
-          <h1 className="gamesHeader-title">All games</h1>
-          <p className="gamesHeader-sub">
+        <div style={{ flex: 1 }}>
+          <h1 className="page-header-title">{t('games.title')}</h1>
+          <p className="page-header-sub">
             {cityQ.data?.city ?? "your city"} · {count} game{count === 1 ? "" : "s"}
           </p>
         </div>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={() => setShowFilters((s) => !s)}
+          data-analytics-label="games-toggle-filters"
+        >
+          <Icon name="filter" size={14} />
+          {filtersActive ? '•' : ''}
+        </button>
       </header>
 
-      {/* === Skill filter chips === */}
+      {/* Skill filter chips */}
       <div className="skillChips" role="tablist" aria-label="Filter by skill level">
         {FILTER_OPTIONS.map((s) => {
           const isActive = skill === s;
@@ -74,17 +116,63 @@ export function GamesPage() {
             >
               <Icon name={SKILL_ICONS[s]} size={14} />
               <span>{skillFilterLabel(s)}</span>
-              {isActive && (
-                <span className="chip-check" aria-hidden="true">
-                  <Icon name="check-unread-01" size={10} />
-                </span>
-              )}
             </button>
           );
         })}
       </div>
 
-      {/* === Results === */}
+      {/* Bucket quick filters */}
+      <div className="skillChips" style={{ marginTop: 6 }}>
+        {(['ALL', 'BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as BucketFilter[]).map((b) => (
+          <button
+            key={b}
+            className={`chip ${bucket === b ? 'chip-active' : ''}`}
+            onClick={() => setBucket(b)}
+          >
+            {b === 'ALL' ? t('games.filter.any') : t(`games.filter.bucket.${b.toLowerCase()}`)}
+          </button>
+        ))}
+      </div>
+
+      {showFilters && (
+        <section className="card gamesFilters">
+          <h2 className="formSection-title">
+            <span className="formSection-num"><Icon name="filter" size={12} /></span>
+            {t('games.filter.apply')}
+          </h2>
+
+          <div className="field">
+            <label className="field-label">{t('games.filter.dateFrom')}</label>
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          </div>
+          <div className="field">
+            <label className="field-label">{t('games.filter.dateTo')}</label>
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+          </div>
+          <div className="field">
+            <label className="field-label">{t('games.filter.spots')}</label>
+            <input
+              type="number"
+              min={0}
+              value={spotsMin}
+              onChange={(e) => setSpotsMin(e.target.value)}
+              placeholder={t('games.filter.any')}
+            />
+          </div>
+          <div className="field">
+            <label className="field-label">{t('games.filter.search')}</label>
+            <input value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+
+          {filtersActive && (
+            <button className="btn btn-ghost" onClick={clearAll} type="button">
+              <Icon name="cancel-01" size={14} />
+              {t('games.filter.clear')}
+            </button>
+          )}
+        </section>
+      )}
+
       {gamesQ.isLoading && (
         <>
           {[0, 1, 2].map((i) => (
@@ -109,14 +197,7 @@ export function GamesPage() {
           <div className="empty-state-icon">
             <Icon name={SKILL_ICONS[skill]} size={24} />
           </div>
-          <div className="empty-state-title">
-            {skill === "ALL" ? "No open games" : `No ${skillFilterLabel(skill)} games`}
-          </div>
-          <div className="empty-state-text">
-            {skill === "ALL"
-              ? "Be the first to create one in your city!"
-              : "Try another skill level, or create the first one."}
-          </div>
+          <div className="empty-state-title">{t('games.empty')}</div>
         </div>
       )}
 

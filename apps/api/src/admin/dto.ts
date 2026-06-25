@@ -1,10 +1,12 @@
 import {
   IsArray,
+  IsBoolean,
   IsIn,
   IsInt,
   IsOptional,
   IsString,
   Max,
+  MaxLength,
   Min,
 } from 'class-validator';
 
@@ -18,35 +20,17 @@ export type { SkillLevel } from '../shared/skill-levels';
 import { SKILL_LEVELS } from '../shared/skill-levels';
 
 export class AdminUpdateUserDto {
-  @IsOptional()
-  @IsString()
-  firstName?: string;
+  @IsOptional() @IsString() firstName?: string;
+  @IsOptional() @IsString() lastName?: string | null;
+  @IsOptional() @IsString() username?: string | null;
+  @IsOptional() @IsString() city?: string;
+  @IsOptional() @IsInt() @Min(5) @Max(120) age?: number;
+  @IsOptional() @IsIn([...SKILL_LEVELS, null]) skillLevel?: (typeof SKILL_LEVELS)[number] | null;
+  @IsOptional() @IsIn(['USER', 'ADMIN']) role?: 'USER' | 'ADMIN';
 
-  @IsOptional()
-  @IsString()
-  lastName?: string | null;
-
-  @IsOptional()
-  @IsString()
-  username?: string | null;
-
-  @IsOptional()
-  @IsString()
-  city?: string;
-
-  @IsOptional()
-  @IsInt()
-  @Min(5)
-  @Max(120)
-  age?: number;
-
-  @IsOptional()
-  @IsIn([...SKILL_LEVELS, null])
-  skillLevel?: (typeof SKILL_LEVELS)[number] | null;
-
-  @IsOptional()
-  @IsIn(['USER', 'ADMIN'])
-  role?: 'USER' | 'ADMIN';
+  // ===== v3 =====
+  @IsOptional() @IsBoolean() isBanned?: boolean;
+  @IsOptional() @IsString() @MaxLength(280) bannedReason?: string | null;
 }
 
 export class AdminUpdateGameDto {
@@ -54,53 +38,37 @@ export class AdminUpdateGameDto {
   @IsIn(['OPEN', 'FULL', 'CANCELLED', 'FINISHED'])
   status?: 'OPEN' | 'FULL' | 'CANCELLED' | 'FINISHED';
 
-  @IsOptional()
-  @IsInt()
-  @Min(2)
-  spotsTotal?: number;
+  @IsOptional() @IsInt() @Min(2) spotsTotal?: number;
+  @IsOptional() @IsString() notes?: string | null;
 
-  @IsOptional()
-  @IsString()
-  notes?: string | null;
+  // ===== v3 =====
+  @IsOptional() @IsInt() @Min(0) totalCost?: number;
+  @IsOptional() @IsString() currency?: string;
+  @IsOptional() @IsBoolean() isPaid?: boolean;
+  @IsOptional() @IsBoolean() isClosed?: boolean;
+  @IsOptional() @IsString() @MaxLength(500) coverImageUrl?: string | null;
+  @IsOptional() @IsString() @MaxLength(280) addressHint?: string | null;
+  @IsOptional() @IsString() startAt?: string;
+  @IsOptional() @IsString() endAt?: string;
+  @IsOptional() @IsIn(SKILL_LEVELS as unknown as string[])
+  skillLevel?: (typeof SKILL_LEVELS)[number];
 }
 
 export class AdminUpdateVenueDto {
-  @IsOptional()
-  @IsString()
-  name?: string;
-
-  @IsOptional()
-  @IsString()
-  address?: string;
-
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  hourlyPrice?: number;
-
-  @IsOptional()
-  @IsInt()
-  @Min(2)
-  capacity?: number;
-
-  @IsOptional()
-  @IsIn(['PUBLISHED', 'HIDDEN'])
-  status?: 'PUBLISHED' | 'HIDDEN';
+  @IsOptional() @IsString() name?: string;
+  @IsOptional() @IsString() address?: string;
+  @IsOptional() @IsInt() @Min(0) hourlyPrice?: number;
+  @IsOptional() @IsInt() @Min(2) capacity?: number;
+  @IsOptional() @IsIn(['PUBLISHED', 'HIDDEN']) status?: 'PUBLISHED' | 'HIDDEN';
 }
 
 export class AdminListQuery {
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Max(200)
-  take?: number;
+  @IsOptional() @IsInt() @Min(1) @Max(200) take?: number;
+  @IsOptional() @IsInt() @Min(0) skip?: number;
+  @IsOptional() @IsString() q?: string;
 
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  skip?: number;
-
-  @IsOptional()
-  @IsString()
-  q?: string; // free-text search (name, username, etc.)
+  // ===== v3 =====
+  @IsOptional() @IsIn(['true', 'false']) isBanned?: 'true' | 'false';
+  @IsOptional() @IsIn(['USER', 'ADMIN']) role?: 'USER' | 'ADMIN';
+  @IsOptional() @IsString() city?: string;
 }

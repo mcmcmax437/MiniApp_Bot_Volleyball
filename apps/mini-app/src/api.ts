@@ -51,6 +51,12 @@ export interface ApiUser {
   reminderOffsets: number[];
   photoUrl: string | null;
   role: UserRole;
+  // v3:
+  language: Language | null;
+  evaluatedSkillLevel: SkillLevel | null;
+  evaluatedAt: string | null;
+  isBanned: boolean;
+  bannedReason: string | null;
 }
 
 export interface ApiVenue {
@@ -77,6 +83,12 @@ export interface ApiGame {
   notes: string | null;
   totalCost: number;
   status: 'OPEN' | 'FULL' | 'CANCELLED' | 'FINISHED';
+  // v3:
+  isClosed: boolean;
+  isPaid: boolean;
+  currency: Currency;
+  coverImageUrl: string | null;
+  addressHint: string | null;
   venue: Pick<ApiVenue, 'id' | 'name' | 'address' | 'lat' | 'lng' | 'indoor' | 'city'>;
   host: {
     id: string;
@@ -100,8 +112,19 @@ export interface ApiGameDetail extends ApiGame {
       lastName: string | null;
       username: string | null;
       photoUrl: string | null;
+      skillLevel: SkillLevel | null;
     };
     joinedAt: string;
+  }>;
+  joinRequests?: Array<{ id: string; userId: string; createdAt: string; status: 'PENDING' | 'APPROVED' | 'REJECTED' }>;
+  invitations?: Array<{ id: string; userId: string; inviterId: string; createdAt: string; status: 'PENDING' | 'ACCEPTED' | 'DECLINED' }>;
+  payments?: Array<{
+    id: string;
+    userId: string;
+    amount: number;
+    currency: Currency;
+    isPaid: boolean;
+    paidAt: string | null;
   }>;
 }
 
@@ -113,6 +136,26 @@ export interface CreateGamePayload {
   spotsTotal: number;
   totalCost: number;
   notes?: string;
+  // v3:
+  currency?: Currency;
+  isPaid?: boolean;
+  isClosed?: boolean;
+  coverImageUrl?: string;
+  addressHint?: string;
+}
+
+export interface UpdateGamePayload {
+  startAt?: string;
+  endAt?: string;
+  notes?: string | null;
+  skillLevel?: SkillLevel;
+  spotsTotal?: number;
+  totalCost?: number;
+  currency?: Currency;
+  isPaid?: boolean;
+  isClosed?: boolean;
+  coverImageUrl?: string | null;
+  addressHint?: string | null;
 }
 
 export interface CreateVenuePayload {
@@ -137,9 +180,13 @@ export interface AdminUserListItem {
     username: string | null;
     age: number | null;
     skillLevel: SkillLevel | null;
+    evaluatedSkillLevel: SkillLevel | null;
     city: string;
     photoUrl: string | null;
     role: UserRole;
+    language: string | null;
+    isBanned: boolean;
+    bannedReason: string | null;
     createdAt: string;
   }>;
   total: number;
@@ -178,6 +225,124 @@ export interface AdminStats {
   games: number;
   venues: number;
   signupsLast24h: number;
+  bannedUsers: number;
+  pendingReports: number;
+  finishedGames: number;
+}
+
+export interface AdminUserDetail {
+  id: string;
+  telegramId: string;
+  firstName: string;
+  lastName: string | null;
+  username: string | null;
+  age: number | null;
+  city: string;
+  skillLevel: SkillLevel | null;
+  evaluatedSkillLevel: SkillLevel | null;
+  photoUrl: string | null;
+  role: UserRole;
+  language: string | null;
+  isBanned: boolean;
+  bannedReason: string | null;
+  bannedAt: string | null;
+  createdAt: string;
+  stats: {
+    gamesAttended: number;
+    gamesCancelled: number;
+    gamesHosted: number;
+    evaluationsGiven: number;
+    evaluationsReceived: number;
+    reportsAgainst: number;
+    paymentsMade: number;
+    avgSessionsPerWeek: number;
+    lastActiveAt: string | null;
+  };
+}
+
+// ===== v3 frontend additions =====
+
+export type Language = 'uk' | 'pl' | 'en' | 'ru';
+export const SUPPORTED_LANGUAGES: Language[] = ['uk', 'pl', 'en', 'ru'];
+
+export type Currency = 'UAH' | 'PLN' | 'EUR' | 'USD';
+export const SUPPORTED_CURRENCIES: Currency[] = ['UAH', 'PLN', 'EUR', 'USD'];
+export const CURRENCY_SYMBOLS: Record<Currency, string> = {
+  UAH: '₴',
+  PLN: 'zł',
+  EUR: '€',
+  USD: '$',
+};
+
+export interface BlacklistEntry {
+  id: string;
+  blockedId: string;
+  reason: string | null;
+  createdAt: string;
+  user: { id: string; firstName: string; lastName: string | null; username: string | null; photoUrl: string | null; skillLevel: SkillLevel | null };
+}
+
+export interface ReportDto {
+  id: string;
+  reason: 'TOXIC' | 'SKIPPED_GAME' | 'HARASSMENT' | 'CHEATING' | 'OTHER';
+  status: 'OPEN' | 'REVIEWED' | 'DISMISSED';
+  details: string | null;
+  createdAt: string;
+  target: { id: string; firstName: string; username: string | null };
+  reporter?: { id: string; firstName: string; username: string | null };
+  game?: { id: string; startAt: string };
+}
+
+export interface GameInvitationDto {
+  id: string;
+  gameId: string;
+  status: 'PENDING' | 'ACCEPTED' | 'DECLINED';
+  createdAt: string;
+  game: {
+    id: string;
+    startAt: string;
+    endAt: string;
+    skillLevel: SkillLevel;
+    spotsTotal: number;
+    venue: { id: string; name: string; address: string };
+  };
+  inviter: { id: string; firstName: string; lastName: string | null; username: string | null; photoUrl: string | null };
+}
+
+export interface GamePaymentDetail {
+  currency: Currency;
+  totalCost: number;
+  perPlayer: number;
+  participants: Array<{
+    userId: string;
+    user: { id: string; firstName: string; lastName: string | null; username: string | null; photoUrl: string | null };
+    joinedAt: string;
+    amount: number;
+    isPaid: boolean;
+    paidAt: string | null;
+    note: string | null;
+  }>;
+}
+
+export interface EvaluationCandidate {
+  id: string;
+  firstName: string;
+  lastName: string | null;
+  username: string | null;
+  photoUrl: string | null;
+  skillLevel: SkillLevel | null;
+  evaluatedSkillLevel: SkillLevel | null;
+  alreadyRated: boolean;
+  ratedAs: SkillLevel | null;
+}
+
+export interface HeatmapBucket {
+  screen: string;
+  target: string;
+  count: number;
+  xSum: number;
+  ySum: number;
+  n: number;
 }
 
 export interface AdminAuditEntry {
@@ -247,10 +412,31 @@ export function useApi() {
     createVenue: (payload: CreateVenuePayload) =>
       http<ApiVenue>('/venues', { method: 'POST', body: JSON.stringify(payload) }, initData),
 
-    listGames: (q: { city?: string; skillLevel?: string } = {}) => {
+    listGames: (
+      q: {
+        city?: string;
+        skillLevel?: string;
+        bucket?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+        from?: string;
+        to?: string;
+        minSpots?: number;
+        hasSpots?: boolean;
+        isPaid?: boolean;
+        isClosed?: boolean;
+        search?: string;
+      } = {},
+    ) => {
       const params = new URLSearchParams();
       if (q.city) params.set('city', q.city);
       if (q.skillLevel) params.set('skillLevel', q.skillLevel);
+      if (q.bucket) params.set('bucket', q.bucket);
+      if (q.from) params.set('from', q.from);
+      if (q.to) params.set('to', q.to);
+      if (q.minSpots != null) params.set('minSpots', String(q.minSpots));
+      if (q.hasSpots) params.set('hasSpots', 'true');
+      if (q.isPaid) params.set('isPaid', 'true');
+      if (q.isClosed) params.set('isClosed', 'true');
+      if (q.search) params.set('q', q.search);
       const qs = params.toString();
       return http<ApiGame[]>(`/games${qs ? `?${qs}` : ''}`, { method: 'GET' }, initData);
     },
@@ -273,11 +459,16 @@ export function useApi() {
 
     // Admin endpoints
     adminStats: () => http<AdminStats>('/admin/stats', { method: 'GET' }, initData),
-    adminListUsers: (q: { take?: number; skip?: number; q?: string } = {}) => {
+    adminListUsers: (
+      q: { take?: number; skip?: number; q?: string; isBanned?: 'true' | 'false'; role?: 'USER' | 'ADMIN'; city?: string } = {},
+    ) => {
       const params = new URLSearchParams();
       if (q.take) params.set('take', String(q.take));
       if (q.skip) params.set('skip', String(q.skip));
       if (q.q) params.set('q', q.q);
+      if (q.isBanned) params.set('isBanned', q.isBanned);
+      if (q.role) params.set('role', q.role);
+      if (q.city) params.set('city', q.city);
       const qs = params.toString();
       return http<AdminUserListItem>(
         `/admin/users${qs ? `?${qs}` : ''}`,
@@ -285,13 +476,52 @@ export function useApi() {
         initData,
       );
     },
+    adminGetUser: (id: string) =>
+      http<AdminUserDetail>(`/admin/users/${id}`, { method: 'GET' }, initData),
     adminUpdateUser: (id: string, patch: Record<string, unknown>) =>
       http<ApiUser>(`/admin/users/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(patch),
       }, initData),
+    adminBanUser: (id: string, reason?: string) =>
+      http<ApiUser>(`/admin/users/${id}/ban`, {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      }, initData),
+    adminUnbanUser: (id: string) =>
+      http<ApiUser>(`/admin/users/${id}/unban`, { method: 'POST' }, initData),
     adminDeleteUser: (id: string) =>
       http<{ ok: boolean }>(`/admin/users/${id}`, { method: 'DELETE' }, initData),
+
+    adminCancelGame: (id: string) =>
+      http<ApiGame>(`/admin/games/${id}/cancel`, { method: 'POST' }, initData),
+
+    adminListReports: (q: { take?: number; skip?: number; status?: 'OPEN' | 'REVIEWED' | 'DISMISSED' } = {}) => {
+      const params = new URLSearchParams();
+      if (q.take) params.set('take', String(q.take));
+      if (q.skip) params.set('skip', String(q.skip));
+      if (q.status) params.set('status', q.status);
+      const qs = params.toString();
+      return http<{ items: ReportDto[]; total: number }>(
+        `/admin/reports${qs ? `?${qs}` : ''}`,
+        { method: 'GET' },
+        initData,
+      );
+    },
+    adminResolveReport: (id: string, payload: { status: 'REVIEWED' | 'DISMISSED'; ban?: boolean }) =>
+      http<ReportDto>(`/admin/reports/${id}/resolve`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }, initData),
+
+    adminHeatmap: (q: { from?: string; to?: string; screen?: string } = {}) => {
+      const params = new URLSearchParams();
+      if (q.from) params.set('from', q.from);
+      if (q.to) params.set('to', q.to);
+      if (q.screen) params.set('screen', q.screen);
+      const qs = params.toString();
+      return http<HeatmapBucket[]>(`/admin/analytics/heatmap${qs ? `?${qs}` : ''}`, { method: 'GET' }, initData);
+    },
 
     adminListGames: (q: { take?: number; skip?: number; q?: string } = {}) => {
       const params = new URLSearchParams();
@@ -344,5 +574,123 @@ export function useApi() {
         initData,
       );
     },
+
+    // ===== Blacklist =====
+
+    listBlacklist: () =>
+      http<BlacklistEntry[]>(`/blacklist`, { method: 'GET' }, initData),
+    addBlacklist: (body: { blockedId?: string; telegramId?: string; reason?: string }) =>
+      http<{ id: string }>(`/blacklist`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }, initData),
+    removeBlacklist: (blockedId: string) =>
+      http<{ count: number }>(`/blacklist/${blockedId}`, { method: 'DELETE' }, initData),
+    intersectBlacklist: (ids: string[]) => {
+      const params = new URLSearchParams();
+      params.set('ids', ids.join(','));
+      return http<{ blocked: string[] }>(
+        `/blacklist/intersect?${params.toString()}`,
+        { method: 'GET' },
+        initData,
+      );
+    },
+
+    // ===== Reports =====
+
+    fileReport: (body: { targetId: string; reason: string; gameId?: string; details?: string }) =>
+      http<ReportDto>(`/reports`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }, initData),
+    listMyReports: () =>
+      http<ReportDto[]>(`/reports/mine`, { method: 'GET' }, initData),
+
+    // ===== Invitations =====
+
+    invitePlayer: (gameId: string, inviteeId: string) =>
+      http<GameInvitationDto>(`/games/${gameId}/invitations`, {
+        method: 'POST',
+        body: JSON.stringify({ inviteeId }),
+      }, initData),
+    cancelInvitation: (id: string) =>
+      http<{ ok: boolean }>(`/invitations/${id}`, { method: 'DELETE' }, initData),
+    respondInvitation: (id: string, accept: boolean) =>
+      http<{ ok: boolean }>(`/invitations/${id}/respond`, {
+        method: 'POST',
+        body: JSON.stringify({ accept }),
+      }, initData),
+    listMyInvitations: () =>
+      http<GameInvitationDto[]>(`/invitations/mine`, { method: 'GET' }, initData),
+
+    // ===== Payments =====
+
+    listGamePayments: (gameId: string) =>
+      http<GamePaymentDetail>(`/games/${gameId}/payments`, { method: 'GET' }, initData),
+    setGamePayment: (gameId: string, body: { userId: string; isPaid: boolean }) =>
+      http<{ id: string; isPaid: boolean }>(`/games/${gameId}/payments`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }, initData),
+    listMyPayments: () =>
+      http<Array<{ id: string; isPaid: boolean; amount: number; currency: Currency; game: { id: string; startAt: string; venue: { name: string }; host: { firstName: string; lastName: string | null; username: string | null } } }>>(
+        `/payments/mine`,
+        { method: 'GET' },
+        initData,
+      ),
+
+    // ===== Evaluations =====
+
+    listMyEvaluations: (gameId: string) =>
+      http<Array<{ evaluateeId: string; skillLevel: SkillLevel }>>(
+        `/games/${gameId}/evaluations`,
+        { method: 'GET' },
+        initData,
+      ),
+    listEvaluationCandidates: (gameId: string) =>
+      http<{ self: string; candidates: EvaluationCandidate[] }>(
+        `/games/${gameId}/evaluations/candidates`,
+        { method: 'GET' },
+        initData,
+      ),
+    submitEvaluations: (
+      gameId: string,
+      items: Array<{ evaluateeId: string; skillLevel: SkillLevel; note?: string }>,
+    ) =>
+      http<{ count: number }>(`/games/${gameId}/evaluations`, {
+        method: 'POST',
+        body: JSON.stringify({ items }),
+      }, initData),
+
+    // ===== Analytics =====
+
+    ingestAnalytics: (events: Array<{ type: string; screen?: string; target?: string; meta?: Record<string, unknown> }>) =>
+      http<{ count: number }>(`/analytics`, {
+        method: 'POST',
+        body: JSON.stringify({ events }),
+      }, initData),
+    heartbeat: () =>
+      http<{ ok: boolean }>(`/analytics/heartbeat`, { method: 'POST' }, initData),
+
+    // ===== Game edits (host) =====
+
+    updateGame: (id: string, patch: UpdateGamePayload) =>
+      http<ApiGameDetail>(`/games/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(patch),
+      }, initData),
+    finishGame: (id: string) =>
+      http<ApiGameDetail>(`/games/${id}/finish`, { method: 'POST' }, initData),
+    decideJoinRequest: (gameId: string, requestId: string, accept: boolean) =>
+      http<{ ok: boolean; status: string }>(`/games/${gameId}/join-requests/${requestId}`, {
+        method: 'POST',
+        body: JSON.stringify({ accept }),
+      }, initData),
+    listJoinRequests: (gameId: string) =>
+      http<Array<{ id: string; userId: string; status: string; user: { firstName: string; lastName: string | null; username: string | null; photoUrl: string | null; skillLevel: SkillLevel | null }; createdAt: string }>>(
+        `/games/${gameId}/join-requests`,
+        { method: 'GET' },
+        initData,
+      ),
   };
 }

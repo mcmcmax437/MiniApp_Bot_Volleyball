@@ -13,7 +13,7 @@ datasource db {
 // LEVEL_3 = Intermediate — consistent reception, confident attacks, first group block
 // LEVEL_4 = Advanced — confident play with setter, first-tempo attacks, tactical serves
 // LEVEL_5 = Semi-Pro — deep tactical understanding, powerful serves/gliders, rehearsed combos
-// LEVEL_6 = Professional — former pros, MS/CMS holders, excellent technique, fast teamwork
+// LEVEL_6 = Professional — former pros, MS / CMS holders, excellent technique, fast teamwork
 enum SkillLevel {
   LEVEL_1
   LEVEL_2
@@ -40,6 +40,32 @@ enum UserRole {
   ADMIN
 }
 
+enum ReportReason {
+  TOXIC
+  SKIPPED_GAME
+  HARASSMENT
+  CHEATING
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  REVIEWED
+  DISMISSED
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id              String      @id @default(cuid())
   telegramId      BigInt      @unique
@@ -56,6 +82,15 @@ model User {
   // Telegram profile photo URL, refreshed on every login
   photoUrl        String?
   role            UserRole    @default(USER)
+  // v3 fields:
+  language        String? // IETF tag e.g. "uk", "pl", "en", "ru"
+  isBanned        Boolean     @default(false)
+  bannedReason    String?     @db.VarChar(280)
+  bannedAt        DateTime?
+  // Aggregated skill from post-game evaluations (kept separate from self-declared skillLevel)
+  evaluatedSkillLevel SkillLevel?
+  evaluatedAt     DateTime?
+
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -64,8 +99,24 @@ model User {
   submittedVenues Venue[]           @relation("venueSubmitter")
   auditActions    AuditLog[]        @relation("auditActor")
 
+  blacklistOwned  Blacklist[]       @relation("BlacklistOwner")
+  blacklistOf     Blacklist[]       @relation("BlacklistTarget")
+  reportsFiled    Report[]          @relation("ReportFiler")
+  reportsAgainst  Report[]          @relation("ReportTarget")
+  reportsReviewed Report[]          @relation("ReportReviewer")
+  invitationsSent GameInvitation[]  @relation("InvitationInviter")
+  invitationsRecv GameInvitation[]  @relation("InvitationInvitee")
+  joinRequests    GameJoinRequest[] @relation("JoinRequester")
+  joinDecisions   GameJoinRequest[] @relation("JoinRequestDecider")
+  payments        GamePayment[]
+  evaluationsGiven GameEvaluation[] @relation("EvaluationEvaluator")
+  evaluationsRecv GameEvaluation[]  @relation("EvaluationEvaluatee")
+  analytics       AnalyticsEvent[]
+  activity        UserActivityStats?
+
   @@index([city])
   @@index([role])
+  @@index([isBanned])
 }
 
 model Venue {
@@ -107,15 +158,27 @@ model Game {
   // total court cost for this specific slot, in minor units
   totalCost  Int
   status     GameStatus @default(OPEN)
+  // v3 fields:
+  isClosed       Boolean  @default(false)
+  currency       String   @default("UAH") // ISO 4217
+  isPaid         Boolean  @default(false)
+  coverImageUrl  String?  @db.VarChar(500)
+  addressHint    String?  @db.VarChar(280)
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
-  participants GameParticipant[]
+  participants   GameParticipant[]
+  invitations    GameInvitation[]
+  joinRequests   GameJoinRequest[]
+  payments       GamePayment[]
+  evaluations    GameEvaluation[]
+  reports        Report[]
 
   @@index([startAt])
   @@index([status, startAt])
   @@index([venueId, startAt])
   @@index([hostId])
+  @@index([isClosed])
 }
 
 model GameParticipant {
@@ -145,4 +208,142 @@ model AuditLog {
 
   @@index([actorId, createdAt])
   @@index([targetType, targetId])
+}
+
+// ===== v3 models =====
+
+model Blacklist {
+  id        String   @id @default(cuid())
+  ownerId   String
+  owner     User     @relation("BlacklistOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User     @relation("BlacklistTarget", fields: [blockedId], references: [id], onDelete: Cascade)
+  reason    String?  @db.VarChar(280)
+  createdAt DateTime @default(now())
+
+  @@unique([ownerId, blockedId])
+  @@index([ownerId])
+  @@index([blockedId])
+}
+
+model Report {
+  id         String       @id @default(cuid())
+  reporterId String
+  reporter   User         @relation("ReportFiler", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetId   String
+  target     User         @relation("ReportTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  gameId     String?
+  game       Game?        @relation(fields: [gameId], references: [id], onDelete: SetNull)
+  reason     ReportReason
+  details    String?      @db.VarChar(1000)
+  status     ReportStatus @default(OPEN)
+  reviewedBy String?
+  reviewer   User?        @relation("ReportReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  reviewedAt DateTime?
+  createdAt  DateTime     @default(now())
+
+  @@index([targetId])
+  @@index([reporterId])
+  @@index([status])
+  @@index([gameId])
+}
+
+model GameInvitation {
+  id          String           @id @default(cuid())
+  gameId      String
+  game        Game             @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  inviterId   String
+  inviter     User             @relation("InvitationInviter", fields: [inviterId], references: [id], onDelete: Cascade)
+  inviteeId   String
+  invitee     User             @relation("InvitationInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
+  status      InvitationStatus @default(PENDING)
+  respondedAt DateTime?
+  createdAt   DateTime         @default(now())
+
+  @@unique([gameId, inviteeId])
+  @@index([inviteeId])
+  @@index([inviterId])
+  @@index([gameId])
+}
+
+model GameJoinRequest {
+  id        String            @id @default(cuid())
+  gameId    String
+  game      Game              @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User              @relation("JoinRequester", fields: [userId], references: [id], onDelete: Cascade)
+  status    JoinRequestStatus @default(PENDING)
+  decidedBy String?
+  decider   User?             @relation("JoinRequestDecider", fields: [decidedBy], references: [id], onDelete: SetNull)
+  decidedAt DateTime?
+  createdAt DateTime          @default(now())
+
+  @@unique([gameId, userId])
+  @@index([gameId])
+  @@index([userId])
+  @@index([status])
+}
+
+model GamePayment {
+  id        String   @id @default(cuid())
+  gameId    String
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int
+  currency  String   @default("UAH")
+  isPaid    Boolean  @default(false)
+  paidAt    DateTime?
+  note      String?  @db.VarChar(280)
+  createdAt DateTime @default(now())
+
+  @@unique([gameId, userId])
+  @@index([gameId])
+  @@index([userId])
+}
+
+model GameEvaluation {
+  id          String     @id @default(cuid())
+  gameId      String
+  game        Game       @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  evaluatorId String
+  evaluator   User       @relation("EvaluationEvaluator", fields: [evaluatorId], references: [id], onDelete: Cascade)
+  evaluateeId String
+  evaluatee   User       @relation("EvaluationEvaluatee", fields: [evaluateeId], references: [id], onDelete: Cascade)
+  skillLevel  SkillLevel
+  note        String?    @db.VarChar(500)
+  createdAt   DateTime   @default(now())
+
+  @@unique([gameId, evaluatorId, evaluateeId])
+  @@index([gameId])
+  @@index([evaluatorId])
+  @@index([evaluateeId])
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  type      String // e.g. 'click', 'screen_view', 'game_join'
+  screen    String?
+  target    String? // element label / selector
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([type])
+  @@index([screen])
+  @@index([target])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+model UserActivityStats {
+  userId             String   @id
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gamesHosted        Int      @default(0)
+  gamesAttended      Int      @default(0)
+  gamesCancelled     Int      @default(0)
+  lastActiveAt       DateTime?
+  avgSessionsPerWeek Float    @default(0)
+  updatedAt          DateTime @updatedAt
 }

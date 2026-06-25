@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { Icon } from "../Icon";
 import { Photo } from "../Photo";
-import { SKILL_LEVEL_LABELS, SkillLevel } from "../api";
+import { SKILL_LEVEL_LABELS, SkillLevel, CURRENCY_SYMBOLS } from "../api";
 import type { ApiGame } from "../api";
+import { SkillBadge } from "../SkillBadge";
+import { useI18n } from "../i18n";
 import "./GameCard.css";
 
 function statusToBadgeClass(status: ApiGame["status"]): string {
@@ -56,6 +58,7 @@ interface GameCardProps {
 }
 
 export function GameCard({ game }: GameCardProps) {
+  const { t } = useI18n();
   const spotsLeft = game.spotsTotal - game.participantsCount;
   const fillPercent = Math.min((game.participantsCount / game.spotsTotal) * 100, 100);
 
@@ -69,11 +72,25 @@ export function GameCard({ game }: GameCardProps) {
             <span>{formatGameTime(game.startAt)}</span>
             <span className="gameCard-timeUntil">· {timeUntil(game.startAt)}</span>
           </div>
-          <div className={statusToBadgeClass(game.status)}>
-            <span className="badge-dot" />
-            {statusLabel(game.status)}
+          <div className="gameCard-topRight">
+            {game.isClosed && (
+              <span className="closedPill" title={t('game.closed')}>
+                <Icon name="lock" size={10} /> {t('game.closed')}
+              </span>
+            )}
+            <div className={statusToBadgeClass(game.status)}>
+              <span className="badge-dot" />
+              {statusLabel(game.status)}
+            </div>
           </div>
         </div>
+
+        {/* Cover image (if any) */}
+        {game.coverImageUrl && (
+          <div className="coverPreview" style={{ marginBottom: 12 }}>
+            <img src={game.coverImageUrl} alt="" />
+          </div>
+        )}
 
         {/* Host row with real photo */}
         <div className="gameCard-host">
@@ -85,7 +102,7 @@ export function GameCard({ game }: GameCardProps) {
           <div className="gameCard-hostInfo">
             <div className="gameCard-title">{game.venue.name}</div>
             <div className="gameCard-hostName">
-              Hosted by {game.host.firstName}
+              {t('game.host')}: {game.host.firstName}
               {game.host.skillLevel && (
                 <span className="gameCard-hostLevel">
                   · {skillLabel(game.host.skillLevel)}
@@ -98,7 +115,10 @@ export function GameCard({ game }: GameCardProps) {
         {/* Location */}
         <div className="gameCard-location">
           <Icon name="map-pin" size={14} />
-          <span>{game.venue.address}</span>
+          <span>
+            {game.venue.address}
+            {game.addressHint ? ` · ${game.addressHint}` : ''}
+          </span>
         </div>
 
         {/* Player count + capacity bar */}
@@ -123,19 +143,27 @@ export function GameCard({ game }: GameCardProps) {
         {/* Meta: tags + price */}
         <div className="gameCard-meta">
           <div className="gameCard-tags">
-            <span className="tag accent">
-              <Icon name="award-01" size={10} className="icon-inline" style={{ marginRight: 2 }} />
-              {skillLabel(game.skillLevel)}
-            </span>
+            <SkillBadge level={game.skillLevel} size="sm" />
             <span className="tag info">
               <Icon name="building-01" size={10} className="icon-inline" style={{ marginRight: 2 }} />
               {game.venue.indoor ? "Indoor" : "Outdoor"}
             </span>
+            {game.isPaid && (
+              <span className="tag warning">
+                <Icon name="dollar-01" size={10} className="icon-inline" style={{ marginRight: 2 }} />
+                {t('game.paid')}
+              </span>
+            )}
           </div>
-          <div className="gameCard-price">
-            <span className="gameCard-priceValue">{formatMoney(game.perPlayerCost)}</span>
-            <span className="gameCard-priceLabel"> / player</span>
-          </div>
+          {game.totalCost > 0 && (
+            <div className="gameCard-price">
+              <span className="gameCard-priceValue">
+                {CURRENCY_SYMBOLS[game.currency] ?? game.currency}
+                {formatMoney(game.perPlayerCost)}
+              </span>
+              <span className="gameCard-priceLabel"> / player</span>
+            </div>
+          )}
         </div>
 
         {spotsLeft > 0 && spotsLeft <= 3 && game.status === "OPEN" && (

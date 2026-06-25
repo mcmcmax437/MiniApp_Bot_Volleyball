@@ -1,18 +1,15 @@
+import { useEffect, useState } from "react";
 import { useQuery } from "react-query";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useApi } from "../api";
 import { useTelegram } from "../tg";
 import { Icon } from "../Icon";
 import { Photo } from "../Photo";
+import { SkillBadge } from "../SkillBadge";
+import { useI18n } from "../i18n";
 import { GameCard } from "./GameCard";
 import "./Home.css";
 
-/**
- * Returns true if the user has already completed onboarding on this device.
- * Paired with the same flag in App.tsx — this is the authoritative local
- * "the user has picked a level" signal, immune to transient API hiccups
- * where /auth/me returns skillLevel=null.
- */
 function hasOnboardedLocally(): boolean {
   try {
     return localStorage.getItem("volley:onboarded:v1") === "1";
@@ -21,11 +18,13 @@ function hasOnboardedLocally(): boolean {
   }
 }
 
+const STORAGE_LAT = 'volley:lat:v1';
+const STORAGE_LNG = 'volley:lng:v1';
+
 export function HomePage() {
   const api = useApi();
   const { user, webApp, photoUrl } = useTelegram();
-  // Always refetch on mount so the onboarding banner disappears immediately
-  // after the user picks a level on the Welcome page.
+  const { t } = useI18n();
   const meQ = useQuery(["me"], () => api.me(), {
     refetchOnMount: "always",
     staleTime: 0,
@@ -38,23 +37,73 @@ export function HomePage() {
   );
   const navigate = useNavigate();
 
+  const [locating, setLocating] = useState(false);
   const firstName = meQ.data?.firstName ?? user?.first_name ?? "friend";
   const city = meQ.data?.city ?? cityQ.data?.city ?? "your city";
   const openGames = (gamesQ.data ?? []).filter((g) => g.status === "OPEN");
   const nextGames = (gamesQ.data ?? []).slice(0, 3);
-  // Only show the onboarding banner if BOTH the API and local state agree the
-  // user hasn't picked a level. If we've ever onboarded locally we trust
-  // that — even if /auth/me momentarily returns skillLevel=null.
   const needsOnboarding =
     meQ.data != null &&
     meQ.data.skillLevel == null &&
     !hasOnboardedLocally();
+
+  // Try to geolocate once on first mount, if user has not stored coords yet.
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    try {
+      if (localStorage.getItem(STORAGE_LAT)) return;
+    } catch {}
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          localStorage.setItem(STORAGE_LAT, String(pos.coords.latitude));
+          localStorage.setItem(STORAGE_LNG, String(pos.coords.longitude));
+        } catch {}
+        try {
+          await api.updateMe({ lat: pos.coords.latitude, lng: pos.coords.longitude } as any);
+          qcRefetchMe();
+        } catch {}
+      },
+      () => undefined,
+      { timeout: 6000, enableHighAccuracy: false, maximumAge: 600_000 },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function qcRefetchMe() {
+    // small wrapper — kept inline to avoid import bloat for a single call
+    meQ.refetch?.();
+  }
+
+  const requestLocation = () => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          localStorage.setItem(STORAGE_LAT, String(pos.coords.latitude));
+          localStorage.setItem(STORAGE_LNG, String(pos.coords.longitude));
+        } catch {}
+        try {
+          await api.updateMe({ lat: pos.coords.latitude, lng: pos.coords.longitude } as any);
+        } finally {
+          setLocating(false);
+          meQ.refetch();
+          cityQ.refetch();
+          gamesQ.refetch();
+        }
+      },
+      () => setLocating(false),
+      { timeout: 8000, enableHighAccuracy: false, maximumAge: 60_000 },
+    );
+  };
 
   const goCreate = () => {
     webApp?.HapticFeedback?.impactOccurred?.("medium");
     navigate("/create");
   };
   const goGames = () => navigate("/games");
+  const goCalendar = () => navigate("/calendar");
   const goWelcome = () => {
     webApp?.HapticFeedback?.impactOccurred?.("light");
     navigate("/welcome");
@@ -62,15 +111,24 @@ export function HomePage() {
 
   return (
     <div className="home">
-      {/* === Hero === */}
       <header className="home-hero">
         <div className="home-hero-text">
           <div className="home-hero-eyebrow">
             <Icon name="map-pin" size={12} />
             <span>{city}</span>
+            <button
+              type="button"
+              className="home-hero-locateBtn"
+              onClick={requestLocation}
+              disabled={locating}
+              aria-label="Use my location"
+              data-analytics-label="home-use-location"
+            >
+              <Icon name={locating ? "loading" : "target"} size={11} />
+            </button>
           </div>
           <h1 className="home-hero-title">
-            Hi, {firstName}!
+            {t('home.hello', { name: firstName })}
             <span className="wave" aria-hidden="true">👋</span>
           </h1>
           <p className="home-hero-sub">
@@ -79,45 +137,48 @@ export function HomePage() {
               : "No games yet — be the first to organize one."}
           </p>
         </div>
-        {meQ.data?.photoUrl || photoUrl ? (
-          <div className="home-hero-avatar">
+        <div className="home-hero-photoWrap">
+          {meQ.data?.photoUrl || photoUrl ? (
             <Photo
               src={meQ.data?.photoUrl ?? photoUrl}
               name={firstName}
               size={56}
             />
-          </div>
-        ) : (
-          <div className="home-hero-mascot" aria-hidden="true">
-            <div className="mascot-glow" />
-            <div className="mascot-orbit" />
-            <img className="mascot-img" src="/robot.png" alt="" />
-          </div>
-        )}
+          ) : (
+            <div className="home-hero-mascot" aria-hidden="true">
+              <div className="mascot-glow" />
+              <div className="mascot-orbit" />
+              <img className="mascot-img" src="/robot.png" alt="" />
+            </div>
+          )}
+          {meQ.data?.skillLevel && (
+            <span className="skillBadge-on-photo">
+              <SkillBadge level={meQ.data.skillLevel} size="md" />
+            </span>
+          )}
+        </div>
       </header>
 
-      {/* === Onboarding banner (only if user hasn't picked a level yet) === */}
       {needsOnboarding && (
         <button type="button" className="home-onboardBanner" onClick={goWelcome}>
           <div className="home-onboardBanner-icon">
             <Icon name="award-01" size={18} />
           </div>
           <div className="home-onboardBanner-text">
-            <div className="home-onboardBanner-title">Pick your playing level</div>
-            <div className="home-onboardBanner-sub">Get matched with the right games in 30 seconds</div>
+            <div className="home-onboardBanner-title">{t('home.pickYourLevel')}</div>
+            <div className="home-onboardBanner-sub">{t('home.pickYourLevelSub')}</div>
           </div>
           <Icon name="arrow-right-01" size={16} />
         </button>
       )}
 
-      {/* === Quick action card with robot's job === */}
       <button className="hero-cta" onClick={goCreate}>
         <div className="hero-cta-content">
           <div className="hero-cta-icon">
             <Icon name="plus-sign" size={22} />
           </div>
           <div>
-            <div className="hero-cta-title">Create a game</div>
+            <div className="hero-cta-title">{t('home.createGame')}</div>
             <div className="hero-cta-sub">Invite players in seconds</div>
           </div>
         </div>
@@ -126,7 +187,21 @@ export function HomePage() {
         </div>
       </button>
 
-      {/* === Stats strip === */}
+      <button className="hero-cta hero-cta-secondary" onClick={goCalendar}>
+        <div className="hero-cta-content">
+          <div className="hero-cta-icon">
+            <Icon name="calendar-02" size={20} />
+          </div>
+          <div>
+            <div className="hero-cta-title">{t('calendar.title')}</div>
+            <div className="hero-cta-sub">Plan your weeks</div>
+          </div>
+        </div>
+        <div className="hero-cta-arrow">
+          <Icon name="arrow-right-01" size={18} />
+        </div>
+      </button>
+
       <div className="stat-strip">
         <div className="stat">
           <div className="stat-value">{openGames.length}</div>
@@ -146,19 +221,18 @@ export function HomePage() {
         </div>
       </div>
 
-      {/* === Upcoming Games section === */}
       <section className="section">
         <div className="section-header">
           <h2 className="section-title">
             <span className="section-title-icon">
               <Icon name="calendar-01" size={16} />
             </span>
-            Upcoming Games
+            {t('home.upcomingGames')}
           </h2>
-          <button className="section-action" onClick={goGames}>
-            View all
-            <Icon name="clock-01" size={12} />
-          </button>
+          <Link to="/calendar" className="section-action" data-analytics-label="home-see-calendar">
+            {t('calendar.title')}
+            <Icon name="arrow-right-01" size={12} />
+          </Link>
         </div>
 
         {gamesQ.isLoading && (
@@ -185,7 +259,7 @@ export function HomePage() {
             <div className="empty-state-icon">
               <Icon name="tennis-ball" size={24} />
             </div>
-            <div className="empty-state-title">No games yet</div>
+            <div className="empty-state-title">{t('home.noGames')}</div>
             <div className="empty-state-text">
               Be the first to organize a volleyball game in {city}. Tap "Create Game" to start.
             </div>

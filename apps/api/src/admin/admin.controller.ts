@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { IsIn, IsOptional } from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { AdminGuard } from '../auth/admin.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -20,6 +21,12 @@ import {
   AdminUpdateVenueDto,
 } from './dto';
 import type { User } from '@prisma/client';
+
+class ResolveReportDto {
+  @IsIn(['REVIEWED', 'DISMISSED']) status!: 'REVIEWED' | 'DISMISSED';
+  @IsOptional() ban?: boolean;
+  @IsOptional() banReason?: string;
+}
 
 @UseGuards(JwtAuthGuard, AdminGuard)
 @Controller('admin')
@@ -38,6 +45,9 @@ export class AdminController {
       take: q.take ?? 50,
       skip: q.skip ?? 0,
       q: q.q,
+      isBanned: q.isBanned,
+      role: q.role,
+      city: q.city,
     });
   }
 
@@ -53,6 +63,23 @@ export class AdminController {
     @Body() dto: AdminUpdateUserDto,
   ) {
     return this.admin.updateUser(me!.id, id, dto);
+  }
+
+  @Post('users/:id/ban')
+  banUser(
+    @CurrentUser() me: User | null,
+    @Param('id') id: string,
+    @Body() body: { reason?: string },
+  ) {
+    return this.admin.updateUser(me!.id, id, {
+      isBanned: true,
+      bannedReason: body.reason,
+    });
+  }
+
+  @Post('users/:id/unban')
+  unbanUser(@CurrentUser() me: User | null, @Param('id') id: string) {
+    return this.admin.updateUser(me!.id, id, { isBanned: false });
   }
 
   @Delete('users/:id')
@@ -77,6 +104,11 @@ export class AdminController {
     @Body() dto: AdminUpdateGameDto,
   ) {
     return this.admin.updateGame(me!.id, id, dto);
+  }
+
+  @Post('games/:id/cancel')
+  cancelGame(@CurrentUser() me: User | null, @Param('id') id: string) {
+    return this.admin.cancelGame(me!.id, id);
   }
 
   @Delete('games/:id')
@@ -115,5 +147,49 @@ export class AdminController {
       take: q.take ?? 50,
       skip: q.skip ?? 0,
     });
+  }
+
+  // ---------- Reports ----------
+  @Get('reports')
+  reports(
+    @Query('take') take?: string,
+    @Query('skip') skip?: string,
+    @Query('status') status?: 'OPEN' | 'REVIEWED' | 'DISMISSED',
+  ) {
+    return this.admin.listReports({
+      take: take ? Number(take) : 50,
+      skip: skip ? Number(skip) : 0,
+      status,
+    });
+  }
+
+  @Post('reports/:id/resolve')
+  async resolveReport(
+    @CurrentUser() me: User | null,
+    @Param('id') id: string,
+    @Body() dto: ResolveReportDto,
+  ) {
+    const resolved = await this.admin.resolveReport(me!.id, id, dto.status);
+    if (dto.ban) {
+      const target = (resolved as any).targetId as string | undefined;
+      // The report record has targetId. We re-fetch and ban.
+      if (target) {
+        await this.admin.updateUser(me!.id, target, {
+          isBanned: true,
+          bannedReason: dto.banReason ?? 'Banned via report review',
+        });
+      }
+    }
+    return resolved;
+  }
+
+  // ---------- Analytics / heatmap ----------
+  @Get('analytics/heatmap')
+  heatmap(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('screen') screen?: string,
+  ) {
+    return this.admin.heatmap({ from, to, screen });
   }
 }

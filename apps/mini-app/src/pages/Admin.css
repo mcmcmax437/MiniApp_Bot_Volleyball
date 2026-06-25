@@ -407,3 +407,11 @@
 .adminItem-audit {
   font-family: var(--font-mono);
 }
+.adminList-filters { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+.adminItem-heatmap .adminItem-meta { font-variant-numeric: tabular-nums; }
+.adminItem-badge-danger { background: var(--danger-soft); color: var(--danger); }
+.adminItem-statusBadge-open { background: var(--success-soft); color: var(--success); }
+.adminItem-statusBadge-finished { background: var(--brand-soft); color: var(--brand); }
+.adminItem-statusBadge-cancelled { background: var(--danger-soft); color: var(--danger); }
+.adminItem-statusBadge-full { background: var(--warning-soft); color: var(--warning); }
+

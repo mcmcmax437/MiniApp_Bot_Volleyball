@@ -4,53 +4,62 @@ import {
   useApi,
   AdminStats,
   AdminUserListItem,
+  AdminUserDetail,
   AdminGameListItem,
   AdminVenueListItem,
   AdminAuditEntry,
+  ReportDto,
+  HeatmapBucket,
   SkillLevel,
+  SKILL_LEVELS,
 } from "../api";
 import { Icon, IconName } from "../Icon";
 import { Photo } from "../Photo";
+import { SkillBadge } from "../SkillBadge";
+import { useI18n } from "../i18n";
 import "./Admin.css";
 
-type Tab = "stats" | "users" | "games" | "venues" | "audit";
+type Tab = "stats" | "users" | "games" | "venues" | "reports" | "audit" | "heatmap";
 
 const TABS: { id: Tab; label: string; icon: IconName }[] = [
   { id: "stats", label: "Stats", icon: "chart-line-data-01" },
   { id: "users", label: "Users", icon: "user-account" },
   { id: "games", label: "Games", icon: "tennis-ball" },
   { id: "venues", label: "Venues", icon: "building-01" },
+  { id: "reports", label: "Reports", icon: "report" },
   { id: "audit", label: "Audit", icon: "security" },
+  { id: "heatmap", label: "Heatmap", icon: "fire" },
 ];
 
 export function AdminPage() {
   const api = useApi();
   const qc = useQueryClient();
+  const { t } = useI18n();
   const [tab, setTab] = useState<Tab>("stats");
 
   return (
     <div className="adminPage">
-      <header className="adminHeader">
-        <div className="adminHeader-icon">
-          <Icon name="crown" size={22} />
+      <header className="page-header">
+        <div className="page-header-icon">
+          <Icon name="crown" size={20} />
         </div>
         <div>
-          <h1 className="adminHeader-title">Admin panel</h1>
-          <p className="adminHeader-sub">Manage users, games, and venues.</p>
+          <h1 className="page-header-title">{t('admin.title')}</h1>
+          <p className="page-header-sub">Manage users, games, and venues.</p>
         </div>
       </header>
 
       <nav className="adminTabs" aria-label="Admin sections">
-        {TABS.map((t) => (
+        {TABS.map((tabDef) => (
           <button
-            key={t.id}
+            key={tabDef.id}
             type="button"
-            className={`adminTab ${tab === t.id ? "adminTab-active" : ""}`}
-            onClick={() => setTab(t.id)}
-            aria-pressed={tab === t.id}
+            className={`adminTab ${tab === tabDef.id ? "adminTab-active" : ""}`}
+            onClick={() => setTab(tabDef.id)}
+            aria-pressed={tab === tabDef.id}
           >
-            <Icon name={t.icon} size={14} />
-            <span>{t.label}</span>
+            <Icon name={tabDef.icon} size={14} />
+            <span>{tabDef.label}</span>
           </button>
         ))}
       </nav>
@@ -60,37 +69,37 @@ export function AdminPage() {
         {tab === "users" && <UsersTab />}
         {tab === "games" && <GamesTab />}
         {tab === "venues" && <VenuesTab />}
+        {tab === "reports" && <ReportsTab />}
         {tab === "audit" && <AuditTab />}
+        {tab === "heatmap" && <HeatmapTab />}
       </div>
     </div>
   );
 }
 
-/* ============================================================
-   Stats tab
-   ============================================================ */
 function StatsTab() {
   const api = useApi();
+  const { t } = useI18n();
   const q = useQuery<AdminStats>(["admin", "stats"], () => api.adminStats());
 
-  if (q.isLoading) {
-    return <AdminSkeleton lines={4} />;
-  }
-  if (q.isError) {
+  if (q.isLoading) return <AdminSkeleton lines={4} />;
+  if (q.isError || !q.data) {
     return (
       <div className="error">
         <Icon name="bell-dot" size={16} />
-        <span>{(q.error as Error).message}</span>
+        <span>{q.isError ? (q.error as Error).message : t('error.unknown')}</span>
       </div>
     );
   }
-  if (!q.data) return null;
 
   const items = [
-    { label: "Total users", value: q.data.users, icon: "user-account" as IconName, color: "cool" },
-    { label: "Total games", value: q.data.games, icon: "tennis-ball" as IconName, color: "brand" },
-    { label: "Total venues", value: q.data.venues, icon: "building-01" as IconName, color: "success" },
+    { label: t('admin.users'), value: q.data.users, icon: "user-account" as IconName, color: "cool" },
+    { label: t('admin.games'), value: q.data.games, icon: "tennis-ball" as IconName, color: "brand" },
+    { label: t('admin.venues'), value: q.data.venues, icon: "building-01" as IconName, color: "success" },
     { label: "Signups (24h)", value: q.data.signupsLast24h, icon: "user-add-01" as IconName, color: "warn" },
+    { label: t('admin.reports'), value: q.data.pendingReports, icon: "report" as IconName, color: "warn" },
+    { label: "Banned", value: q.data.bannedUsers, icon: "user-block" as IconName, color: "cool" },
+    { label: t('game.finish'), value: q.data.finishedGames, icon: "check" as IconName, color: "success" },
   ];
 
   return (
@@ -108,17 +117,22 @@ function StatsTab() {
   );
 }
 
-/* ============================================================
-   Users tab
-   ============================================================ */
 function UsersTab() {
   const api = useApi();
   const qc = useQueryClient();
+  const { t } = useI18n();
   const [search, setSearch] = useState("");
+  const [filterBanned, setFilterBanned] = useState<'ALL' | 'YES' | 'NO'>('ALL');
+  const [openUser, setOpenUser] = useState<string | null>(null);
 
   const q = useQuery<AdminUserListItem>(
-    ["admin", "users", search],
-    () => api.adminListUsers({ take: 100, q: search || undefined }),
+    ["admin", "users", search, filterBanned],
+    () =>
+      api.adminListUsers({
+        take: 100,
+        q: search || undefined,
+        isBanned: filterBanned === 'ALL' ? undefined : filterBanned === 'YES' ? 'true' : 'false',
+      }),
   );
 
   const updateRole = useMutation(
@@ -127,11 +141,19 @@ function UsersTab() {
     { onSuccess: () => qc.invalidateQueries(["admin", "users"]) },
   );
 
+  const banMut = useMutation(
+    ({ id, reason }: { id: string; reason?: string }) => api.adminBanUser(id, reason),
+    { onSuccess: () => qc.invalidateQueries(["admin", "users"]) },
+  );
+
+  const unbanMut = useMutation(
+    (id: string) => api.adminUnbanUser(id),
+    { onSuccess: () => qc.invalidateQueries(["admin", "users"]) },
+  );
+
   const del = useMutation(
     (id: string) => api.adminDeleteUser(id),
-    {
-      onSuccess: () => qc.invalidateQueries(["admin", "users"]),
-    },
+    { onSuccess: () => qc.invalidateQueries(["admin", "users"]) },
   );
 
   return (
@@ -140,10 +162,23 @@ function UsersTab() {
         <Icon name="search-01" size={14} />
         <input
           type="text"
-          placeholder="Search users…"
+          placeholder={t('admin.search')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+      </div>
+
+      <div className="adminList-filters">
+        {(['ALL', 'YES', 'NO'] as const).map((f) => (
+          <button
+            key={f}
+            type="button"
+            className={`chip ${filterBanned === f ? 'chip-active' : ''}`}
+            onClick={() => setFilterBanned(f)}
+          >
+            {f === 'ALL' ? t('games.filter.any') : f === 'YES' ? 'Banned' : 'Active'}
+          </button>
+        ))}
       </div>
 
       {q.isLoading && <AdminSkeleton lines={3} />}
@@ -176,11 +211,19 @@ function UsersTab() {
                     Admin
                   </span>
                 )}
+                {u.isBanned && (
+                  <span className="adminItem-badge adminItem-badge-danger">
+                    <Icon name="user-block" size={10} />
+                    Banned
+                  </span>
+                )}
               </div>
               <div className="adminItem-sub">
-                {u.username ? `@${u.username}` : "—"} · {u.city}
+                {u.username ? `@${u.username}` : "—"} · {u.city ?? '—'}
                 {u.skillLevel && (
-                  <span className="adminItem-tag">{u.skillLevel.replace("_", " ")}</span>
+                  <span style={{ marginLeft: 6 }}>
+                    <SkillBadge level={u.skillLevel as SkillLevel} size="sm" />
+                  </span>
                 )}
               </div>
               <div className="adminItem-meta">
@@ -188,6 +231,15 @@ function UsersTab() {
               </div>
             </div>
             <div className="adminItem-actions">
+              <button
+                type="button"
+                className="adminItem-btn"
+                onClick={() => setOpenUser(u.id)}
+                title="Details"
+                data-analytics-label="admin-user-details"
+              >
+                <Icon name="view" size={14} />
+              </button>
               {u.role === "ADMIN" ? (
                 <button
                   type="button"
@@ -209,6 +261,30 @@ function UsersTab() {
                   <Icon name="crown" size={14} />
                 </button>
               )}
+              {u.isBanned ? (
+                <button
+                  type="button"
+                  className="adminItem-btn"
+                  onClick={() => unbanMut.mutate(u.id)}
+                  disabled={unbanMut.isLoading}
+                  title={t('admin.unban')}
+                >
+                  <Icon name="lock-unlocked-01" size={14} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="adminItem-btn adminItem-btn-warn"
+                  onClick={() => {
+                    const reason = window.prompt(t('admin.banReason'));
+                    if (reason !== null) banMut.mutate({ id: u.id, reason: reason || undefined });
+                  }}
+                  disabled={banMut.isLoading}
+                  title={t('admin.ban')}
+                >
+                  <Icon name="lock" size={14} />
+                </button>
+              )}
               <button
                 type="button"
                 className="adminItem-btn adminItem-btn-danger"
@@ -226,13 +302,109 @@ function UsersTab() {
           </article>
         ))}
       </div>
+
+      <UserDetailsModal userId={openUser} onClose={() => setOpenUser(null)} />
     </div>
   );
 }
 
-/* ============================================================
-   Games tab
-   ============================================================ */
+function UserDetailsModal({ userId, onClose }: { userId: string | null; onClose: () => void }) {
+  const api = useApi();
+  const q = useQuery<AdminUserDetail | null>(
+    ['admin', 'user', userId],
+    () => api.adminGetUser(userId!),
+    { enabled: !!userId },
+  );
+
+  if (!userId) return null;
+
+  return (
+    <div className="modalBackdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="modal" role="dialog" aria-modal="true">
+        <div className="modal-header">
+          <h3 className="modal-title">User details</h3>
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
+            <Icon name="cancel-01" size={14} />
+          </button>
+        </div>
+        {q.isLoading && <div className="skeleton" style={{ height: 100, borderRadius: 10 }} />}
+        {q.data && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <Photo src={q.data.photoUrl} name={q.data.firstName} size={56} />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 16 }}>
+                  {q.data.firstName} {q.data.lastName ?? ''}
+                </div>
+                <div style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>
+                  @{q.data.username ?? '—'} · {q.data.city}
+                </div>
+                {q.data.skillLevel && (
+                  <div style={{ marginTop: 6 }}>
+                    <SkillBadge level={q.data.skillLevel as SkillLevel} size="sm" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <h2 className="formSection-title">
+              <span className="formSection-num"><Icon name="chart-bar" size={12} /></span>
+              Activity
+            </h2>
+            <div className="statsGrid">
+              <div className="statCard statCard-cool">
+                <div className="statCard-value">{q.data.stats.gamesAttended}</div>
+                <div className="statCard-label">Visited</div>
+              </div>
+              <div className="statCard statCard-warn">
+                <div className="statCard-value">{q.data.stats.gamesCancelled}</div>
+                <div className="statCard-label">Cancelled</div>
+              </div>
+              <div className="statCard statCard-brand">
+                <div className="statCard-value">{q.data.stats.gamesHosted}</div>
+                <div className="statCard-label">Created</div>
+              </div>
+              <div className="statCard statCard-success">
+                <div className="statCard-value">{q.data.stats.avgSessionsPerWeek.toFixed(1)}</div>
+                <div className="statCard-label">Sessions / wk</div>
+              </div>
+            </div>
+
+            <div className="costRow">
+              <span>Evaluations given</span>
+              <strong>{q.data.stats.evaluationsGiven}</strong>
+            </div>
+            <div className="costRow">
+              <span>Evaluations received</span>
+              <strong>{q.data.stats.evaluationsReceived}</strong>
+            </div>
+            <div className="costRow">
+              <span>Reports against</span>
+              <strong>{q.data.stats.reportsAgainst}</strong>
+            </div>
+            <div className="costRow">
+              <span>Payments made</span>
+              <strong>{q.data.stats.paymentsMade}</strong>
+            </div>
+            {q.data.evaluatedSkillLevel && (
+              <div className="costRow">
+                <span>Evaluated skill</span>
+                <SkillBadge level={q.data.evaluatedSkillLevel as SkillLevel} size="sm" />
+              </div>
+            )}
+            {q.data.isBanned && (
+              <div className="error" style={{ marginTop: 10 }}>
+                <Icon name="user-block" size={14} />
+                <span>Banned: {q.data.bannedReason ?? '—'}</span>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function GamesTab() {
   const api = useApi();
   const qc = useQueryClient();
@@ -319,7 +491,7 @@ function GamesTab() {
                   disabled={setStatus.isLoading}
                   title="Mark as finished"
                 >
-                  <Icon name="check-unread-01" size={14} />
+                  <Icon name="check" size={14} />
                 </button>
               )}
               <button
@@ -341,9 +513,6 @@ function GamesTab() {
   );
 }
 
-/* ============================================================
-   Venues tab
-   ============================================================ */
 function VenuesTab() {
   const api = useApi();
   const qc = useQueryClient();
@@ -454,9 +623,111 @@ function VenuesTab() {
   );
 }
 
-/* ============================================================
-   Audit tab
-   ============================================================ */
+function ReportsTab() {
+  const api = useApi();
+  const qc = useQueryClient();
+  const { t } = useI18n();
+  const [statusFilter, setStatusFilter] = useState<'OPEN' | 'REVIEWED' | 'DISMISSED' | 'ALL'>('OPEN');
+
+  const q = useQuery<{ items: ReportDto[]; total: number }>(
+    ['admin', 'reports', statusFilter],
+    () =>
+      api.adminListReports({
+        take: 100,
+        status: statusFilter === 'ALL' ? undefined : statusFilter,
+      }),
+  );
+
+  const resolveMut = useMutation(
+    ({ id, status, ban }: { id: string; status: 'REVIEWED' | 'DISMISSED'; ban?: boolean }) =>
+      api.adminResolveReport(id, { status, ban }),
+    { onSuccess: () => qc.invalidateQueries(['admin', 'reports']) },
+  );
+
+  return (
+    <div className="adminList">
+      <div className="adminList-filters">
+        {(['OPEN', 'REVIEWED', 'DISMISSED', 'ALL'] as const).map((f) => (
+          <button
+            key={f}
+            type="button"
+            className={`chip ${statusFilter === f ? 'chip-active' : ''}`}
+            onClick={() => setStatusFilter(f)}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+
+      {q.isLoading && <AdminSkeleton lines={3} />}
+      {q.isError && (
+        <div className="error">
+          <Icon name="bell-dot" size={16} />
+          <span>{(q.error as Error).message}</span>
+        </div>
+      )}
+      {q.data && (
+        <div className="adminList-meta">{q.data.total} report{q.data.total === 1 ? '' : 's'}</div>
+      )}
+
+      <div className="adminItems">
+        {q.data?.items.map((r) => (
+          <article key={r.id} className="adminItem">
+            <div className={`adminItem-statusBadge adminItem-statusBadge-${r.status === 'OPEN' ? 'open' : r.status === 'REVIEWED' ? 'finished' : 'cancelled'}`}>
+              {r.status}
+            </div>
+            <div className="adminItem-info">
+              <div className="adminItem-title">
+                {r.reason} · <strong>{r.target.firstName}</strong>
+              </div>
+              <div className="adminItem-sub">
+                by {r.reporter?.firstName ?? '—'} {r.reporter?.username && `(@${r.reporter.username})`}
+                {r.game && ` · game ${r.game.startAt.slice(0, 10)}`}
+              </div>
+              {r.details && <div className="adminItem-meta">{r.details}</div>}
+            </div>
+            {r.status === 'OPEN' && (
+              <div className="adminItem-actions">
+                <button
+                  type="button"
+                  className="adminItem-btn adminItem-btn-warn"
+                  onClick={() => {
+                    if (window.confirm('Ban this user?')) {
+                      resolveMut.mutate({ id: r.id, status: 'REVIEWED', ban: true });
+                    }
+                  }}
+                  disabled={resolveMut.isLoading}
+                  title={t('admin.resolveAndBan')}
+                >
+                  <Icon name="user-block" size={14} />
+                </button>
+                <button
+                  type="button"
+                  className="adminItem-btn"
+                  onClick={() => resolveMut.mutate({ id: r.id, status: 'REVIEWED' })}
+                  disabled={resolveMut.isLoading}
+                  title={t('admin.resolve')}
+                >
+                  <Icon name="check" size={14} />
+                </button>
+                <button
+                  type="button"
+                  className="adminItem-btn adminItem-btn-danger"
+                  onClick={() => resolveMut.mutate({ id: r.id, status: 'DISMISSED' })}
+                  disabled={resolveMut.isLoading}
+                  title={t('admin.dismiss')}
+                >
+                  <Icon name="cancel-01" size={14} />
+                </button>
+              </div>
+            )}
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AuditTab() {
   const api = useApi();
   const q = useQuery<{ items: AdminAuditEntry[]; total: number }>(
@@ -513,9 +784,96 @@ function AuditTab() {
   );
 }
 
-/* ============================================================
-   Skeleton placeholder
-   ============================================================ */
+function HeatmapTab() {
+  const api = useApi();
+  const [days, setDays] = useState(7);
+
+  const fromDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const q = useQuery<HeatmapBucket[]>(
+    ['admin', 'heatmap', days],
+    () => api.adminHeatmap({ from: fromDate.toISOString() }),
+  );
+
+  return (
+    <div className="adminList">
+      <div className="adminList-filters">
+        {[1, 7, 30].map((d) => (
+          <button
+            key={d}
+            type="button"
+            className={`chip ${days === d ? 'chip-active' : ''}`}
+            onClick={() => setDays(d)}
+          >
+            {d} day{d === 1 ? '' : 's'}
+          </button>
+        ))}
+      </div>
+
+      {q.isLoading && <AdminSkeleton lines={4} />}
+      {q.isError && (
+        <div className="error">
+          <Icon name="bell-dot" size={16} />
+          <span>{(q.error as Error).message}</span>
+        </div>
+      )}
+
+      {q.data && q.data.length === 0 && (
+        <div className="empty-state">
+          <div className="empty-state-icon">
+            <Icon name="chart-bar" size={24} />
+          </div>
+          <div className="empty-state-title">No click data yet</div>
+          <div className="empty-state-text">As users interact with the app, the most-clicked elements will appear here.</div>
+        </div>
+      )}
+
+      {q.data && q.data.length > 0 && (
+        <>
+          <div className="adminList-meta">{q.data.length} unique elements</div>
+          <div className="adminItems">
+            {q.data.map((b, i) => {
+              const max = Math.max(...q.data!.map((x) => x.count));
+              const pct = Math.max(8, Math.round((b.count / max) * 100));
+              return (
+                <article key={i} className="adminItem adminItem-heatmap">
+                  <div className="adminItem-icon">
+                    <Icon name="target" size={16} />
+                  </div>
+                  <div className="adminItem-info">
+                    <div className="adminItem-title">{b.target}</div>
+                    <div className="adminItem-sub">on {b.screen}</div>
+                    <div
+                      style={{
+                        marginTop: 6,
+                        height: 8,
+                        borderRadius: 4,
+                        background: 'var(--surface-2)',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${pct}%`,
+                          height: '100%',
+                          background: 'var(--gradient-brand)',
+                          transition: 'width 240ms',
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="adminItem-meta" style={{ alignSelf: 'center', minWidth: 48, textAlign: 'right' }}>
+                    <strong>{b.count}</strong>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function AdminSkeleton({ lines = 3 }: { lines?: number }) {
   return (
     <div className="adminItems">

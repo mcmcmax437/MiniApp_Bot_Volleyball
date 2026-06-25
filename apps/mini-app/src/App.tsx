@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useTelegram } from './tg';
 import { useApi } from './api';
 import { Icon } from './Icon';
+import { useI18n } from './i18n';
 import { HomePage } from './pages/Home';
 import { GamesPage } from './pages/Games';
 import { GameDetailPage } from './pages/GameDetail';
@@ -12,9 +13,15 @@ import { VenuesPage } from './pages/Venues';
 import { ProfilePage } from './pages/Profile';
 import { WelcomePage } from './pages/Welcome';
 import { AdminPage } from './pages/Admin';
+import { CalendarPage } from './pages/Calendar';
+import { BlacklistPage } from './pages/Blacklist';
+import { InvitationsPage } from './pages/Invitations';
+import { PaymentsPage } from './pages/Payments';
+import { useAnalytics } from './hooks/useAnalytics';
 import './App.css';
 
 function LoadingScreen() {
+  const { t } = useI18n();
   return (
     <div className="app-container">
       <div className="empty-state">
@@ -27,6 +34,7 @@ function LoadingScreen() {
           className="empty-state-text skeleton"
           style={{ width: 200, height: 12, marginTop: 8 }}
         />
+        <div style={{ marginTop: 16, color: 'var(--text-tertiary)' }}>{t('app.loadingHome')}</div>
       </div>
     </div>
   );
@@ -34,7 +42,6 @@ function LoadingScreen() {
 
 const ONBOARDED_KEY = 'volley:onboarded:v1';
 
-/** True if this device has finished the welcome flow at least once. */
 function hasOnboardedLocally(): boolean {
   try {
     return localStorage.getItem(ONBOARDED_KEY) === '1';
@@ -47,7 +54,7 @@ function markOnboardedLocally() {
   try {
     localStorage.setItem(ONBOARDED_KEY, '1');
   } catch {
-    /* ignore — private mode etc. */
+    /* ignore */
   }
 }
 
@@ -56,12 +63,12 @@ export function App() {
   const api = useApi();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { t } = useI18n();
+  useAnalytics();
 
   const meQ = useQuery(['me'], () => api.me(), {
     enabled: ready,
     retry: false,
-    // Always revalidate when this component (re)mounts, so we get the latest
-    // server state instead of relying on a potentially-stale cache.
     refetchOnMount: 'always',
     staleTime: 0,
   });
@@ -77,10 +84,7 @@ export function App() {
     }
   }, [ready, initData, meQ.isFetched, meQ.data, loginMut.isLoading]);
 
-  // Onboarding: redirect to /welcome only when we're sure the user has no
-  // skill level AND this device hasn't already completed onboarding. The
-  // localStorage guard prevents the welcome page from re-appearing for
-  // returning users (e.g. after a transient API hiccup that returns null).
+  // Onboarding redirect
   useEffect(() => {
     if (!meQ.data) return;
     if (window.location.pathname !== '/') return;
@@ -92,13 +96,34 @@ export function App() {
     }
   }, [meQ.data]);
 
-  // Expose the marker on window so Welcome.tsx can flip it without importing
-  // a side-effecty module just for that.
   useEffect(() => {
     (window as any).__markVolleyOnboarded = markOnboardedLocally;
   }, []);
 
   if (!ready) return <LoadingScreen />;
+
+  // Banned screen — replaces the entire app UI for banned users.
+  if (meQ.data?.isBanned) {
+    return (
+      <div className="app-container">
+        <div className="card" style={{ marginTop: 60, textAlign: 'center' }}>
+          <div
+            className="empty-state-icon"
+            style={{ margin: '0 auto 12px', background: 'var(--gradient-danger)' }}
+          >
+            <Icon name="user-block" size={24} />
+          </div>
+          <h2 style={{ margin: 0 }}>{t('auth.banned.title')}</h2>
+          <p style={{ color: 'var(--text-tertiary)' }}>
+            {t('auth.banned.body', { reason: meQ.data.bannedReason ?? '—' })}
+          </p>
+          <p style={{ color: 'var(--text-tertiary)', fontSize: 13 }}>
+            {t('auth.banned.contact')}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!initData && !meQ.data) {
     return (
@@ -111,8 +136,7 @@ export function App() {
             </h3>
           </div>
           <p style={{ color: 'var(--text-tertiary)', fontSize: 14, lineHeight: 1.6 }}>
-            This Mini App must be opened from a Telegram bot to work. If you're a developer, run it
-            inside the Telegram client to get <code>initData</code>.
+            This Mini App must be opened from a Telegram bot to work.
           </p>
           <p style={{ color: 'var(--text-secondary)', marginTop: 12 }}>
             Hello{user ? `, ${user.first_name}` : ''}.
@@ -157,6 +181,10 @@ export function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/welcome" element={<WelcomePage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/blacklist" element={<BlacklistPage />} />
+          <Route path="/invitations" element={<InvitationsPage />} />
+          <Route path="/payments" element={<PaymentsPage />} />
           <Route
             path="*"
             element={
@@ -179,25 +207,25 @@ export function App() {
           <span className="nav-icon">
             <Icon name="home-01" size={20} />
           </span>
-          <span>Home</span>
+          <span>{t('nav.home')}</span>
         </NavLink>
         <NavLink to="/games" className={({ isActive }) => (isActive ? 'active' : '')}>
           <span className="nav-icon">
             <Icon name="tennis-ball" size={20} />
           </span>
-          <span>Games</span>
+          <span>{t('nav.games')}</span>
         </NavLink>
         <NavLink to="/create" className={({ isActive }) => (isActive ? 'active' : '')}>
           <span className="nav-icon">
             <Icon name="plus-sign" size={20} />
           </span>
-          <span>Create</span>
+          <span>{t('nav.create')}</span>
         </NavLink>
         <NavLink to="/profile" className={({ isActive }) => (isActive ? 'active' : '')}>
           <span className="nav-icon">
             <Icon name="user-account" size={20} />
           </span>
-          <span>Profile</span>
+          <span>{t('nav.profile')}</span>
         </NavLink>
       </nav>
     </>

@@ -8,19 +8,16 @@ import {
   SKILL_LEVELS,
   SKILL_LEVEL_LABELS,
   SKILL_LEVEL_DESCRIPTIONS,
+  Language,
+  SUPPORTED_LANGUAGES,
 } from "../api";
 import { useTelegram } from "../tg";
 import { Icon, IconName } from "../Icon";
 import { Photo } from "../Photo";
+import { SkillBadge } from "../SkillBadge";
+import { useI18n, LANG_LABELS, LANG_FLAGS } from "../i18n";
 import "./Profile.css";
 
-/**
- * When a field gets focus on iOS/Android the on-screen keyboard covers the
- * bottom half of the screen. The browser auto-scrolls the focused input into
- * view, but our `padding-bottom` for the bottom-nav eats into that space.
- * We nudge the scroll position to leave room for the nav so the input
- * stays comfortably above it.
- */
 function scrollIntoViewSafe(el: HTMLElement) {
   setTimeout(() => {
     el.scrollIntoView({ block: "center", behavior: "smooth" });
@@ -30,7 +27,7 @@ function scrollIntoViewSafe(el: HTMLElement) {
 const REMINDER_PRESETS: {
   label: string;
   description: string;
-  icon: string;
+  icon: IconName;
   offsets: number[];
 }[] = [
   { label: "24h + 2h + 30m", description: "All the reminders", icon: "bell-dot", offsets: [1440, 120, 30] },
@@ -51,19 +48,18 @@ const SKILL_ICONS: Record<SkillLevel, IconName> = {
 export function ProfilePage() {
   const api = useApi();
   const qc = useQueryClient();
-  // Always refetch on mount so the avatar / level are fresh after edits.
+  const { t, lang, setLang } = useI18n();
   const meQ = useQuery<ApiUser | null>(["me"], () => api.me(), {
     refetchOnMount: "always",
     staleTime: 0,
   });
-  // Fall back to the Telegram WebApp photo if the server hasn't sent one
-  // yet (e.g. very first render, or Telegram client didn't expose it).
   const { photoUrl: tgPhotoUrl } = useTelegram();
 
   const [age, setAge] = useState<number | "">("");
   const [skill, setSkill] = useState<SkillLevel | "">("");
   const [city, setCity] = useState("");
   const [offsets, setOffsets] = useState<number[]>([]);
+  const [language, setLanguageState] = useState<Language>(lang);
 
   useEffect(() => {
     if (!meQ.data) return;
@@ -71,6 +67,9 @@ export function ProfilePage() {
     setSkill(meQ.data.skillLevel ?? "");
     setCity(meQ.data.city);
     setOffsets(meQ.data.reminderOffsets ?? []);
+    if (meQ.data.language && SUPPORTED_LANGUAGES.includes(meQ.data.language)) {
+      setLanguageState(meQ.data.language);
+    }
   }, [meQ.data]);
 
   const save = useMutation(
@@ -80,13 +79,27 @@ export function ProfilePage() {
         skillLevel: skill === "" ? undefined : skill,
         city: city || undefined,
         reminderOffsets: offsets,
+        language,
       }),
     {
-      onSuccess: () => {
+      onSuccess: (updated) => {
+        qc.setQueryData(["me"], updated);
         qc.invalidateQueries(["me"]);
       },
     },
   );
+
+  // Geolocation request — best-effort, non-blocking
+  const requestLocation = async () => {
+    if (!navigator.geolocation) return;
+    return new Promise<{ lat: number; lng: number } | null>((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => resolve(null),
+        { timeout: 8000, enableHighAccuracy: false, maximumAge: 600_000 },
+      );
+    });
+  };
 
   if (meQ.isLoading) {
     return (
@@ -103,8 +116,8 @@ export function ProfilePage() {
         <div className="empty-state-icon">
           <Icon name="user-account" size={24} />
         </div>
-        <div className="empty-state-title">Not signed in</div>
-        <div className="empty-state-text">Open this Mini App from Telegram to set up your profile.</div>
+        <div className="empty-state-title">{t('empty.notSignedIn')}</div>
+        <div className="empty-state-text">{t('empty.notSignedInText')}</div>
       </div>
     );
   }
@@ -116,13 +129,19 @@ export function ProfilePage() {
 
   return (
     <div className="profilePage">
-      {/* === Hero: real photo + name === */}
       <header className="profileHero">
-        <Photo
-          src={meQ.data.photoUrl ?? tgPhotoUrl}
-          name={fullName}
-          size={84}
-        />
+        <div className="profileHero-photoWrap">
+          <Photo
+            src={meQ.data.photoUrl ?? tgPhotoUrl}
+            name={fullName}
+            size={84}
+          />
+          {meQ.data.skillLevel && (
+            <span className="skillBadge-on-photo">
+              <SkillBadge level={meQ.data.skillLevel} size="lg" />
+            </span>
+          )}
+        </div>
         <div className="profileHero-info">
           <h1 className="profileHero-name">
             {meQ.data.firstName} {meQ.data.lastName ?? ""}
@@ -138,23 +157,60 @@ export function ProfilePage() {
               </span>
             )}
           </div>
+          {meQ.data.evaluatedSkillLevel && (
+            <div className="profileHero-eval">
+              <SkillBadge level={meQ.data.evaluatedSkillLevel} size="sm" />
+              <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 6 }}>
+                {t('profile.skillFromEvaluations', { n: 1 })}
+              </span>
+            </div>
+          )}
         </div>
       </header>
+
+      {/* === Section: Quick links === */}
+      <div className="profileLinks">
+        {isAdmin && (
+          <Link to="/admin" className="profileLink" data-analytics-label="profile-admin">
+            <span className="profileLink-icon"><Icon name="crown" size={16} /></span>
+            {t('profile.adminPanel')}
+            <span className="profileLink-arrow"><Icon name="arrow-right-01" size={16} /></span>
+          </Link>
+        )}
+        <Link to="/calendar" className="profileLink" data-analytics-label="profile-calendar">
+          <span className="profileLink-icon"><Icon name="calendar-02" size={16} /></span>
+          {t('calendar.title')}
+          <span className="profileLink-arrow"><Icon name="arrow-right-01" size={16} /></span>
+        </Link>
+        <Link to="/invitations" className="profileLink" data-analytics-label="profile-invitations">
+          <span className="profileLink-icon"><Icon name="send-01" size={16} /></span>
+          {t('profile.invitations')}
+          <span className="profileLink-arrow"><Icon name="arrow-right-01" size={16} /></span>
+        </Link>
+        <Link to="/blacklist" className="profileLink" data-analytics-label="profile-blacklist">
+          <span className="profileLink-icon"><Icon name="user-block" size={16} /></span>
+          {t('profile.blacklist')}
+          <span className="profileLink-arrow"><Icon name="arrow-right-01" size={16} /></span>
+        </Link>
+        <Link to="/payments" className="profileLink" data-analytics-label="profile-payments">
+          <span className="profileLink-icon"><Icon name="wallet-01" size={16} /></span>
+          {t('profile.payments')}
+          <span className="profileLink-arrow"><Icon name="arrow-right-01" size={16} /></span>
+        </Link>
+      </div>
 
       {/* === Section: About you === */}
       <section className="formSection">
         <h2 className="formSection-title">
-          <span className="formSection-num">
-            <Icon name="user-account" size={12} />
-          </span>
-          About you
+          <span className="formSection-num"><Icon name="user-account" size={12} /></span>
+          {t('profile.about')}
         </h2>
 
         <div className="card profileCard">
           <div className="field" style={{ marginBottom: 14 }}>
             <label className="field-label" htmlFor="age">
               <Icon name="calendar-01" size={12} className="icon-inline" />
-              Age
+              {t('profile.age')}
             </label>
             <input
               id="age"
@@ -164,33 +220,49 @@ export function ProfilePage() {
               value={age}
               onChange={(e) => setAge(e.target.value === "" ? "" : Number(e.target.value))}
               onFocus={(e) => scrollIntoViewSafe(e.currentTarget)}
-              placeholder="Optional"
+              placeholder={t('common.optional')}
             />
           </div>
 
           <div className="field">
             <label className="field-label" htmlFor="city">
               <Icon name="map-pin" size={12} className="icon-inline" />
-              City
+              {t('profile.city')}
             </label>
-            <input
-              id="city"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              onFocus={(e) => scrollIntoViewSafe(e.currentTarget)}
-              placeholder="e.g. Kyiv"
-            />
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input
+                id="city"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                onFocus={(e) => scrollIntoViewSafe(e.currentTarget)}
+                placeholder="e.g. Kyiv"
+                style={{ flex: 1 }}
+              />
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={async () => {
+                  const pos = await requestLocation();
+                  if (pos) {
+                    await api.updateMe({ lat: pos.lat, lng: pos.lng } as any);
+                    qc.invalidateQueries(['me']);
+                  }
+                }}
+                title="Use my location"
+                aria-label="Use my location"
+              >
+                <Icon name="map-pin" size={14} />
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* === Section: Skill (6 levels) === */}
+      {/* === Section: Skill === */}
       <section className="formSection">
         <h2 className="formSection-title">
-          <span className="formSection-num">
-            <Icon name="award-01" size={12} />
-          </span>
-          Your skill
+          <span className="formSection-num"><Icon name="award-01" size={12} /></span>
+          {t('profile.skill')}
         </h2>
         <p className="formSection-hint">Tap a level to see its description.</p>
         <div className="skillGrid">
@@ -216,12 +288,35 @@ export function ProfilePage() {
         )}
       </section>
 
+      {/* === Section: Language === */}
+      <section className="formSection">
+        <h2 className="formSection-title">
+          <span className="formSection-num"><Icon name="globe" size={12} /></span>
+          {t('profile.language')}
+        </h2>
+        <div className="langGrid">
+          {SUPPORTED_LANGUAGES.map((l) => (
+            <button
+              type="button"
+              key={l}
+              className={`langOption ${language === l ? "langOption-active" : ""}`}
+              onClick={() => {
+                setLanguageState(l);
+                setLang(l); // optimistic local switch
+              }}
+              aria-pressed={language === l}
+            >
+              <span className="langOption-flag">{LANG_FLAGS[l]}</span>
+              <span className="langOption-label">{LANG_LABELS[l]}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
       {/* === Section: Reminders === */}
       <section className="formSection">
         <h2 className="formSection-title">
-          <span className="formSection-num">
-            <Icon name="bell-dot" size={12} />
-          </span>
+          <span className="formSection-num"><Icon name="bell-dot" size={12} /></span>
           Reminders
         </h2>
 
@@ -237,7 +332,7 @@ export function ProfilePage() {
                 aria-pressed={isActive}
               >
                 <div className="reminderOption-icon">
-                  <Icon name={p.icon as any} size={18} />
+                  <Icon name={p.icon} size={18} />
                 </div>
                 <div className="reminderOption-text">
                   <div className="reminderOption-label">{p.label}</div>
@@ -258,11 +353,10 @@ export function ProfilePage() {
           <span>{(save.error as Error).message}</span>
         </div>
       )}
-
       {save.isSuccess && (
         <div className="success-banner">
-          <Icon name="check-unread-01" size={16} />
-          <span>Profile saved</span>
+          <Icon name="check" size={16} />
+          <span>{t('profile.saved')}</span>
         </div>
       )}
 
@@ -272,52 +366,36 @@ export function ProfilePage() {
         disabled={!canSave}
         onClick={() => save.mutate()}
       >
-        <Icon name="check-unread-01" size={18} />
-        {save.isLoading ? "Saving…" : "Save changes"}
+        <Icon name="check" size={18} />
+        {save.isLoading ? t('common.loading') : t('profile.save')}
       </button>
-
-      {/* === Admin panel (only for admins) === */}
-      {isAdmin && (
-        <section className="formSection profileAdminSection">
-          <h2 className="formSection-title">
-            <span className="formSection-num formSection-num-admin">
-              <Icon name="crown" size={12} />
-            </span>
-            Admin
-          </h2>
-          <Link
-            to="/admin"
-            className="adminPanelLink"
-          >
-            <div className="adminPanelLink-icon">
-              <Icon name="security" size={20} />
-            </div>
-            <div className="adminPanelLink-text">
-              <div className="adminPanelLink-title">Admin panel</div>
-              <div className="adminPanelLink-desc">Manage users, games, and venues.</div>
-            </div>
-            <Icon name="arrow-right-01" size={18} />
-          </Link>
-        </section>
-      )}
 
       <button
         type="button"
         className="btn profileLogout"
         onClick={async () => {
+          if (!window.confirm(t('profile.signOutConfirm'))) return;
           try {
             await fetch("/api/v1/auth/logout", { method: "POST", credentials: "include" });
           } catch {}
-          // Reset the local onboarded flag too, so the next sign-in shows the
-          // welcome flow again (in case the user re-onboards as someone else).
           try {
             localStorage.removeItem("volley:onboarded:v1");
+            localStorage.removeItem("volley:lang:v1");
+            sessionStorage.removeItem("volley:analytics:queue:v1");
           } catch {}
-          window.location.reload();
+          // Clear react-query cache so a fresh login doesn't see stale data
+          qc.clear();
+          // Tell Telegram WebApp we're done — this closes the mini-app.
+          try {
+            const tg = (window as any).Telegram?.WebApp;
+            if (tg?.close) tg.close();
+          } catch {}
+          // Fallback reload if WebApp.close isn't available
+          setTimeout(() => window.location.reload(), 250);
         }}
       >
         <Icon name="logout-01" size={18} />
-        Sign out
+        {t('profile.signOut')}
       </button>
     </div>
   );
