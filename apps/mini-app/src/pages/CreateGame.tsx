@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../api';
+import './CreateGame.css';
 
 const SKILLS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PRO'] as const;
 type Skill = (typeof SKILLS)[number];
@@ -78,7 +79,7 @@ export function CreateGamePage() {
 
   return (
     <>
-      <div className="card">
+      <div className="createPage">
         <h3>New game</h3>
 
         <div className="field">

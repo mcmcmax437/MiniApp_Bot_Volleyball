@@ -1,0 +1,26 @@
+.gamesPage {
+  display: flex;
+  flex-direction: column;
+}
+
+.filterBar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.filterBar label {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.filterBar select {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid #1f2937;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 15px;
+  font-family: inherit;
+}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useApi } from '../api';
 import { Icon } from '../Icon';
+import './Venues.css';
 
 export function VenuesPage() {
   const api = useApi();
@@ -15,29 +16,29 @@ export function VenuesPage() {
 
   return (
     <>
-      <div className="map-placeholder">
+      <div className="detailMap">
         <Icon name="maps" size={28} className="icon-inline" />
         <span>Map of venues in {cityQ.data?.city}</span>
       </div>
 
       {venuesQ.isLoading && <div className="empty">Loading venues…</div>}
       {venuesQ.data?.map((v) => (
-        <div className="card" key={v.id}>
+        <div className="venueCard" key={v.id}>
           <h3>{v.name}</h3>
-          <div className="row">
+          <div className="venueRow">
             <span>
               <Icon name="map-pin" className="icon-inline" />
               {v.address}
             </span>
           </div>
-          <div className="row">
+          <div className="venueRow">
             <span>
               <span className="tag">{v.indoor ? 'Indoor' : 'Outdoor'}</span>
               {v.surface && <span className="tag">{v.surface}</span>}
             </span>
             <strong>{(v.hourlyPrice / 100).toFixed(2)} / hr</strong>
           </div>
-          <div className="row">
+          <div className="venueRow">
             <span>
               <Icon name="user-group" className="icon-inline" />
               Up to {v.capacity} players
@@ -82,7 +83,7 @@ function SuggestVenueForm({ onDone }: { onDone: () => void }) {
   );
 
   return (
-    <div className="card" style={{ marginTop: 10 }}>
+    <div className="venueCard" style={{ marginTop: 10 }}>
       <h3>Suggest a venue</h3>
       <div className="field">
         <label>Name</label>

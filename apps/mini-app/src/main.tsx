@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { App } from './App';
 import { TelegramProvider } from './tg';
-import './styles.css';
+import './App.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {

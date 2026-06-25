@@ -1,0 +1,30 @@
+.venuesPage {
+  display: flex;
+  flex-direction: column;
+}
+
+.venueCard {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 10px;
+  border: 1px solid #1f2937;
+}
+
+.venueCard h3 {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+}
+
+.venueRow {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.venueRow strong {
+  color: var(--text);
+  font-weight: 600;
+}

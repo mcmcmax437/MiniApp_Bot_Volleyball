@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useApi, ApiUser } from '../api';
 import { Icon } from '../Icon';
+import './Profile.css';
 
 const SKILLS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PRO'] as const;
 type Skill = (typeof SKILLS)[number];
@@ -46,9 +47,9 @@ export function ProfilePage() {
   if (!meQ.data) return <div className="empty">Sign in first.</div>;
 
   return (
-    <div className="card">
+    <div className="profilePage">
       <h3>Your profile</h3>
-      <div className="row" style={{ marginBottom: 12 }}>
+      <div className="profileHeader">
         <span>
           {meQ.data.firstName} {meQ.data.lastName ?? ''}{' '}
           {meQ.data.username && <span className="tag">@{meQ.data.username}</span>}

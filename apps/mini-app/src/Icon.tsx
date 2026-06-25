@@ -19,7 +19,9 @@ export type IconName =
   | "bell-dot"
   | "tennis-ball"
   | "plus-sign"
-  | "building-01";
+  | "building-01"
+  | "home-01"
+  | "game";
 
 interface IconProps {
   name: IconName;

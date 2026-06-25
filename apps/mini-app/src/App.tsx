@@ -4,11 +4,13 @@ import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useTelegram } from './tg';
 import { useApi } from './api';
 import { Icon } from './Icon';
-import { FeedPage } from './pages/Feed';
+import { HomePage } from './pages/Home';
+import { GamesPage } from './pages/Games';
 import { GameDetailPage } from './pages/GameDetail';
 import { CreateGamePage } from './pages/CreateGame';
 import { VenuesPage } from './pages/Venues';
 import { ProfilePage } from './pages/Profile';
+import './App.css';
 
 export function App() {
   const { initData, user, ready } = useTelegram();
@@ -43,7 +45,7 @@ export function App() {
 
   if (!ready) {
     return (
-      <div className="container">
+      <div className="app-container">
         <div className="empty">Loading…</div>
       </div>
     );
@@ -51,14 +53,14 @@ export function App() {
 
   if (!initData && !meQ.data) {
     return (
-      <div className="container">
-        <div className="card">
+      <div className="app-container">
+        <div className="detailCard">
           <h3>Open from Telegram</h3>
-          <p className="row" style={{ color: 'var(--text-dim)', fontSize: 13 }}>
+          <p style={{ color: 'var(--text-dim)', fontSize: 13 }}>
             This Mini App must be opened from a Telegram bot to work. If you're a developer, run it
             inside the Telegram client to get <code>initData</code>.
           </p>
-          <p className="row">Hello{user ? `, ${user.first_name}` : ''}.</p>
+          <p>Hello{user ? `, ${user.first_name}` : ''}.</p>
         </div>
       </div>
     );
@@ -66,8 +68,8 @@ export function App() {
 
   if (loginMut.isError) {
     return (
-      <div className="container">
-        <div className="card">
+      <div className="app-container">
+        <div className="detailCard">
           <h3>Sign-in failed</h3>
           <div className="error">{(loginMut.error as Error).message}</div>
           <button className="btn" onClick={() => loginMut.mutate()}>
@@ -80,17 +82,10 @@ export function App() {
 
   return (
     <>
-      <div className="container">
-        <div className="header">
-          <div>
-            <h1>Volleyball</h1>
-            <div className="sub">{meQ.data?.city ?? '—'}</div>
-          </div>
-          <div className="sub">{meQ.data?.firstName ?? user?.first_name}</div>
-        </div>
-
+      <div className="app-container">
         <Routes>
-          <Route path="/" element={<FeedPage />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/games" element={<GamesPage />} />
           <Route path="/games/:id" element={<GameDetailPage />} />
           <Route path="/create" element={<CreateGamePage />} />
           <Route path="/venues" element={<VenuesPage />} />
@@ -101,19 +96,19 @@ export function App() {
 
       <nav className="bottom-nav">
         <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>
-          <Icon name="tennis-ball" size={18} />
+          <Icon name="home-01" size={18} className="icon-stacked" />
+          <span>Home</span>
+        </NavLink>
+        <NavLink to="/games" className={({ isActive }) => (isActive ? 'active' : '')}>
+          <Icon name="tennis-ball" size={18} className="icon-stacked" />
           <span>Games</span>
         </NavLink>
         <NavLink to="/create" className={({ isActive }) => (isActive ? 'active' : '')}>
-          <Icon name="plus-sign" size={18} />
+          <Icon name="plus-sign" size={18} className="icon-stacked" />
           <span>Create</span>
         </NavLink>
-        <NavLink to="/venues" className={({ isActive }) => (isActive ? 'active' : '')}>
-          <Icon name="building-01" size={18} />
-          <span>Venues</span>
-        </NavLink>
         <NavLink to="/profile" className={({ isActive }) => (isActive ? 'active' : '')}>
-          <Icon name="user-account" size={18} />
+          <Icon name="user-account" size={18} className="icon-stacked" />
           <span>Profile</span>
         </NavLink>
       </nav>

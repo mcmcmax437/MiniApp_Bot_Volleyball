@@ -1,0 +1,86 @@
+.home {
+  display: flex;
+  flex-direction: column;
+}
+
+.homeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 12px;
+}
+
+.homeHeader h1 {
+  font-size: 30px;
+  margin: 0 0 6px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.homeHeader .welcomeSub {
+  color: var(--text-dim);
+  font-size: 15px;
+  margin: 0;
+}
+
+.homeHeader .wave {
+  display: inline-block;
+  transform-origin: 70% 70%;
+}
+
+.robot {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.createButton {
+  background: var(--accent);
+  color: #062023;
+  border: none;
+  height: 54px;
+  border-radius: 16px;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 28px;
+  width: 100%;
+}
+
+.createButton:hover {
+  filter: brightness(1.05);
+}
+
+.gamesSection {
+  display: flex;
+  flex-direction: column;
+}
+
+.sectionTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sectionTitle h2 {
+  font-size: 18px;
+  margin: 0;
+  color: var(--text);
+}
+
+.sectionTitle .viewAll {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0;
+}

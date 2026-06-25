@@ -1,0 +1,39 @@
+/* Reusable shared bits used by GameDetail only. */
+
+.detailCard {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 10px;
+  border: 1px solid #1f2937;
+}
+
+.detailCard h3 {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.detailRow strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.detailMap {
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border-radius: var(--radius);
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  border: 1px solid #1f2937;
+  margin-bottom: 12px;
+}

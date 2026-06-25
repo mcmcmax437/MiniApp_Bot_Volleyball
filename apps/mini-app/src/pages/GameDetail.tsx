@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '../api';
 import { Icon } from '../Icon';
+import './GameDetail.css';
 
 function formatGameTime(iso: string): string {
   const d = new Date(iso);
@@ -49,9 +50,9 @@ export function GameDetailPage() {
 
   return (
     <>
-      <div className="card">
+      <div className="detailCard">
         <h3>{g.venue.name}</h3>
-        <div className="row">
+        <div className="detailRow">
           <span>
             <Icon name="calendar-01" className="icon-inline" />
             {formatGameTime(g.startAt)}
@@ -61,13 +62,13 @@ export function GameDetailPage() {
             {g.participantsCount}/{g.spotsTotal} players
           </span>
         </div>
-        <div className="row">
+        <div className="detailRow">
           <span>
             <Icon name="map-pin" className="icon-inline" />
             {g.venue.address}
           </span>
         </div>
-        <div className="row">
+        <div className="detailRow">
           <span>
             <span className="tag accent">{g.skillLevel}</span>
             <span className="tag">{g.venue.indoor ? 'Indoor' : 'Outdoor'}</span>
@@ -77,7 +78,7 @@ export function GameDetailPage() {
           <strong>{formatMoney(g.perPlayerCost)} / player</strong>
         </div>
         {g.notes && (
-          <div className="row" style={{ marginTop: 8 }}>
+          <div className="detailRow" style={{ marginTop: 8 }}>
             <span style={{ color: 'var(--text)' }}>
               <Icon name="note-01" className="icon-inline" />
               {g.notes}
@@ -86,14 +87,14 @@ export function GameDetailPage() {
         )}
       </div>
 
-      <div className="map-placeholder">
+      <div className="detailMap">
         <Icon name="map-pin" size={28} className="icon-inline" />
         <span>{g.venue.lat.toFixed(4)}, {g.venue.lng.toFixed(4)}</span>
       </div>
 
-      <div className="card">
+      <div className="detailCard">
         <h3>Players</h3>
-        <div className="row">
+        <div className="detailRow">
           <span>
             <Icon name="user-account" className="icon-inline" />
             {g.host.firstName} (host)
@@ -102,7 +103,7 @@ export function GameDetailPage() {
         {g.participants
           .filter((p) => p.userId !== g.host.id)
           .map((p) => (
-            <div className="row" key={p.id}>
+            <div className="detailRow" key={p.id}>
               <span>
                 <Icon name="user-account" className="icon-inline" />
                 {p.user.firstName}{p.user.lastName ? ` ${p.user.lastName}` : ''}
