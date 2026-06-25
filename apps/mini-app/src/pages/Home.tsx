@@ -10,7 +10,12 @@ import "./Home.css";
 export function HomePage() {
   const api = useApi();
   const { user, webApp, photoUrl } = useTelegram();
-  const meQ = useQuery(["me"], () => api.me());
+  // Always refetch on mount so the onboarding banner disappears immediately
+  // after the user picks a level on the Welcome page.
+  const meQ = useQuery(["me"], () => api.me(), {
+    refetchOnMount: "always",
+    staleTime: 0,
+  });
   const cityQ = useQuery(["default-city"], () => api.defaultCity());
   const gamesQ = useQuery(
     ["games", cityQ.data?.city, "HOME"],

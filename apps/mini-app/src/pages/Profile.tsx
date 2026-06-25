@@ -9,9 +9,23 @@ import {
   SKILL_LEVEL_LABELS,
   SKILL_LEVEL_DESCRIPTIONS,
 } from "../api";
+import { useTelegram } from "../tg";
 import { Icon, IconName } from "../Icon";
 import { Photo } from "../Photo";
 import "./Profile.css";
+
+/**
+ * When a field gets focus on iOS/Android the on-screen keyboard covers the
+ * bottom half of the screen. The browser auto-scrolls the focused input into
+ * view, but our `padding-bottom` for the bottom-nav eats into that space.
+ * We nudge the scroll position to leave room for the nav so the input
+ * stays comfortably above it.
+ */
+function scrollIntoViewSafe(el: HTMLElement) {
+  setTimeout(() => {
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, 280);
+}
 
 const REMINDER_PRESETS: {
   label: string;
@@ -27,17 +41,24 @@ const REMINDER_PRESETS: {
 
 const SKILL_ICONS: Record<SkillLevel, IconName> = {
   LEVEL_1: "tennis-ball",
-  LEVEL_2: "user-account",
-  LEVEL_3: "user-group",
+  LEVEL_2: "play",
+  LEVEL_3: "medal-01",
   LEVEL_4: "award-01",
-  LEVEL_5: "crown",
-  LEVEL_6: "fire",
+  LEVEL_5: "star",
+  LEVEL_6: "crown",
 };
 
 export function ProfilePage() {
   const api = useApi();
   const qc = useQueryClient();
-  const meQ = useQuery<ApiUser | null>(["me"], () => api.me());
+  // Always refetch on mount so the avatar / level are fresh after edits.
+  const meQ = useQuery<ApiUser | null>(["me"], () => api.me(), {
+    refetchOnMount: "always",
+    staleTime: 0,
+  });
+  // Fall back to the Telegram WebApp photo if the server hasn't sent one
+  // yet (e.g. very first render, or Telegram client didn't expose it).
+  const { photoUrl: tgPhotoUrl } = useTelegram();
 
   const [age, setAge] = useState<number | "">("");
   const [skill, setSkill] = useState<SkillLevel | "">("");
@@ -97,7 +118,11 @@ export function ProfilePage() {
     <div className="profilePage">
       {/* === Hero: real photo + name === */}
       <header className="profileHero">
-        <Photo src={meQ.data.photoUrl} name={fullName} size={84} />
+        <Photo
+          src={meQ.data.photoUrl ?? tgPhotoUrl}
+          name={fullName}
+          size={84}
+        />
         <div className="profileHero-info">
           <h1 className="profileHero-name">
             {meQ.data.firstName} {meQ.data.lastName ?? ""}
@@ -138,6 +163,7 @@ export function ProfilePage() {
               max={120}
               value={age}
               onChange={(e) => setAge(e.target.value === "" ? "" : Number(e.target.value))}
+              onFocus={(e) => scrollIntoViewSafe(e.currentTarget)}
               placeholder="Optional"
             />
           </div>
@@ -151,6 +177,7 @@ export function ProfilePage() {
               id="city"
               value={city}
               onChange={(e) => setCity(e.target.value)}
+              onFocus={(e) => scrollIntoViewSafe(e.currentTarget)}
               placeholder="e.g. Kyiv"
             />
           </div>

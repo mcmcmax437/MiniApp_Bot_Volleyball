@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt.guard';
+import { AvatarModule } from '../avatar/avatar.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { JwtAuthGuard } from './jwt.guard';
         signOptions: { expiresIn: cfg.get<string>('JWT_EXPIRES_IN') ?? '30d' },
       }),
     }),
+    AvatarModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtAuthGuard],

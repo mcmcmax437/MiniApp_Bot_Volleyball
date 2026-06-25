@@ -15,11 +15,11 @@ type SkillFilter = "ALL" | SkillLevel;
 const SKILL_ICONS: Record<SkillFilter, IconName> = {
   ALL: "tennis-ball",
   LEVEL_1: "tennis-ball",
-  LEVEL_2: "user-account",
-  LEVEL_3: "user-group",
+  LEVEL_2: "play",
+  LEVEL_3: "medal-01",
   LEVEL_4: "award-01",
-  LEVEL_5: "crown",
-  LEVEL_6: "fire",
+  LEVEL_5: "star",
+  LEVEL_6: "crown",
 };
 
 const FILTER_OPTIONS: SkillFilter[] = ["ALL", ...SKILL_LEVELS];

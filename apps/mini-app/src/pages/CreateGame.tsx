@@ -12,11 +12,11 @@ import './CreateGame.css';
 
 const SKILL_ICONS: Record<SkillLevel, IconName> = {
   LEVEL_1: "tennis-ball",
-  LEVEL_2: "user-account",
-  LEVEL_3: "user-group",
+  LEVEL_2: "play",
+  LEVEL_3: "medal-01",
   LEVEL_4: "award-01",
-  LEVEL_5: "crown",
-  LEVEL_6: "fire",
+  LEVEL_5: "star",
+  LEVEL_6: "crown",
 };
 
 function toIsoLocal(value: string): string {

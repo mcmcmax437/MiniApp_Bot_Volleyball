@@ -163,8 +163,24 @@ button { font-family: inherit; }
   max-width: 480px;
   margin: 0 auto;
   padding: 16px;
+  /* Telegram renders a chrome bar (close / back / ⋮ menu) at the top of
+     the WebApp. Reserve room for it so the app's hero never sits under the
+     native controls. */
+  padding-top: calc(48px + env(safe-area-inset-top));
   padding-bottom: calc(100px + env(safe-area-inset-bottom));
   animation: page-fade-in var(--dur-base) var(--ease-out);
+}
+
+/* When the on-screen keyboard opens, Telegram fires a `viewportChanged`
+   event with `isStateStable=true`. We tag the body with `keyboard-open`
+   (see tg.tsx) so the bottom nav can drop out of the way and the focused
+   input isn't obscured. */
+body.keyboard-open .bottom-nav {
+  display: none;
+}
+
+body.keyboard-open .app-container {
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
 }
 
 .app-header {

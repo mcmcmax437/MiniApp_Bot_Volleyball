@@ -12,11 +12,11 @@ type Step = (typeof STEPS)[number];
 
 const SKILL_ICONS: Record<SkillLevel, IconName> = {
   LEVEL_1: "tennis-ball",
-  LEVEL_2: "user-account",
-  LEVEL_3: "user-group",
+  LEVEL_2: "play",
+  LEVEL_3: "medal-01",
   LEVEL_4: "award-01",
-  LEVEL_5: "crown",
-  LEVEL_6: "fire",
+  LEVEL_5: "star",
+  LEVEL_6: "crown",
 };
 
 /**
@@ -35,7 +35,13 @@ export function WelcomePage() {
   const save = useMutation(
     () => api.updateMe({ skillLevel: selected! }),
     {
-      onSuccess: () => {
+      onSuccess: (updatedUser) => {
+        // Patch the cached "me" entry immediately so the home page never
+        // re-shows the onboarding banner with stale data, then refetch in
+        // the background to make sure we have the latest server state.
+        if (updatedUser) {
+          qc.setQueryData(["me"], updatedUser);
+        }
         qc.invalidateQueries(["me"]);
         setStep("done");
         webApp?.HapticFeedback?.notificationOccurred?.("success");

@@ -2,6 +2,7 @@ import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
+import { AvatarService } from '../avatar/avatar.service';
 import { verifyTelegramInitData } from './telegram-auth.util';
 
 export interface JwtPayload {
@@ -17,6 +18,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    private readonly avatars: AvatarService,
   ) {}
 
   async loginWithTelegram(initData: string) {
@@ -46,6 +48,11 @@ export class AuthService {
     const isSuperadmin =
       !!superadminId && String(tgUser.id) === String(superadminId).trim();
 
+    // Download the Telegram avatar to our own cache so the URL stored in the
+    // DB is stable. We first upsert to learn the user's id, then download to
+    // a path keyed on that id and patch `photoUrl` to point at our endpoint.
+    const tgPhotoUrl = tgUser.photo_url ?? null;
+
     const user = await this.prisma.user.upsert({
       where: { telegramId: BigInt(tgUser.id) },
       update: {
@@ -54,7 +61,7 @@ export class AuthService {
         username: tgUser.username ?? null,
         // Refresh Telegram photo on every login — the URL is signed and may
         // expire, so re-fetching keeps avatars fresh without a separate job.
-        photoUrl: tgUser.photo_url ?? null,
+        photoUrl: tgPhotoUrl,
         ...(isSuperadmin ? { role: 'ADMIN' as const } : {}),
       },
       create: {
@@ -62,7 +69,7 @@ export class AuthService {
         firstName: tgUser.first_name,
         lastName: tgUser.last_name ?? null,
         username: tgUser.username ?? null,
-        photoUrl: tgUser.photo_url ?? null,
+        photoUrl: tgPhotoUrl,
         city: defaultCity,
         lat: defaultLat || null,
         lng: defaultLng || null,
@@ -75,12 +82,28 @@ export class AuthService {
       this.logger.warn(`Superadmin elevation failed for telegramId=${tgUser.id}`);
     }
 
-    const token = await this.jwt.signAsync({
+    // Now that we know the user's id, download to the right filename and
+    // patch `photoUrl` to point at our own static endpoint. This keeps the
+    // photo persistent across logins and immune to Telegram's URL expiry.
+    if (tgPhotoUrl) {
+      const localUrl = await this.avatars.refresh(user.id, tgPhotoUrl);
+      if (localUrl) {
+        const updated = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { photoUrl: localUrl },
+        });
+        return { user: updated, token: await this.signToken(updated) };
+      }
+    }
+
+    return { user, token: await this.signToken(user) };
+  }
+
+  private async signToken(user: { id: string; telegramId: bigint }) {
+    return this.jwt.signAsync({
       sub: user.id,
       tid: user.telegramId.toString(),
     } as JwtPayload);
-
-    return { user, token };
   }
 
   async verifyToken(token: string): Promise<JwtPayload> {

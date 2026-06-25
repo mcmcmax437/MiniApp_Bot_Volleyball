@@ -34,6 +34,11 @@ interface TelegramWebApp {
   ready: () => void;
   expand: () => void;
   close: () => void;
+  viewportHeight?: number;
+  viewportStableHeight?: number;
+  isExpanded?: boolean;
+  onEvent?: (event: string, handler: () => void) => void;
+  offEvent?: (event: string, handler: () => void) => void;
   HapticFeedback?: {
     impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
     notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
@@ -68,6 +73,27 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
       setWebApp(tg);
       tg.ready();
       tg.expand();
+
+      // Detect the on-screen keyboard so we can hide the bottom nav while
+      // the user is typing and stop the form from being obscured.
+      // Telegram shrinks `viewportStableHeight` when the keyboard is up.
+      const KEYBOARD_THRESHOLD = 300; // px — empirically enough on iOS/Android
+      const updateKeyboard = () => {
+        const stable = tg.viewportStableHeight ?? tg.viewportHeight ?? 0;
+        const full = tg.viewportHeight ?? 0;
+        const keyboardOpen =
+          stable > 0 && full > 0 && full - stable > KEYBOARD_THRESHOLD;
+        document.body.classList.toggle('keyboard-open', keyboardOpen);
+      };
+      tg.onEvent?.('viewportChanged', updateKeyboard);
+      tg.onEvent?.('contentSafeAreaChanged', updateKeyboard);
+      updateKeyboard();
+
+      return () => {
+        tg.offEvent?.('viewportChanged', updateKeyboard);
+        tg.offEvent?.('contentSafeAreaChanged', updateKeyboard);
+        document.body.classList.remove('keyboard-open');
+      };
     }
     setReady(true);
   }, []);
