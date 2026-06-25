@@ -207,13 +207,22 @@ async function http<T>(path: string, init: RequestInit, initData: string): Promi
   if (!res.ok) {
     let msg = `${res.status} ${res.statusText}`;
     try {
-      const j = await res.json();
-      if (j?.message) msg = Array.isArray(j.message) ? j.message.join(', ') : String(j.message);
+      // Some upstreams (nginx 502/503, empty proxy responses) return an empty
+      // body — that's why we need to guard the JSON parse.
+      const text = await res.text();
+      if (text) {
+        const j = JSON.parse(text);
+        if (j?.message) msg = Array.isArray(j.message) ? j.message.join(', ') : String(j.message);
+      }
     } catch {}
     throw new Error(msg);
   }
   if (res.status === 204) return undefined as T;
-  return (await res.json()) as T;
+
+  // Same guard on the happy path — empty bodies should not throw a JSON error.
+  const text = await res.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text) as T;
 }
 
 export function useApi() {
