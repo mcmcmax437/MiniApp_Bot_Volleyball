@@ -43,6 +43,12 @@ export function WelcomePage() {
           qc.setQueryData(["me"], updatedUser);
         }
         qc.invalidateQueries(["me"]);
+        // Persist a local "onboarded" flag so the welcome page never pops up
+        // again for this device, even if the server temporarily returns
+        // skillLevel=null.
+        try {
+          localStorage.setItem("volley:onboarded:v1", "1");
+        } catch {}
         setStep("done");
         webApp?.HapticFeedback?.notificationOccurred?.("success");
         // Brief celebration then auto-dismiss to home
@@ -198,7 +204,7 @@ export function WelcomePage() {
       {step === "done" && (
         <div className="welcome-step welcome-fadeIn welcome-done">
           <div className="welcome-doneCheck">
-            <Icon name="check-unread-01" size={48} />
+            <Icon name="check" size={56} />
           </div>
           <h1 className="welcome-title">You're all set!</h1>
           <p className="welcome-sub">

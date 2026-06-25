@@ -478,6 +478,11 @@ body.keyboard-open .app-container {
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
   z-index: 50;
   gap: 4px;
+  /* The OS sometimes tries to scroll the page (and the fixed nav with it)
+     when the keyboard opens. Pin the nav to the visual viewport via the
+     visualViewport API fallback handled in JS — the CSS rule below makes
+     sure that, when keyboard-open is on, the nav is removed entirely. */
+  transition: opacity 120ms var(--ease-out);
 }
 
 .bottom-nav a {

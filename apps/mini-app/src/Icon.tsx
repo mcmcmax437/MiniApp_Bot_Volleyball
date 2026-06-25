@@ -28,6 +28,8 @@ export type IconName =
   | "medal-01"
   | "star"
   | "check-unread-01"
+  | "check"
+  | "check-circle"
   | "arrow-right-01"
   | "logout-01"
   | "settings-01"

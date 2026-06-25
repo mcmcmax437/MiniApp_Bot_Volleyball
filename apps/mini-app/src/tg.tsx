@@ -64,6 +64,16 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp ?? null;
+
+    // ---- Keyboard detection -----------------------------------------------
+    // Telegram's viewport events are unreliable across clients and OS versions,
+    // so we use *two* signals: the Telegram event (preferred) and a focus-based
+    // fallback that watches the document for focused form fields. The CSS
+    // `body.keyboard-open .bottom-nav { display: none }` rule hides the nav.
+    const setKeyboardOpen = (open: boolean) => {
+      document.body.classList.toggle('keyboard-open', open);
+    };
+
     if (tg) {
       setInitData(tg.initData ?? '');
       const u = tg.initDataUnsafe?.user ?? null;
@@ -74,30 +84,66 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
       tg.ready();
       tg.expand();
 
-      // Detect the on-screen keyboard so we can hide the bottom nav while
-      // the user is typing and stop the form from being obscured.
-      // Telegram shrinks `viewportStableHeight` when the keyboard is up.
-      const KEYBOARD_THRESHOLD = 300; // px — empirically enough on iOS/Android
+      const KEYBOARD_THRESHOLD = 200;
       const updateKeyboard = () => {
         const stable = tg.viewportStableHeight ?? tg.viewportHeight ?? 0;
         const full = tg.viewportHeight ?? 0;
         const keyboardOpen =
           stable > 0 && full > 0 && full - stable > KEYBOARD_THRESHOLD;
-        document.body.classList.toggle('keyboard-open', keyboardOpen);
+        setKeyboardOpen(keyboardOpen);
       };
       tg.onEvent?.('viewportChanged', updateKeyboard);
       tg.onEvent?.('contentSafeAreaChanged', updateKeyboard);
       updateKeyboard();
-
-      setReady(true);
-
-      return () => {
-        tg.offEvent?.('viewportChanged', updateKeyboard);
-        tg.offEvent?.('contentSafeAreaChanged', updateKeyboard);
-        document.body.classList.remove('keyboard-open');
-      };
     }
+
+    // Fallback: any focused <input>/<textarea>/[contenteditable] is treated as
+    // "keyboard open". We add a small grace period on blur so taps on a
+    // submit button right after typing don't flash the nav back in.
+    let blurTimer: number | undefined;
+    const onFocusIn = (e: FocusEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (!t) return;
+      const tag = t.tagName;
+      if (
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT' ||
+        t.isContentEditable
+      ) {
+        if (blurTimer) {
+          window.clearTimeout(blurTimer);
+          blurTimer = undefined;
+        }
+        setKeyboardOpen(true);
+      }
+    };
+    const onFocusOut = () => {
+      if (blurTimer) window.clearTimeout(blurTimer);
+      blurTimer = window.setTimeout(() => {
+        const active = document.activeElement as HTMLElement | null;
+        const stillTyping =
+          active &&
+          (active.tagName === 'INPUT' ||
+            active.tagName === 'TEXTAREA' ||
+            active.tagName === 'SELECT' ||
+            active.isContentEditable);
+        if (!stillTyping) setKeyboardOpen(false);
+      }, 120);
+    };
+    document.addEventListener('focusin', onFocusIn);
+    document.addEventListener('focusout', onFocusOut);
+
     setReady(true);
+
+    return () => {
+      tg?.offEvent?.('viewportChanged', () => undefined);
+      tg?.offEvent?.('contentSafeAreaChanged', () => undefined);
+      document.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('focusout', onFocusOut);
+      if (blurTimer) window.clearTimeout(blurTimer);
+      setKeyboardOpen(false);
+    };
   }, []);
 
   return (

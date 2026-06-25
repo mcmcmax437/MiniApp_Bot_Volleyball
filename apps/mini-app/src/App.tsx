@@ -32,6 +32,25 @@ function LoadingScreen() {
   );
 }
 
+const ONBOARDED_KEY = 'volley:onboarded:v1';
+
+/** True if this device has finished the welcome flow at least once. */
+function hasOnboardedLocally(): boolean {
+  try {
+    return localStorage.getItem(ONBOARDED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function markOnboardedLocally() {
+  try {
+    localStorage.setItem(ONBOARDED_KEY, '1');
+  } catch {
+    /* ignore — private mode etc. */
+  }
+}
+
 export function App() {
   const { initData, user, ready } = useTelegram();
   const api = useApi();
@@ -41,6 +60,10 @@ export function App() {
   const meQ = useQuery(['me'], () => api.me(), {
     enabled: ready,
     retry: false,
+    // Always revalidate when this component (re)mounts, so we get the latest
+    // server state instead of relying on a potentially-stale cache.
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 
   const loginMut = useMutation(() => api.login(initData), {
@@ -54,15 +77,26 @@ export function App() {
     }
   }, [ready, initData, meQ.isFetched, meQ.data, loginMut.isLoading]);
 
-  // Onboarding: only redirect to /welcome if the user is signed in, has no
-  // skill level, AND is on the homepage. Don't auto-redirect from /profile,
-  // /games, etc. — let the user browse freely and just gently nudge them.
+  // Onboarding: redirect to /welcome only when we're sure the user has no
+  // skill level AND this device hasn't already completed onboarding. The
+  // localStorage guard prevents the welcome page from re-appearing for
+  // returning users (e.g. after a transient API hiccup that returns null).
   useEffect(() => {
     if (!meQ.data) return;
-    if (meQ.data.skillLevel == null && window.location.pathname === '/') {
+    if (window.location.pathname !== '/') return;
+    if (hasOnboardedLocally()) return;
+    if (meQ.data.skillLevel == null) {
       navigate('/welcome', { replace: true });
+    } else {
+      markOnboardedLocally();
     }
   }, [meQ.data]);
+
+  // Expose the marker on window so Welcome.tsx can flip it without importing
+  // a side-effecty module just for that.
+  useEffect(() => {
+    (window as any).__markVolleyOnboarded = markOnboardedLocally;
+  }, []);
 
   if (!ready) return <LoadingScreen />;
 
