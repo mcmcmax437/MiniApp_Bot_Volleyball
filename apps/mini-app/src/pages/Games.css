@@ -3,24 +3,51 @@
   flex-direction: column;
 }
 
-.filterBar {
+.skillPills {
   display: flex;
-  flex-direction: column;
   gap: 6px;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
+  overflow-x: auto;
+  padding: 4px 0 8px;
+  scrollbar-width: none;
 }
 
-.filterBar label {
-  color: var(--text-dim);
-  font-size: 12px;
+.skillPills::-webkit-scrollbar {
+  display: none;
 }
 
-.filterBar select {
+.pill {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
   background: var(--surface);
-  color: var(--text);
-  border: 1px solid #1f2937;
-  border-radius: 10px;
-  padding: 10px;
-  font-size: 15px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
   font-family: inherit;
+  cursor: pointer;
+  transition: all var(--dur-base) var(--ease-out);
+  min-height: 36px;
+}
+
+.pill:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.pill:active {
+  transform: scale(0.96);
+}
+
+.pill-active {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+.pill-active:hover {
+  background: var(--accent-hover);
+  color: var(--accent-text);
 }

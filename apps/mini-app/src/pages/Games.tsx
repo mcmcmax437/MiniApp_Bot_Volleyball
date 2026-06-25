@@ -27,19 +27,18 @@ export function GamesPage() {
 
   return (
     <div className="gamesPage">
-      <div className="filterBar">
-        <label htmlFor="skill">Skill level</label>
-        <select
-          id="skill"
-          value={skill}
-          onChange={(e) => setSkill(e.target.value as SkillFilter)}
-        >
-          {SKILL_OPTIONS.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
+      <div className="skillPills" role="tablist" aria-label="Skill level">
+        {SKILL_OPTIONS.map((s) => (
+          <button
+            key={s}
+            role="tab"
+            aria-selected={skill === s}
+            className={`pill ${skill === s ? "pill-active" : ""}`}
+            onClick={() => setSkill(s)}
+          >
+            {s.charAt(0) + s.slice(1).toLowerCase()}
+          </button>
+        ))}
       </div>
 
       {gamesQ.isLoading && <div className="empty">Loading games…</div>}

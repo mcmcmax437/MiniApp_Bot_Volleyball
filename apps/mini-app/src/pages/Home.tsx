@@ -13,7 +13,7 @@ import "./Home.css";
  */
 export function HomePage() {
   const api = useApi();
-  const { user } = useTelegram();
+  const { user, webApp } = useTelegram();
   const meQ = useQuery(["me"], () => api.me());
   const cityQ = useQuery(["default-city"], () => api.defaultCity());
   const gamesQ = useQuery(
@@ -26,21 +26,34 @@ export function HomePage() {
   const firstName = meQ.data?.firstName ?? user?.first_name ?? "friend";
   const nextGames = (gamesQ.data ?? []).slice(0, 3);
 
+  const handleCreate = () => {
+    // Haptic feedback on the primary action (TG-only; no-op outside)
+    webApp?.HapticFeedback?.impactOccurred?.("medium");
+    navigate("/create");
+  };
+
   return (
     <div className="home">
       <header className="homeHeader">
-        <div>
+        <div className="homeHeader-text">
           <h1>
-            Hi, {firstName}! <span className="wave">👋</span>
+            Hi, {firstName}! <span className="wave" aria-hidden="true">👋</span>
           </h1>
-          <p className="welcomeSub">Ready to organize a game?</p>
+          <p className="welcomeSub">
+            {nextGames.length > 0
+              ? `${nextGames.length} game${nextGames.length === 1 ? "" : "s"} waiting for you.`
+              : "Ready to organize a game?"}
+          </p>
         </div>
-        <img className="robot" src="/robot.png" alt="" />
+        <div className="robotWrap" aria-hidden="true">
+          <div className="robotGlow" />
+          <img className="robot" src="/robot.png" alt="" />
+        </div>
       </header>
 
-      <button className="createButton" onClick={() => navigate("/create")}>
-        <Icon name="plus-sign" size={20} className="icon-inline" />
-        Create Game
+      <button className="createButton" onClick={handleCreate}>
+        <Icon name="plus-sign" size={20} />
+        <span>Create Game</span>
       </button>
 
       <section className="gamesSection">

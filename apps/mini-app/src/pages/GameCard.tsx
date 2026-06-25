@@ -4,21 +4,20 @@ import type { ApiGame } from "../api";
 import "./GameCard.css";
 
 /**
- * Status → badge colour. Mirrors the reference design's per-card accent.
- * Falls back to neutral if status is unknown.
+ * Status → badge class. Mirrors the reference design's per-card accent.
  */
-function badgeColor(status: ApiGame["status"]): string {
+function badgeClass(status: ApiGame["status"]): string {
   switch (status) {
     case "OPEN":
-      return "#4ade80"; // green
+      return "badge badge-status-OPEN";
     case "FULL":
-      return "#f59e0b"; // amber
+      return "badge badge-status-FULL";
     case "CANCELLED":
-      return "#f87171"; // red
+      return "badge badge-status-CANCELLED";
     case "FINISHED":
-      return "#94a3b8"; // dim
+      return "badge badge-status-FINISHED";
     default:
-      return "#38bdf8"; // blue
+      return "badge";
   }
 }
 
@@ -35,7 +34,7 @@ function formatGameTime(iso: string): string {
 
 function formatMoney(minor: number): string {
   // assume minor units; 100 = 1.00
-  return `${(minor / 100).toFixed(2)}`;
+  return (minor / 100).toFixed(2);
 }
 
 interface GameCardProps {
@@ -56,16 +55,16 @@ export function GameCard({ game }: GameCardProps) {
         <div className="cardTop">
           <div>
             <div className="date">
-              <Icon name="calendar-01" className="icon-inline" />
+              <Icon name="calendar-01" size={14} />
               <span>{formatGameTime(game.startAt)}</span>
             </div>
             <h3 className="title">{game.venue.name}</h3>
             <div className="location">
-              <Icon name="map-pin" className="icon-inline" />
+              <Icon name="map-pin" size={14} />
               <span>{game.venue.address}</span>
             </div>
           </div>
-          <div className="badge" style={{ background: badgeColor(game.status) }}>
+          <div className={badgeClass(game.status)}>
             {game.participantsCount}/{game.spotsTotal}
           </div>
         </div>
@@ -73,7 +72,7 @@ export function GameCard({ game }: GameCardProps) {
         <div className="avatars">
           {Array.from({ length: shownPlayers }).map((_, i) => (
             <div key={i} className="avatar" aria-hidden="true">
-              <Icon name="user-account" size={16} />
+              {i + 1}
             </div>
           ))}
           {extraPlayers > 0 && <span className="more">+{extraPlayers}</span>}
@@ -81,7 +80,7 @@ export function GameCard({ game }: GameCardProps) {
 
         <div className="meta">
           <span className="tag accent">{game.skillLevel}</span>
-          <span className="tag">{game.venue.indoor ? "Indoor" : "Outdoor"}</span>
+          <span className="tag info">{game.venue.indoor ? "Indoor" : "Outdoor"}</span>
           <span className="price">{formatMoney(game.perPlayerCost)} / player</span>
         </div>
       </article>

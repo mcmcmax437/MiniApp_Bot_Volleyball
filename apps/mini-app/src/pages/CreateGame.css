@@ -1,13 +1,31 @@
 .createPage {
   background: var(--surface);
-  border-radius: var(--radius);
-  padding: 14px;
-  border: 1px solid #1f2937;
+  border-radius: var(--radius-md);
+  padding: 18px;
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.createPage::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.12) 50%,
+    transparent 100%
+  );
 }
 
 .createPage h3 {
-  margin: 0 0 12px 0;
-  font-size: 16px;
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .skill-radio {
@@ -20,10 +38,20 @@
   flex: 1;
   text-align: center;
   background: var(--surface-2);
-  padding: 8px;
-  border-radius: 10px;
+  padding: 10px 8px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
   cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--dur-fast) var(--ease-out);
+  min-width: 70px;
+}
+
+.skill-radio label:hover {
+  background: var(--surface-3);
+  color: var(--text);
 }
 
 .skill-radio input {
@@ -31,6 +59,12 @@
 }
 
 .skill-radio input:checked + span {
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 700;
+}
+
+.skill-radio label:has(input:checked) {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px var(--accent-glow);
 }

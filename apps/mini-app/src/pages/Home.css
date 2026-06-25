@@ -3,60 +3,105 @@
   flex-direction: column;
 }
 
+/* ---------- Hero greeting ---------- */
 .homeHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   gap: 12px;
+  position: relative;
+}
+
+.homeHeader-text {
+  flex: 1;
+  min-width: 0;
 }
 
 .homeHeader h1 {
-  font-size: 30px;
+  font-size: 28px;
+  line-height: 1.15;
   margin: 0 0 6px;
-  color: var(--text);
   font-weight: 700;
 }
 
 .homeHeader .welcomeSub {
   color: var(--text-dim);
-  font-size: 15px;
+  font-size: 14px;
   margin: 0;
+  font-weight: 500;
 }
 
 .homeHeader .wave {
   display: inline-block;
   transform-origin: 70% 70%;
+  animation: wave 2.4s var(--ease-out) infinite;
+  font-size: 28px;
+}
+
+/* ---------- Robot mascot ---------- */
+.robotWrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 96px;
+  height: 96px;
+}
+
+.robotGlow {
+  position: absolute;
+  inset: -8px;
+  background: var(--sport-gradient);
+  filter: blur(20px);
+  opacity: 0.35;
+  border-radius: 50%;
+  z-index: 0;
+  animation: blob-drift 6s ease-in-out infinite;
 }
 
 .robot {
+  position: relative;
+  z-index: 1;
   width: 96px;
   height: 96px;
   object-fit: contain;
-  flex-shrink: 0;
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.35));
 }
 
+/* ---------- Primary CTA ---------- */
 .createButton {
   background: var(--accent);
-  color: #062023;
+  color: var(--accent-text);
   border: none;
-  height: 54px;
-  border-radius: 16px;
-  font-size: 17px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  font-size: 16px;
   font-weight: 700;
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin-bottom: 28px;
+  gap: 10px;
+  margin-bottom: 32px;
   width: 100%;
+  box-shadow: 0 4px 16px var(--accent-glow);
+  animation: pulse-glow 2.4s ease-in-out infinite;
+  transition: transform var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
 }
 
 .createButton:hover {
-  filter: brightness(1.05);
+  background: var(--accent-hover);
+  transform: translateY(-1px);
 }
 
+.createButton:active {
+  background: var(--accent-active);
+  transform: scale(0.97);
+}
+
+/* ---------- Section title ---------- */
 .gamesSection {
   display: flex;
   flex-direction: column;
@@ -65,14 +110,14 @@
 .sectionTitle {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
+  align-items: baseline;
+  margin-bottom: 14px;
 }
 
 .sectionTitle h2 {
-  font-size: 18px;
-  margin: 0;
-  color: var(--text);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
 }
 
 .sectionTitle .viewAll {
@@ -80,7 +125,17 @@
   border: none;
   color: var(--accent);
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  padding: 0;
+  padding: 4px 0;
+  transition: color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.sectionTitle .viewAll:hover {
+  color: var(--accent-hover);
+}
+
+.sectionTitle .viewAll:active {
+  transform: scale(0.96);
 }
