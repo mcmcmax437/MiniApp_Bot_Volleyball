@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
 import { useApi, ApiGame } from '../api';
+import { Icon } from '../Icon';
 
 const SKILL_OPTIONS = ['ALL', 'BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PRO'] as const;
 type SkillFilter = (typeof SKILL_OPTIONS)[number];
@@ -39,7 +40,8 @@ export function FeedPage() {
   return (
     <>
       <div className="map-placeholder">
-        <span>🗺️ Map of upcoming games</span>
+        <Icon name="maps" size={28} className="icon-inline" />
+        <span>Map of upcoming games</span>
       </div>
 
       <div className="field">
@@ -64,8 +66,12 @@ export function FeedPage() {
           <div className="card">
             <h3>{g.venue.name}</h3>
             <div className="row">
-              <span>📅 {formatGameTime(g.startAt)}</span>
               <span>
+                <Icon name="calendar-01" className="icon-inline" />
+                {formatGameTime(g.startAt)}
+              </span>
+              <span>
+                <Icon name="user-group" className="icon-inline" />
                 {g.participantsCount}/{g.spotsTotal} players
               </span>
             </div>
@@ -77,7 +83,10 @@ export function FeedPage() {
               <strong>{formatMoney(g.perPlayerCost)} / player</strong>
             </div>
             <div className="row">
-              <span>👤 {g.host.firstName}</span>
+              <span>
+                <Icon name="user-account" className="icon-inline" />
+                {g.host.firstName}
+              </span>
             </div>
           </div>
         </Link>

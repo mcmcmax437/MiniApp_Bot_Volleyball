@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '../api';
+import { Icon } from '../Icon';
 
 function formatGameTime(iso: string): string {
   const d = new Date(iso);
@@ -51,13 +52,20 @@ export function GameDetailPage() {
       <div className="card">
         <h3>{g.venue.name}</h3>
         <div className="row">
-          <span>📅 {formatGameTime(g.startAt)}</span>
           <span>
+            <Icon name="calendar-01" className="icon-inline" />
+            {formatGameTime(g.startAt)}
+          </span>
+          <span>
+            <Icon name="user-group" className="icon-inline" />
             {g.participantsCount}/{g.spotsTotal} players
           </span>
         </div>
         <div className="row">
-          <span>📍 {g.venue.address}</span>
+          <span>
+            <Icon name="map-pin" className="icon-inline" />
+            {g.venue.address}
+          </span>
         </div>
         <div className="row">
           <span>
@@ -70,23 +78,35 @@ export function GameDetailPage() {
         </div>
         {g.notes && (
           <div className="row" style={{ marginTop: 8 }}>
-            <span style={{ color: 'var(--text)' }}>📝 {g.notes}</span>
+            <span style={{ color: 'var(--text)' }}>
+              <Icon name="note-01" className="icon-inline" />
+              {g.notes}
+            </span>
           </div>
         )}
       </div>
 
-      <div className="map-placeholder">📍 {g.venue.lat.toFixed(4)}, {g.venue.lng.toFixed(4)}</div>
+      <div className="map-placeholder">
+        <Icon name="map-pin" size={28} className="icon-inline" />
+        <span>{g.venue.lat.toFixed(4)}, {g.venue.lng.toFixed(4)}</span>
+      </div>
 
       <div className="card">
         <h3>Players</h3>
         <div className="row">
-          <span>👤 {g.host.firstName} (host)</span>
+          <span>
+            <Icon name="user-account" className="icon-inline" />
+            {g.host.firstName} (host)
+          </span>
         </div>
         {g.participants
           .filter((p) => p.userId !== g.host.id)
           .map((p) => (
             <div className="row" key={p.id}>
-              <span>👤 {p.user.firstName}{p.user.lastName ? ` ${p.user.lastName}` : ''}</span>
+              <span>
+                <Icon name="user-account" className="icon-inline" />
+                {p.user.firstName}{p.user.lastName ? ` ${p.user.lastName}` : ''}
+              </span>
             </div>
           ))}
         {g.participants.length === 1 && (

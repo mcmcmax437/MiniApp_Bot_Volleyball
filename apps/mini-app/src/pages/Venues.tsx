@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useApi } from '../api';
+import { Icon } from '../Icon';
 
 export function VenuesPage() {
   const api = useApi();
@@ -14,14 +15,20 @@ export function VenuesPage() {
 
   return (
     <>
-      <div className="map-placeholder">🗺️ Map of venues in {cityQ.data?.city}</div>
+      <div className="map-placeholder">
+        <Icon name="maps" size={28} className="icon-inline" />
+        <span>Map of venues in {cityQ.data?.city}</span>
+      </div>
 
       {venuesQ.isLoading && <div className="empty">Loading venues…</div>}
       {venuesQ.data?.map((v) => (
         <div className="card" key={v.id}>
           <h3>{v.name}</h3>
           <div className="row">
-            <span>📍 {v.address}</span>
+            <span>
+              <Icon name="map-pin" className="icon-inline" />
+              {v.address}
+            </span>
           </div>
           <div className="row">
             <span>
@@ -31,7 +38,10 @@ export function VenuesPage() {
             <strong>{(v.hourlyPrice / 100).toFixed(2)} / hr</strong>
           </div>
           <div className="row">
-            <span>👥 Up to {v.capacity} players</span>
+            <span>
+              <Icon name="user-group" className="icon-inline" />
+              Up to {v.capacity} players
+            </span>
           </div>
         </div>
       ))}

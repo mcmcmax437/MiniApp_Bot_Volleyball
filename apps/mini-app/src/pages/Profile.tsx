@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useApi, ApiUser } from '../api';
+import { Icon } from '../Icon';
 
 const SKILLS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PRO'] as const;
 type Skill = (typeof SKILLS)[number];
@@ -83,7 +84,10 @@ export function ProfilePage() {
       </div>
 
       <div className="field">
-        <label>Reminders</label>
+        <label>
+          <Icon name="bell-dot" className="icon-inline" />
+          Reminders
+        </label>
         {REMINDER_PRESETS.map((p) => (
           <label key={p.label} style={{ display: 'block', padding: '6px 0' }}>
             <input

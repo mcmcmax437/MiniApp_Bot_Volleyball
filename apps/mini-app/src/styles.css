@@ -136,3 +136,13 @@ body {
 }
 .skill-radio input { display: none; }
 .skill-radio input:checked + span { color: var(--accent); font-weight: 700; }
+
+/* Inline icon used alongside text in rows (e.g. "📅 Fri 19:00" → "📅 Fri 19:00"). */
+.icon-inline { margin-right: 6px; vertical-align: -2px; }
+
+/* Bottom-nav icons stacked above the label. */
+.bottom-nav a { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.bottom-nav .icon-inline { margin-right: 0; }
+
+/* Larger centered icon for the map placeholder. */
+.map-placeholder .icon-inline { font-size: 28px; margin-right: 8px; }

@@ -3,6 +3,7 @@ import { NavLink, Route, Routes, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useTelegram } from './tg';
 import { useApi } from './api';
+import { Icon } from './Icon';
 import { FeedPage } from './pages/Feed';
 import { GameDetailPage } from './pages/GameDetail';
 import { CreateGamePage } from './pages/CreateGame';
@@ -100,16 +101,20 @@ export function App() {
 
       <nav className="bottom-nav">
         <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>
-          Games
+          <Icon name="tennis-ball" size={18} />
+          <span>Games</span>
         </NavLink>
         <NavLink to="/create" className={({ isActive }) => (isActive ? 'active' : '')}>
-          Create
+          <Icon name="plus-sign" size={18} />
+          <span>Create</span>
         </NavLink>
         <NavLink to="/venues" className={({ isActive }) => (isActive ? 'active' : '')}>
-          Venues
+          <Icon name="building-01" size={18} />
+          <span>Venues</span>
         </NavLink>
         <NavLink to="/profile" className={({ isActive }) => (isActive ? 'active' : '')}>
-          Profile
+          <Icon name="user-account" size={18} />
+          <span>Profile</span>
         </NavLink>
       </nav>
     </>
