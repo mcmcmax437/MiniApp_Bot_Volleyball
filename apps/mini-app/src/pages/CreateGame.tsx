@@ -2,13 +2,13 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../api';
+import { Icon, IconName } from '../Icon';
 import './CreateGame.css';
 
 const SKILLS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PRO'] as const;
 type Skill = (typeof SKILLS)[number];
 
 function toIsoLocal(value: string): string {
-  // value like "2025-09-12T19:00" -> ISO
   return new Date(value).toISOString();
 }
 
@@ -16,9 +16,17 @@ function defaultStartAt(): string {
   const d = new Date();
   d.setMinutes(0, 0, 0);
   d.setHours(d.getHours() + 24);
-  // local datetime-local format
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function skillIcon(s: Skill): IconName {
+  switch (s) {
+    case "BEGINNER": return "user-account";
+    case "INTERMEDIATE": return "user-group";
+    case "ADVANCED": return "award-01";
+    case "PRO": return "fire";
+  }
 }
 
 export function CreateGamePage() {
@@ -36,7 +44,7 @@ export function CreateGamePage() {
   const [durationHours, setDurationHours] = useState(2);
   const [skill, setSkill] = useState<Skill>('INTERMEDIATE');
   const [spotsTotal, setSpotsTotal] = useState(10);
-  const [totalCost, setTotalCost] = useState(0); // in minor units
+  const [totalCost, setTotalCost] = useState(0);
   const [notes, setNotes] = useState('');
 
   const selectedVenue = useMemo(
@@ -44,11 +52,10 @@ export function CreateGamePage() {
     [venuesQ.data, venueId],
   );
 
-  // Suggest totalCost when venue or duration changes (only if user hasn't edited).
   const [costTouched, setCostTouched] = useState(false);
-  const suggestedCost = selectedVenue
-    ? selectedVenue.hourlyPrice * durationHours
-    : 0;
+  const suggestedCost = selectedVenue ? selectedVenue.hourlyPrice * durationHours : 0;
+  const finalCost = costTouched ? totalCost : suggestedCost;
+  const perPlayer = spotsTotal > 0 ? (finalCost / spotsTotal / 100).toFixed(2) : '0.00';
 
   const endAtIso = useMemo(() => {
     const start = new Date(toIsoLocal(startAt));
@@ -64,7 +71,7 @@ export function CreateGamePage() {
         endAt: endAtIso,
         skillLevel: skill,
         spotsTotal,
-        totalCost: costTouched ? totalCost : suggestedCost,
+        totalCost: finalCost,
         notes: notes || undefined,
       }),
     {
@@ -75,115 +82,257 @@ export function CreateGamePage() {
     },
   );
 
-  if (venuesQ.isLoading) return <div className="empty">Loading venues…</div>;
+  if (venuesQ.isLoading) {
+    return (
+      <div className="createPage">
+        <div className="skeleton" style={{ width: '60%', height: 24, marginBottom: 24 }} />
+        <div className="skeleton" style={{ width: '100%', height: 48, marginBottom: 16, borderRadius: 12 }} />
+        <div className="skeleton" style={{ width: '100%', height: 48, marginBottom: 16, borderRadius: 12 }} />
+        <div className="skeleton" style={{ width: '100%', height: 120, borderRadius: 12 }} />
+      </div>
+    );
+  }
+
+  const canSubmit = !!venueId && !createMut.isLoading;
 
   return (
-    <>
-      <div className="createPage">
-        <h3>New game</h3>
+    <form
+      className="createForm"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (canSubmit) createMut.mutate();
+      }}
+    >
+      {/* === Header === */}
+      <header className="createHeader">
+        <div className="createHeader-icon">
+          <Icon name="plus-sign" size={20} />
+        </div>
+        <div>
+          <h1 className="createHeader-title">New game</h1>
+          <p className="createHeader-sub">Fill in the details and invite players</p>
+        </div>
+      </header>
 
+      {/* === Section: Where === */}
+      <section className="formSection">
+        <h2 className="formSection-title">
+          <span className="formSection-num">1</span>
+          Where
+        </h2>
         <div className="field">
-          <label>Venue</label>
-          <select value={venueId} onChange={(e) => setVenueId(e.target.value)}>
+          <label className="field-label" htmlFor="venue">
+            <Icon name="building-01" size={12} className="icon-inline" />
+            Venue
+          </label>
+          <select id="venue" value={venueId} onChange={(e) => setVenueId(e.target.value)}>
             <option value="">— select a venue —</option>
             {venuesQ.data?.map((v) => (
               <option key={v.id} value={v.id}>
-                {v.name} ({v.address})
+                {v.name} · {v.address}
               </option>
             ))}
           </select>
+          {selectedVenue && (
+            <div className="venueSelected">
+              <div className="venueSelected-icon">
+                <Icon name={selectedVenue.indoor ? "building-01" : "maps"} size={16} />
+              </div>
+              <div className="venueSelected-info">
+                <div className="venueSelected-name">{selectedVenue.name}</div>
+                <div className="venueSelected-meta">
+                  <span className="tag info">{selectedVenue.indoor ? "Indoor" : "Outdoor"}</span>
+                  <span className="tag">Up to {selectedVenue.capacity} players</span>
+                  <span className="venueSelected-price">
+                    {(selectedVenue.hourlyPrice / 100).toFixed(2)} / hr
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+      </section>
+
+      {/* === Section: When === */}
+      <section className="formSection">
+        <h2 className="formSection-title">
+          <span className="formSection-num">2</span>
+          When
+        </h2>
+        <div className="field-row">
+          <div className="field">
+            <label className="field-label" htmlFor="start">
+              <Icon name="calendar-01" size={12} className="icon-inline" />
+              Start
+            </label>
+            <input
+              id="start"
+              type="datetime-local"
+              value={startAt}
+              onChange={(e) => setStartAt(e.target.value)}
+            />
+          </div>
+          <div className="field" style={{ maxWidth: 120 }}>
+            <label className="field-label" htmlFor="duration">
+              <Icon name="clock-01" size={12} className="icon-inline" />
+              Hours
+            </label>
+            <input
+              id="duration"
+              type="number"
+              min={1}
+              max={6}
+              value={durationHours}
+              onChange={(e) => setDurationHours(Number(e.target.value) || 2)}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* === Section: Who === */}
+      <section className="formSection">
+        <h2 className="formSection-title">
+          <span className="formSection-num">3</span>
+          Who
+        </h2>
 
         <div className="field">
-          <label>Start</label>
-          <input
-            type="datetime-local"
-            value={startAt}
-            onChange={(e) => setStartAt(e.target.value)}
-          />
-        </div>
-
-        <div className="field">
-          <label>Duration (hours)</label>
-          <input
-            type="number"
-            min={1}
-            max={6}
-            value={durationHours}
-            onChange={(e) => setDurationHours(Number(e.target.value) || 2)}
-          />
-        </div>
-
-        <div className="field">
-          <label>Skill level</label>
-          <div className="skill-radio">
+          <label className="field-label">
+            <Icon name="award-01" size={12} className="icon-inline" />
+            Skill level
+          </label>
+          <div className="skillGrid">
             {SKILLS.map((s) => (
-              <label key={s}>
-                <input
-                  type="radio"
-                  name="skill"
-                  checked={skill === s}
-                  onChange={() => setSkill(s)}
-                />
-                <span>{s}</span>
-              </label>
+              <button
+                type="button"
+                key={s}
+                className={`skillCard ${skill === s ? "skillCard-active" : ""}`}
+                onClick={() => setSkill(s)}
+                aria-pressed={skill === s}
+              >
+                <Icon name={skillIcon(s)} size={18} />
+                <span>{s.charAt(0) + s.slice(1).toLowerCase()}</span>
+              </button>
             ))}
           </div>
         </div>
 
         <div className="field">
-          <label>Spots</label>
-          <input
-            type="number"
-            min={2}
-            max={selectedVenue?.capacity ?? 40}
-            value={spotsTotal}
-            onChange={(e) => setSpotsTotal(Number(e.target.value) || 2)}
-          />
+          <label className="field-label" htmlFor="spots">
+            <Icon name="user-group" size={12} className="icon-inline" />
+            Total spots
+          </label>
+          <div className="spotsStepper">
+            <button
+              type="button"
+              className="stepperBtn"
+              onClick={() => setSpotsTotal((s) => Math.max(2, s - 1))}
+              aria-label="Decrease spots"
+            >
+              <Icon name="arrow-down-01" size={14} />
+            </button>
+            <input
+              id="spots"
+              type="number"
+              min={2}
+              max={selectedVenue?.capacity ?? 40}
+              value={spotsTotal}
+              onChange={(e) => setSpotsTotal(Math.max(2, Number(e.target.value) || 2))}
+              className="stepperInput"
+            />
+            <button
+              type="button"
+              className="stepperBtn"
+              onClick={() =>
+                setSpotsTotal((s) => Math.min(selectedVenue?.capacity ?? 40, s + 1))
+              }
+              aria-label="Increase spots"
+            >
+              <Icon name="arrow-up-01" size={14} />
+            </button>
+          </div>
           {selectedVenue && (
-            <div className="sub" style={{ fontSize: 12, color: 'var(--text-dim)' }}>
-              Venue capacity: {selectedVenue.capacity}
-            </div>
+            <div className="field-hint">Venue max: {selectedVenue.capacity} players</div>
           )}
         </div>
+      </section>
 
+      {/* === Section: Cost === */}
+      <section className="formSection">
+        <h2 className="formSection-title">
+          <span className="formSection-num">4</span>
+          Cost
+        </h2>
         <div className="field">
-          <label>Total court cost (minor units; 100 = 1.00)</label>
+          <label className="field-label" htmlFor="cost">
+            <Icon name="dollar-01" size={12} className="icon-inline" />
+            Total court cost (minor units)
+          </label>
           <input
+            id="cost"
             type="number"
             min={0}
-            value={costTouched ? totalCost : suggestedCost}
+            value={finalCost}
             onChange={(e) => {
               setCostTouched(true);
               setTotalCost(Number(e.target.value) || 0);
             }}
           />
-          {!costTouched && selectedVenue && (
-            <div className="sub" style={{ fontSize: 12, color: 'var(--text-dim)' }}>
-              Suggested based on venue hourly price × duration.
-            </div>
-          )}
+          <div className="field-hint">
+            {costTouched
+              ? "You set a custom amount."
+              : selectedVenue
+                ? `Auto: ${selectedVenue.name} × ${durationHours}h.`
+                : "Select a venue to auto-fill."}
+          </div>
         </div>
 
+        <div className="costSummary">
+          <div className="costSummary-row">
+            <span className="costSummary-label">Per player</span>
+            <span className="costSummary-value">{perPlayer}</span>
+          </div>
+          <div className="costSummary-row costSummary-row-total">
+            <span className="costSummary-label">Split between</span>
+            <span className="costSummary-value">
+              {spotsTotal} player{spotsTotal === 1 ? "" : "s"}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* === Section: Notes === */}
+      <section className="formSection">
+        <h2 className="formSection-title">
+          <span className="formSection-num">5</span>
+          Notes
+        </h2>
         <div className="field">
-          <label>Notes</label>
+          <label className="field-label" htmlFor="notes">
+            <Icon name="note-01" size={12} className="icon-inline" />
+            Optional message to players
+          </label>
           <textarea
+            id="notes"
             rows={3}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="e.g. Bring a light/dark shirt for teams"
           />
         </div>
+      </section>
 
-        <button
-          className="btn"
-          disabled={!venueId || createMut.isLoading}
-          onClick={() => createMut.mutate()}
-        >
-          Create game
-        </button>
-        {createMut.isError && <div className="error">{(createMut.error as Error).message}</div>}
-      </div>
-    </>
+      {createMut.isError && (
+        <div className="error">
+          <Icon name="bell-dot" size={16} />
+          <span>{(createMut.error as Error).message}</span>
+        </div>
+      )}
+
+      <button type="submit" className="btn" disabled={!canSubmit}>
+        <Icon name="plus-sign" size={18} />
+        {createMut.isLoading ? "Creating…" : "Create game"}
+      </button>
+    </form>
   );
 }

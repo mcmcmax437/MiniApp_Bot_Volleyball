@@ -1,141 +1,274 @@
 .home {
   display: flex;
   flex-direction: column;
+  padding-top: 8px;
 }
 
-/* ---------- Hero greeting ---------- */
-.homeHeader {
+/* ============================================================
+   Hero block (greeting + mascot)
+   ============================================================ */
+.home-hero {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
+  align-items: flex-start;
   gap: 12px;
+  margin-bottom: 24px;
+  padding: 20px 18px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
   position: relative;
+  overflow: hidden;
 }
 
-.homeHeader-text {
+.home-hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.14) 50%,
+    transparent 100%
+  );
+}
+
+.home-hero::after {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 200px;
+  height: 200px;
+  background: var(--gradient-brand-subtle);
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.home-hero-text {
   flex: 1;
   min-width: 0;
+  position: relative;
+  z-index: 1;
 }
 
-.homeHeader h1 {
-  font-size: 28px;
+.home-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--brand-300);
+  background: var(--brand-soft);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  margin-bottom: 10px;
+  letter-spacing: 0.02em;
+}
+
+.home-hero-title {
+  font-size: 26px;
   line-height: 1.15;
+  font-weight: 800;
   margin: 0 0 6px;
-  font-weight: 700;
+  color: var(--text-primary);
 }
 
-.homeHeader .welcomeSub {
-  color: var(--text-dim);
-  font-size: 14px;
-  margin: 0;
-  font-weight: 500;
-}
-
-.homeHeader .wave {
+.home-hero-title .wave {
   display: inline-block;
   transform-origin: 70% 70%;
   animation: wave 2.4s var(--ease-out) infinite;
-  font-size: 28px;
+  margin-left: 4px;
 }
 
-/* ---------- Robot mascot ---------- */
-.robotWrap {
+.home-hero-sub {
+  color: var(--text-tertiary);
+  font-size: 13px;
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* ============================================================
+   Mascot (robot)
+   ============================================================ */
+.home-hero-mascot {
   position: relative;
+  width: 88px;
+  height: 88px;
   flex-shrink: 0;
-  width: 96px;
-  height: 96px;
+  z-index: 1;
 }
 
-.robotGlow {
+.mascot-glow {
   position: absolute;
-  inset: -8px;
-  background: var(--sport-gradient);
+  inset: -10px;
+  background: var(--gradient-brand);
   filter: blur(20px);
-  opacity: 0.35;
+  opacity: 0.4;
   border-radius: 50%;
   z-index: 0;
-  animation: blob-drift 6s ease-in-out infinite;
+  animation: float 4s ease-in-out infinite;
 }
 
-.robot {
+.mascot-orbit {
+  position: absolute;
+  inset: -4px;
+  border: 1.5px dashed rgba(255, 182, 39, 0.25);
+  border-radius: 50%;
+  z-index: 1;
+  animation: orbit 18s linear infinite;
+}
+
+.mascot-img {
+  position: relative;
+  z-index: 2;
+  width: 88px;
+  height: 88px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.5));
+  animation: float 3.6s ease-in-out infinite;
+}
+
+/* ============================================================
+   Hero CTA card (the big "Create Game")
+   ============================================================ */
+.hero-cta {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--gradient-brand);
+  color: var(--text-inverse);
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  font-family: var(--font-display);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-md), var(--shadow-glow), var(--shadow-inner);
+  transition: transform var(--dur-instant) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    filter var(--dur-fast) var(--ease-out);
+}
+
+.hero-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.hero-cta:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: var(--shadow-lg), var(--shadow-glow-strong), var(--shadow-inner);
+}
+
+.hero-cta:active {
+  transform: scale(0.98);
+  filter: brightness(0.95);
+  transition-duration: var(--dur-instant);
+}
+
+.hero-cta-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   position: relative;
   z-index: 1;
-  width: 96px;
-  height: 96px;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.35));
 }
 
-/* ---------- Primary CTA ---------- */
-.createButton {
-  background: var(--accent);
-  color: var(--accent-text);
-  border: none;
-  height: 56px;
-  border-radius: var(--radius-md);
-  font-size: 16px;
-  font-weight: 700;
-  font-family: var(--font-display);
-  letter-spacing: -0.01em;
-  cursor: pointer;
+.hero-cta-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(10, 15, 28, 0.2);
+  color: var(--text-inverse);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  margin-bottom: 32px;
-  width: 100%;
-  box-shadow: 0 4px 16px var(--accent-glow);
-  animation: pulse-glow 2.4s ease-in-out infinite;
-  transition: transform var(--dur-fast) var(--ease-out),
-    background-color var(--dur-fast) var(--ease-out);
 }
 
-.createButton:hover {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
-}
-
-.createButton:active {
-  background: var(--accent-active);
-  transform: scale(0.97);
-}
-
-/* ---------- Section title ---------- */
-.gamesSection {
-  display: flex;
-  flex-direction: column;
-}
-
-.sectionTitle {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 14px;
-}
-
-.sectionTitle h2 {
-  font-size: 19px;
+.hero-cta-title {
+  font-size: 16px;
   font-weight: 700;
-  letter-spacing: -0.015em;
+  text-align: left;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
-.sectionTitle .viewAll {
-  background: none;
-  border: none;
-  color: var(--accent);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 4px 0;
-  transition: color var(--dur-fast) var(--ease-out),
-    transform var(--dur-fast) var(--ease-out);
+.hero-cta-sub {
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  opacity: 0.75;
+  margin-top: 2px;
 }
 
-.sectionTitle .viewAll:hover {
-  color: var(--accent-hover);
+.hero-cta-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(10, 15, 28, 0.15);
+  color: var(--text-inverse);
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
 }
 
-.sectionTitle .viewAll:active {
-  transform: scale(0.96);
+/* ============================================================
+   Stats strip
+   ============================================================ */
+.stat-strip {
+  display: flex;
+  align-items: stretch;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 8px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-inner);
+}
+
+.stat {
+  flex: 1;
+  text-align: center;
+  padding: 0 4px;
+  position: relative;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 800;
+  font-family: var(--font-display);
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  margin-bottom: 2px;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stat-divider {
+  width: 1px;
+  background: var(--border);
+  margin: 4px 0;
 }

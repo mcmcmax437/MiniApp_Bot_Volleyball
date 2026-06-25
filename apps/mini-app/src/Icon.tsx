@@ -21,7 +21,30 @@ export type IconName =
   | "plus-sign"
   | "building-01"
   | "home-01"
-  | "game";
+  | "game"
+  | "fire"
+  | "award-01"
+  | "crown"
+  | "medal-01"
+  | "star"
+  | "check-unread-01"
+  | "arrow-right-01"
+  | "logout-01"
+  | "settings-01"
+  | "dollar-01"
+  | "shirt-01"
+  | "ticket-01"
+  | "play"
+  | "arrow-up-01"
+  | "arrow-down-01"
+  | "edit-01"
+  | "search-01"
+  | "filter"
+  | "refresh"
+  | "menu-01"
+  | "more-horizontal"
+  | "cancel-01"
+  | "image-01";
 
 interface IconProps {
   name: IconName;

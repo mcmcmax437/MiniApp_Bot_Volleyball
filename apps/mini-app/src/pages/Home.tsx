@@ -6,11 +6,6 @@ import { Icon } from "../Icon";
 import { GameCard } from "./GameCard";
 import "./Home.css";
 
-/**
- * Greeting + "Create Game" CTA + the next 3 upcoming games.
- * Mirrors the reference design (greeting header, mascot, big primary CTA,
- * "Upcoming Games" section with "View all" link).
- */
 export function HomePage() {
   const api = useApi();
   const { user, webApp } = useTelegram();
@@ -24,51 +19,122 @@ export function HomePage() {
   const navigate = useNavigate();
 
   const firstName = meQ.data?.firstName ?? user?.first_name ?? "friend";
+  const city = meQ.data?.city ?? cityQ.data?.city ?? "your city";
+  const openGames = (gamesQ.data ?? []).filter((g) => g.status === "OPEN");
   const nextGames = (gamesQ.data ?? []).slice(0, 3);
 
-  const handleCreate = () => {
-    // Haptic feedback on the primary action (TG-only; no-op outside)
+  const goCreate = () => {
     webApp?.HapticFeedback?.impactOccurred?.("medium");
     navigate("/create");
   };
+  const goGames = () => navigate("/games");
 
   return (
     <div className="home">
-      <header className="homeHeader">
-        <div className="homeHeader-text">
-          <h1>
-            Hi, {firstName}! <span className="wave" aria-hidden="true">👋</span>
+      {/* === Hero === */}
+      <header className="home-hero">
+        <div className="home-hero-text">
+          <div className="home-hero-eyebrow">
+            <Icon name="map-pin" size={12} />
+            <span>{city}</span>
+          </div>
+          <h1 className="home-hero-title">
+            Hi, {firstName}!
+            <span className="wave" aria-hidden="true">👋</span>
           </h1>
-          <p className="welcomeSub">
-            {nextGames.length > 0
-              ? `${nextGames.length} game${nextGames.length === 1 ? "" : "s"} waiting for you.`
-              : "Ready to organize a game?"}
+          <p className="home-hero-sub">
+            {openGames.length > 0
+              ? `${openGames.length} open game${openGames.length === 1 ? "" : "s"} in your city.`
+              : "No games yet — be the first to organize one."}
           </p>
         </div>
-        <div className="robotWrap" aria-hidden="true">
-          <div className="robotGlow" />
-          <img className="robot" src="/robot.png" alt="" />
+        <div className="home-hero-mascot" aria-hidden="true">
+          <div className="mascot-glow" />
+          <div className="mascot-orbit" />
+          <img className="mascot-img" src="/robot.png" alt="" />
         </div>
       </header>
 
-      <button className="createButton" onClick={handleCreate}>
-        <Icon name="plus-sign" size={20} />
-        <span>Create Game</span>
+      {/* === Quick action card with robot's job === */}
+      <button className="hero-cta" onClick={goCreate}>
+        <div className="hero-cta-content">
+          <div className="hero-cta-icon">
+            <Icon name="plus-sign" size={22} />
+          </div>
+          <div>
+            <div className="hero-cta-title">Create a game</div>
+            <div className="hero-cta-sub">Invite players in seconds</div>
+          </div>
+        </div>
+        <div className="hero-cta-arrow">
+          <Icon name="calendar-01" size={18} />
+        </div>
       </button>
 
-      <section className="gamesSection">
-        <div className="sectionTitle">
-          <h2>Upcoming Games</h2>
-          <button className="viewAll" onClick={() => navigate("/games")}>
+      {/* === Stats strip === */}
+      <div className="stat-strip">
+        <div className="stat">
+          <div className="stat-value">{openGames.length}</div>
+          <div className="stat-label">Open games</div>
+        </div>
+        <div className="stat-divider" />
+        <div className="stat">
+          <div className="stat-value">
+            {openGames.reduce((sum, g) => sum + (g.spotsTotal - g.participantsCount), 0)}
+          </div>
+          <div className="stat-label">Free spots</div>
+        </div>
+        <div className="stat-divider" />
+        <div className="stat">
+          <div className="stat-value">{gamesQ.data?.length ?? 0}</div>
+          <div className="stat-label">All games</div>
+        </div>
+      </div>
+
+      {/* === Upcoming Games section === */}
+      <section className="section">
+        <div className="section-header">
+          <h2 className="section-title">
+            <span className="section-title-icon">
+              <Icon name="calendar-01" size={16} />
+            </span>
+            Upcoming Games
+          </h2>
+          <button className="section-action" onClick={goGames}>
             View all
+            <Icon name="clock-01" size={12} />
           </button>
         </div>
 
-        {gamesQ.isLoading && <div className="empty">Loading games…</div>}
-        {gamesQ.isError && <div className="error">{(gamesQ.error as Error).message}</div>}
+        {gamesQ.isLoading && (
+          <>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="card" style={{ marginBottom: 12, height: 130 }}>
+                <div className="skeleton" style={{ width: '60%', height: 18, marginBottom: 8 }} />
+                <div className="skeleton" style={{ width: '40%', height: 14, marginBottom: 16 }} />
+                <div className="skeleton" style={{ width: '100%', height: 32, borderRadius: 10 }} />
+              </div>
+            ))}
+          </>
+        )}
+
+        {gamesQ.isError && (
+          <div className="error">
+            <Icon name="bell-dot" size={16} />
+            <span>{(gamesQ.error as Error).message}</span>
+          </div>
+        )}
 
         {gamesQ.data && gamesQ.data.length === 0 && (
-          <div className="empty">No open games in your city yet. Tap "Create Game" to start one!</div>
+          <div className="empty-state">
+            <div className="empty-state-icon">
+              <Icon name="tennis-ball" size={24} />
+            </div>
+            <div className="empty-state-title">No games yet</div>
+            <div className="empty-state-text">
+              Be the first to organize a volleyball game in {city}. Tap "Create Game" to start.
+            </div>
+          </div>
         )}
 
         {nextGames.map((g) => (
