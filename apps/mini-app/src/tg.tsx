@@ -89,6 +89,8 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
       tg.onEvent?.('contentSafeAreaChanged', updateKeyboard);
       updateKeyboard();
 
+      setReady(true);
+
       return () => {
         tg.offEvent?.('viewportChanged', updateKeyboard);
         tg.offEvent?.('contentSafeAreaChanged', updateKeyboard);
