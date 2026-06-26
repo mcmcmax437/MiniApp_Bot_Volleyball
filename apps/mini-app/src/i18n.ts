@@ -48,7 +48,25 @@ function resolve(lang: Language, key: string): string {
   return key;
 }
 
-let currentLang: Language = 'uk';
+// Locale detection order: stored choice → Telegram WebApp `language_code` →
+// default to English (the canonical language of the app).
+function detectInitialLang(): Language {
+  if (typeof localStorage !== 'undefined') {
+    const stored = localStorage.getItem(STORAGE_KEY) as Language | null;
+    if (stored && SUPPORTED_LANGUAGES.includes(stored)) return stored;
+  }
+  if (typeof window !== 'undefined') {
+    const tg = (window as any).Telegram?.WebApp;
+    const code = (tg?.initDataUnsafe?.user?.language_code as string | undefined) ?? navigator.language;
+    if (code) {
+      const short = code.split('-')[0].toLowerCase();
+      if (SUPPORTED_LANGUAGES.includes(short as Language)) return short as Language;
+    }
+  }
+  return 'en';
+}
+
+let currentLang: Language = 'en';
 const subscribers = new Set<(l: Language) => void>();
 
 export function getLang(): Language {
@@ -56,7 +74,7 @@ export function getLang(): Language {
     const stored = localStorage.getItem(STORAGE_KEY) as Language | null;
     if (stored && SUPPORTED_LANGUAGES.includes(stored)) return stored;
   }
-  return currentLang;
+  return detectInitialLang();
 }
 
 export function setLang(l: Language) {

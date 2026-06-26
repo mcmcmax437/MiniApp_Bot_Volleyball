@@ -48,19 +48,18 @@ export function CreateGamePage() {
 
   const [venueId, setVenueId] = useState('');
   const [startAt, setStartAt] = useState(defaultStartAt());
-  const [durationHours, setDurationHours] = useState(2);
+  const [durationHours, setDurationHours] = useState<number | ''>(2);
   const [skill, setSkill] = useState<SkillLevel>('LEVEL_3');
   // 0 = unlimited. We use 0 because the field minimum is 1 in HTML, but we
   // show a toggle that flips to "unlimited" and clears the cap.
   const [unlimitedSpots, setUnlimitedSpots] = useState(false);
   const [spotsTotal, setSpotsTotal] = useState(10);
-  const [currency, setCurrency] = useState<Currency>('UAH');
+  const [currency, setCurrency] = useState<Currency>('PLN');
   // cost is stored as decimal in major units (e.g. 25.00)
   const [totalCostDecimal, setTotalCostDecimal] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [addressHint, setAddressHint] = useState('');
   const [coverImageUrl, setCoverImageUrl] = useState('');
-  const [isPaid, setIsPaid] = useState(false);
   const [isClosed, setIsClosed] = useState(false);
 
   const selectedVenue = useMemo(
@@ -70,9 +69,13 @@ export function CreateGamePage() {
 
   const [costTouched, setCostTouched] = useState(false);
   const suggestedCostDecimal = selectedVenue
-    ? ((selectedVenue.hourlyPrice * durationHours) / 100).toFixed(2)
+    ? ((selectedVenue.hourlyPrice * (durationHours === '' ? 1 : durationHours)) / 100).toFixed(2)
     : '0.00';
   const finalCostDecimal = costTouched ? totalCostDecimal : suggestedCostDecimal;
+  // `isPaid` is no longer user-toggled. It is derived from the total cost:
+  // a game is paid when the organizer enters a non-zero amount. Leaving the
+  // cost at zero means the game is free.
+  const isPaid = Number(finalCostDecimal) > 0;
   const perPlayer = unlimitedSpots
     ? (Number(finalCostDecimal) || 0).toFixed(2)
     : spotsTotal > 0
@@ -81,7 +84,8 @@ export function CreateGamePage() {
 
   const endAtIso = useMemo(() => {
     const start = new Date(toIsoLocal(startAt));
-    const end = new Date(start.getTime() + durationHours * 3600_000);
+    const hours = durationHours === '' ? 1 : durationHours;
+    const end = new Date(start.getTime() + hours * 3600_000);
     return end.toISOString();
   }, [startAt, durationHours]);
 
@@ -157,16 +161,48 @@ export function CreateGamePage() {
             <Icon name="building-01" size={12} className="icon-inline" />
             {t('create.field.venue')}
           </label>
-          <select id="venue" value={venueId} onChange={(e) => setVenueId(e.target.value)}>
-            <option value="">{t('create.field.selectVenue')}</option>
-            {venuesQ.data?.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.name} · {v.address}
-              </option>
-            ))}
-          </select>
+          {/* Native <select> elements render inconsistently across iOS Safari
+              and Android WebView and are easy to miss on small phones. We
+              render a tappable card list instead, with the same accessibility
+              surface (radiogroup / aria-checked). */}
+          <div
+            className="venuePicker"
+            role="radiogroup"
+            aria-label={t('create.field.venue')}
+          >
+            {(venuesQ.data ?? []).length === 0 && (
+              <div className="venuePicker-empty">{t('create.field.noVenues')}</div>
+            )}
+            {venuesQ.data?.map((v) => {
+              const active = v.id === venueId;
+              return (
+                <button
+                  type="button"
+                  key={v.id}
+                  role="radio"
+                  aria-checked={active}
+                  className={`venuePicker-item ${active ? 'isActive' : ''}`}
+                  onClick={() => setVenueId(v.id)}
+                  data-analytics-label={`create-venue-${v.id}`}
+                >
+                  <span className="venuePicker-icon">
+                    <Icon name={v.indoor ? 'building-01' : 'maps'} size={16} />
+                  </span>
+                  <span className="venuePicker-info">
+                    <span className="venuePicker-name">{v.name}</span>
+                    <span className="venuePicker-meta">
+                      {v.address} · {v.indoor ? 'Indoor' : 'Outdoor'} · up to {v.capacity}
+                    </span>
+                  </span>
+                  <span className="venuePicker-price">
+                    {CURRENCY_SYMBOLS[currency]}{(v.hourlyPrice / 100).toFixed(2)}/hr
+                  </span>
+                </button>
+              );
+            })}
+          </div>
           {selectedVenue && (
-            <div className="venueSelected">
+            <div className="venueSelected" style={{ display: 'none' }} aria-hidden="true">
               <div className="venueSelected-icon">
                 <Icon name={selectedVenue.indoor ? 'building-01' : 'maps'} size={16} />
               </div>
@@ -236,7 +272,7 @@ export function CreateGamePage() {
               onChange={(e) => setStartAt(e.target.value)}
             />
           </div>
-          <div className="field" style={{ maxWidth: 120 }}>
+          <div className="field field-duration">
             <label className="field-label" htmlFor="duration">
               <Icon name="clock-01" size={12} className="icon-inline" />
               {t('create.field.duration')}
@@ -246,8 +282,20 @@ export function CreateGamePage() {
               type="number"
               min={1}
               max={6}
-              value={durationHours}
-              onChange={(e) => setDurationHours(Number(e.target.value) || 2)}
+              value={durationHours === '' ? '' : durationHours}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === '') {
+                  setDurationHours('');
+                  return;
+                }
+                const n = Number(v);
+                if (!Number.isNaN(n)) setDurationHours(Math.min(6, Math.max(1, n)));
+              }}
+              onBlur={(e) => {
+                const n = Number(e.target.value);
+                if (!Number.isFinite(n) || n < 1) setDurationHours(1);
+              }}
             />
           </div>
         </div>
@@ -348,16 +396,6 @@ export function CreateGamePage() {
           )}
           {unlimitedSpots && <div className="field-hint">{t('create.unlimitedHint')}</div>}
         </div>
-
-        <label className="toggle" style={{ marginTop: 8 }}>
-          <input
-            type="checkbox"
-            checked={isClosed}
-            onChange={(e) => setIsClosed(e.target.checked)}
-          />
-          <span className="toggle-track" />
-          <span className="toggle-label">{t('create.field.closed')}</span>
-        </label>
       </section>
 
       {/* Cost */}
@@ -415,7 +453,7 @@ export function CreateGamePage() {
             {costTouched
               ? t('create.cost.custom')
               : selectedVenue
-                ? t('create.cost.auto', { venue: selectedVenue.name, hours: durationHours })
+                ? t('create.cost.auto', { venue: selectedVenue.name, hours: durationHours === '' ? 1 : durationHours })
                 : t('create.cost.empty')}
           </div>
         </div>
@@ -423,12 +461,24 @@ export function CreateGamePage() {
         <label className="toggle" style={{ marginTop: 8 }}>
           <input
             type="checkbox"
-            checked={isPaid}
-            onChange={(e) => setIsPaid(e.target.checked)}
+            checked={isClosed}
+            onChange={(e) => setIsClosed(e.target.checked)}
           />
           <span className="toggle-track" />
-          <span className="toggle-label">{t('create.field.paid')}</span>
+          <span className="toggle-label">{t('create.field.closed')}</span>
         </label>
+
+        <div
+          className={`paidBadge ${isPaid ? 'paidBadge-paid' : 'paidBadge-free'}`}
+          aria-live="polite"
+        >
+          <Icon name={isPaid ? 'credit-card' : 'gift'} size={14} />
+          <span>
+            {isPaid
+              ? t('create.paidStatus.on')
+              : t('create.paidStatus.off')}
+          </span>
+        </div>
 
         <div className="costSummary">
           <div className="costRow">

@@ -263,10 +263,12 @@ export interface AdminUserDetail {
 // ===== v3 frontend additions =====
 
 export type Language = 'uk' | 'pl' | 'en' | 'ru';
-export const SUPPORTED_LANGUAGES: Language[] = ['uk', 'pl', 'en', 'ru'];
+// Order: Polish first (default currency), then the rest.
+export const SUPPORTED_LANGUAGES: Language[] = ['pl', 'en', 'uk', 'ru'];
 
 export type Currency = 'UAH' | 'PLN' | 'EUR' | 'USD';
-export const SUPPORTED_CURRENCIES: Currency[] = ['UAH', 'PLN', 'EUR', 'USD'];
+// Polish Zloty first because it is the app's default currency.
+export const SUPPORTED_CURRENCIES: Currency[] = ['PLN', 'UAH', 'EUR', 'USD'];
 export const CURRENCY_SYMBOLS: Record<Currency, string> = {
   UAH: '₴',
   PLN: 'zł',

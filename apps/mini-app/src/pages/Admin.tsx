@@ -98,7 +98,7 @@ function StatsTab() {
     { label: t('admin.venues'), value: q.data.venues, icon: "building-01" as IconName, color: "success" },
     { label: "Signups (24h)", value: q.data.signupsLast24h, icon: "user-add-01" as IconName, color: "warn" },
     { label: t('admin.reports'), value: q.data.pendingReports, icon: "report" as IconName, color: "warn" },
-    { label: "Banned", value: q.data.bannedUsers, icon: "user-block" as IconName, color: "cool" },
+    { label: "Banned", value: q.data.bannedUsers, icon: "user-remove-01" as IconName, color: "cool" },
     { label: t('game.finish'), value: q.data.finishedGames, icon: "check" as IconName, color: "success" },
   ];
 
@@ -213,7 +213,7 @@ function UsersTab() {
                 )}
                 {u.isBanned && (
                   <span className="adminItem-badge adminItem-badge-danger">
-                    <Icon name="user-block" size={10} />
+                    <Icon name="user-remove-01" size={10} />
                     Banned
                   </span>
                 )}
@@ -394,7 +394,7 @@ function UserDetailsModal({ userId, onClose }: { userId: string | null; onClose:
             )}
             {q.data.isBanned && (
               <div className="error" style={{ marginTop: 10 }}>
-                <Icon name="user-block" size={14} />
+                <Icon name="user-remove-01" size={14} />
                 <span>Banned: {q.data.bannedReason ?? '—'}</span>
               </div>
             )}
@@ -699,7 +699,7 @@ function ReportsTab() {
                   disabled={resolveMut.isLoading}
                   title={t('admin.resolveAndBan')}
                 >
-                  <Icon name="user-block" size={14} />
+                  <Icon name="user-remove-01" size={14} />
                 </button>
                 <button
                   type="button"

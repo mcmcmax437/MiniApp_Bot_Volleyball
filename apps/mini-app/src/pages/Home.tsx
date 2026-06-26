@@ -103,7 +103,6 @@ export function HomePage() {
     navigate("/create");
   };
   const goGames = () => navigate("/games");
-  const goCalendar = () => navigate("/calendar");
   const goWelcome = () => {
     webApp?.HapticFeedback?.impactOccurred?.("light");
     navigate("/welcome");
@@ -183,21 +182,6 @@ export function HomePage() {
           </div>
         </div>
         <div className="hero-cta-arrow">
-          <Icon name="calendar-01" size={18} />
-        </div>
-      </button>
-
-      <button className="hero-cta hero-cta-secondary" onClick={goCalendar}>
-        <div className="hero-cta-content">
-          <div className="hero-cta-icon">
-            <Icon name="calendar-02" size={20} />
-          </div>
-          <div>
-            <div className="hero-cta-title">{t('calendar.title')}</div>
-            <div className="hero-cta-sub">Plan your weeks</div>
-          </div>
-        </div>
-        <div className="hero-cta-arrow">
           <Icon name="arrow-right-01" size={18} />
         </div>
       </button>
@@ -229,8 +213,8 @@ export function HomePage() {
             </span>
             {t('home.upcomingGames')}
           </h2>
-          <Link to="/calendar" className="section-action" data-analytics-label="home-see-calendar">
-            {t('calendar.title')}
+          <Link to="/games" className="section-action" data-analytics-label="home-see-all">
+            {t('home.seeAll')}
             <Icon name="arrow-right-01" size={12} />
           </Link>
         </div>

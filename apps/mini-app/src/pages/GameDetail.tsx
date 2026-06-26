@@ -245,7 +245,7 @@ export function GameDetailPage() {
                 onClick={() => setShowInvite(true)}
                 data-analytics-label="game-invite"
               >
-                <Icon name="send-01" size={16} /> {t('game.invitePlayers')}
+                <Icon name="mail-01" size={16} /> {t('game.invitePlayers')}
               </button>
               <button
                 className="btn btn-ghost"
@@ -299,7 +299,7 @@ export function GameDetailPage() {
               disabled={joinMut.isLoading}
               data-analytics-label="game-request-join"
             >
-              <Icon name="send-01" size={16} /> {t('game.requestToJoin')}
+              <Icon name="mail-01" size={16} /> {t('game.requestToJoin')}
             </button>
           ) : myJoinRequest ? (
             <button className="btn" disabled>

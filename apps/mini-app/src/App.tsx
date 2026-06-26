@@ -111,7 +111,7 @@ export function App() {
             className="empty-state-icon"
             style={{ margin: '0 auto 12px', background: 'var(--gradient-danger)' }}
           >
-            <Icon name="user-block" size={24} />
+            <Icon name="user-remove-01" size={24} />
           </div>
           <h2 style={{ margin: 0 }}>{t('auth.banned.title')}</h2>
           <p style={{ color: 'var(--text-tertiary)' }}>

@@ -30,11 +30,25 @@ const REMINDER_PRESETS: {
   icon: IconName;
   offsets: number[];
 }[] = [
-  { label: "24h + 2h + 30m", description: "All the reminders", icon: "bell-dot", offsets: [1440, 120, 30] },
-  { label: "2h + 30m", description: "Just before the game", icon: "clock-01", offsets: [120, 30] },
   { label: "1h only", description: "Last-minute heads-up", icon: "clock-01", offsets: [60] },
+  { label: "2h + 30m", description: "Just before the game", icon: "clock-01", offsets: [120, 30] },
+  { label: "24h + 2h + 30m", description: "All the reminders", icon: "bell-dot", offsets: [1440, 120, 30] },
   { label: "Off", description: "Don't notify me", icon: "cancel-01", offsets: [] },
 ];
+
+function formatOffsetsSummary(offsets: number[]): string {
+  if (offsets.length === 0) return "Off";
+  const sorted = [...offsets].sort((a, b) => b - a);
+  return sorted
+    .map((m) => {
+      if (m >= 60 && m % 60 === 0) {
+        const h = m / 60;
+        return `${h}h`;
+      }
+      return `${m}m`;
+    })
+    .join(" + ");
+}
 
 const SKILL_ICONS: Record<SkillLevel, IconName> = {
   LEVEL_1: "tennis-ball",
@@ -58,7 +72,11 @@ export function ProfilePage() {
   const [age, setAge] = useState<number | "">("");
   const [skill, setSkill] = useState<SkillLevel | "">("");
   const [city, setCity] = useState("");
-  const [offsets, setOffsets] = useState<number[]>([]);
+  // Reminders default to "1h only" (matches the first preset). The section is
+  // also collapsed by default — the user only sees a small chip with the
+  // current summary, and taps to expand the picker if they want to change.
+  const [offsets, setOffsets] = useState<number[]>([60]);
+  const [remindersOpen, setRemindersOpen] = useState(false);
   const [language, setLanguageState] = useState<Language>(lang);
 
   useEffect(() => {
@@ -183,12 +201,12 @@ export function ProfilePage() {
           <span className="profileLink-arrow"><Icon name="arrow-right-01" size={16} /></span>
         </Link>
         <Link to="/invitations" className="profileLink" data-analytics-label="profile-invitations">
-          <span className="profileLink-icon"><Icon name="send-01" size={16} /></span>
+          <span className="profileLink-icon"><Icon name="mail-01" size={16} /></span>
           {t('profile.invitations')}
           <span className="profileLink-arrow"><Icon name="arrow-right-01" size={16} /></span>
         </Link>
         <Link to="/blacklist" className="profileLink" data-analytics-label="profile-blacklist">
-          <span className="profileLink-icon"><Icon name="user-block" size={16} /></span>
+          <span className="profileLink-icon"><Icon name="user-remove-01" size={16} /></span>
           {t('profile.blacklist')}
           <span className="profileLink-arrow"><Icon name="arrow-right-01" size={16} /></span>
         </Link>
@@ -229,18 +247,18 @@ export function ProfilePage() {
               <Icon name="map-pin" size={12} className="icon-inline" />
               {t('profile.city')}
             </label>
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div className="cityRow">
               <input
                 id="city"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 onFocus={(e) => scrollIntoViewSafe(e.currentTarget)}
                 placeholder="e.g. Kyiv"
-                style={{ flex: 1 }}
+                className="cityRow-input"
               />
               <button
                 type="button"
-                className="btn btn-ghost"
+                className="cityRow-locateBtn"
                 onClick={async () => {
                   const pos = await requestLocation();
                   if (pos) {
@@ -250,6 +268,7 @@ export function ProfilePage() {
                 }}
                 title="Use my location"
                 aria-label="Use my location"
+                data-analytics-label="profile-use-location"
               >
                 <Icon name="map-pin" size={14} />
               </button>
@@ -313,38 +332,65 @@ export function ProfilePage() {
         </div>
       </section>
 
-      {/* === Section: Reminders === */}
-      <section className="formSection">
+      {/* === Section: Reminders (collapsible) === */}
+      <section className={`formSection ${remindersOpen ? 'isOpen' : 'formSection-collapsible'}`}>
         <h2 className="formSection-title">
           <span className="formSection-num"><Icon name="bell-dot" size={12} /></span>
           Reminders
+          <button
+            type="button"
+            className="formSection-toggle"
+            onClick={() => setRemindersOpen((v) => !v)}
+            aria-expanded={remindersOpen}
+            aria-label="Toggle reminders"
+            style={{ marginLeft: 'auto' }}
+          >
+            <Icon name={remindersOpen ? 'minus-sign' : 'plus-sign'} size={12} />
+            {remindersOpen ? 'Hide' : 'Change'}
+          </button>
         </h2>
 
-        <div className="reminderList">
-          {REMINDER_PRESETS.map((p) => {
-            const isActive = JSON.stringify(offsets) === JSON.stringify(p.offsets);
-            return (
-              <button
-                type="button"
-                key={p.label}
-                className={`reminderOption ${isActive ? "reminderOption-active" : ""}`}
-                onClick={() => setOffsets(p.offsets)}
-                aria-pressed={isActive}
-              >
-                <div className="reminderOption-icon">
-                  <Icon name={p.icon} size={18} />
-                </div>
-                <div className="reminderOption-text">
-                  <div className="reminderOption-label">{p.label}</div>
-                  <div className="reminderOption-desc">{p.description}</div>
-                </div>
-                <div className="reminderOption-radio">
-                  <span className="radio-dot" />
-                </div>
-              </button>
-            );
-          })}
-        </div>
+        {!remindersOpen && (
+          <button
+            type="button"
+            className="reminderSummary"
+            onClick={() => setRemindersOpen(true)}
+            aria-label="Open reminders"
+          >
+            <span className="reminderSummary-icon">
+              <Icon name="clock-01" size={12} />
+            </span>
+            <span>{formatOffsetsSummary(offsets)}</span>
+          </button>
+        )}
+
+        {remindersOpen && (
+          <div className="reminderList">
+            {REMINDER_PRESETS.map((p) => {
+              const isActive = JSON.stringify(offsets) === JSON.stringify(p.offsets);
+              return (
+                <button
+                  type="button"
+                  key={p.label}
+                  className={`reminderOption ${isActive ? "reminderOption-active" : ""}`}
+                  onClick={() => setOffsets(p.offsets)}
+                  aria-pressed={isActive}
+                >
+                  <div className="reminderOption-icon">
+                    <Icon name={p.icon} size={18} />
+                  </div>
+                  <div className="reminderOption-text">
+                    <div className="reminderOption-label">{p.label}</div>
+                    <div className="reminderOption-desc">{p.description}</div>
+                  </div>
+                  <div className="reminderOption-radio">
+                    <span className="radio-dot" />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {save.isError && (

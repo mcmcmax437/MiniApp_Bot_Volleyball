@@ -26,7 +26,7 @@ export function InvitationsPage() {
     <div className="invitationsPage">
       <header className="page-header">
         <div className="page-header-icon">
-          <Icon name="send-01" size={20} />
+          <Icon name="mail-01" size={20} />
         </div>
         <div>
           <h1 className="page-header-title">{t('invite.title')}</h1>

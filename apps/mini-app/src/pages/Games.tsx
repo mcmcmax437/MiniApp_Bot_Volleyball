@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "react-query";
+import { Link } from "react-router-dom";
 import {
   useApi,
   SkillLevel,
@@ -100,6 +101,15 @@ export function GamesPage() {
           <Icon name="filter" size={14} />
           {filtersActive ? '•' : ''}
         </button>
+        <Link
+          to="/calendar"
+          className="btn btn-ghost btn-icon"
+          aria-label={t('calendar.title')}
+          data-analytics-label="games-open-calendar"
+          title={t('calendar.title')}
+        >
+          <Icon name="calendar-02" size={14} />
+        </Link>
       </header>
 
       {/* Skill filter chips */}

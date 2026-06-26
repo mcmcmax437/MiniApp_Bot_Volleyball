@@ -516,3 +516,22 @@
 
 .profileHero-eval { display: flex; align-items: center; margin-top: 8px; }
 
+
+.cityRow { display: flex; gap: 8px; align-items: stretch; }
+.cityRow-input { flex: 1; min-width: 0; }
+.cityRow-locateBtn { flex: 0 0 auto; width: 44px; min-height: 44px; height: 44px; padding: 0; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface-1); color: var(--brand-300); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), transform var(--dur-instant) var(--ease-out); }
+.cityRow-locateBtn:hover { background: var(--brand-soft); }
+.cityRow-locateBtn:active { transform: scale(0.96); }
+
+/* Collapsible section */
+.formSection-collapsible > .formSection-body { display: none; }
+.formSection-collapsible.isOpen > .formSection-body { display: block; }
+.formSection-toggle { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; padding: 0; cursor: pointer; color: var(--text-tertiary); font-size: 12px; font-weight: 500; }
+.formSection-toggle:hover { color: var(--brand-300); }
+
+/* Reminders summary */
+.reminderSummary { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--radius-pill); background: var(--surface-2); border: 1px solid var(--border); font-size: 13px; font-weight: 500; color: var(--text-primary); margin-top: 8px; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
+.reminderSummary:hover { background: var(--brand-soft); }
+.reminderSummary-icon { color: var(--brand-300); display: inline-flex; }
+
+

@@ -70,7 +70,7 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
           onClick={() => inviteMut.mutate()}
           disabled={!telegramId.trim() || inviteMut.isLoading}
         >
-          <Icon name="send-01" size={14} />
+          <Icon name="mail-01" size={14} />
           {t('invite.invitePlayer')}
         </button>
       </div>

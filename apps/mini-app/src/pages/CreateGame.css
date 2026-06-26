@@ -118,13 +118,21 @@
 
 .field-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   align-items: stretch;
 }
 
 .field-row .field {
-  flex: 1;
+  flex: 1 1 140px;
   min-width: 0;
+}
+
+/* The duration input would otherwise overflow its container on iOS Safari
+   because number inputs render a wide stepper control. Cap it explicitly. */
+.field-row .field-duration {
+  flex: 0 0 96px;
+  max-width: 110px;
 }
 
 /* ============================================================
@@ -358,3 +366,20 @@
   padding-top: 8px;
   border-top: 1px solid var(--border-subtle);
 }
+.paidBadge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 600; margin-top: 10px; border: 1px solid transparent; }
+.paidBadge-paid { background: var(--brand-soft); color: var(--brand-300); border-color: rgba(255, 165, 0, 0.2); }
+.paidBadge-free { background: var(--surface-2); color: var(--text-secondary); border-color: var(--border); }
+
+/* Venue picker — visible cards on mobile */
+.venuePicker { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.venuePicker-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--radius-md); background: var(--surface-1); border: 1px solid var(--border); cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); text-align: left; width: 100%; font: inherit; color: inherit; }
+.venuePicker-item:hover { border-color: var(--brand); background: var(--surface-2); }
+.venuePicker-item.isActive { border-color: var(--brand); background: var(--brand-soft); }
+.venuePicker-icon { flex: 0 0 36px; width: 36px; height: 36px; border-radius: 10px; background: var(--surface-2); display: inline-flex; align-items: center; justify-content: center; color: var(--brand-300); }
+.venuePicker-info { flex: 1; min-width: 0; }
+.venuePicker-name { font-weight: 600; font-size: 14px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.venuePicker-meta { font-size: 12px; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.venuePicker-price { flex: 0 0 auto; font-size: 12px; color: var(--brand-300); font-weight: 600; }
+.venuePicker-empty { padding: 12px; border-radius: var(--radius-md); background: var(--surface-2); color: var(--text-tertiary); font-size: 13px; text-align: center; }
+
+

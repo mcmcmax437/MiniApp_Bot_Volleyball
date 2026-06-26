@@ -41,7 +41,7 @@ export function BlacklistPage() {
     <div className="blacklistPage">
       <header className="page-header">
         <div className="page-header-icon">
-          <Icon name="user-block" size={20} />
+          <Icon name="user-remove-01" size={20} />
         </div>
         <div>
           <h1 className="page-header-title">{t('blacklist.title')}</h1>
@@ -77,7 +77,7 @@ export function BlacklistPage() {
           disabled={!telegramId.trim() || maxed || addMut.isLoading}
           onClick={() => addMut.mutate()}
         >
-          <Icon name="user-block" size={16} />
+          <Icon name="user-remove-01" size={16} />
           {t('blacklist.add')}
         </button>
         {addMut.isError && (
