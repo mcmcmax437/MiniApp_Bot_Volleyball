@@ -1,23 +1,25 @@
 import { Link } from "react-router-dom";
 import { Icon, IconName } from "../Icon";
+import { useI18n } from "../i18n";
 
-const SUB_PAGES: { to: string; title: string; icon: IconName; desc: string }[] = [
-  { to: "/admin/stats", title: "Stats", icon: "chart-line-data-01", desc: "Users, games, venues, signups" },
-  { to: "/admin/users", title: "Users", icon: "user-account", desc: "Manage roles, ban, unban" },
-  { to: "/admin/games", title: "Games", icon: "tennis-ball", desc: "Cancel or finish any game" },
-  { to: "/admin/venues", title: "Venues", icon: "building-01", desc: "Publish, hide, delete venues" },
-  { to: "/admin/reports", title: "Reports", icon: "report", desc: "Review and resolve user reports" },
+const SUB_PAGES: { to: string; titleKey: string; icon: IconName; descKey: string }[] = [
+  { to: "/admin/stats", titleKey: "admin.stats", icon: "chart-line-data-01", descKey: "admin.index.stats" },
+  { to: "/admin/users", titleKey: "admin.users", icon: "user-account", descKey: "admin.index.users" },
+  { to: "/admin/games", titleKey: "admin.games", icon: "tennis-ball", descKey: "admin.index.games" },
+  { to: "/admin/venues", titleKey: "admin.venues", icon: "building-01", descKey: "admin.index.venues" },
+  { to: "/admin/reports", titleKey: "admin.reports", icon: "report", descKey: "admin.index.reports" },
 ];
 
 export function AdminIndexPage() {
+  const { t } = useI18n();
   return (
     <div className="adminIndex">
       {SUB_PAGES.map((p) => (
         <Link key={p.to} to={p.to} className="adminIndexCard">
           <span className="adminIndexCard-icon"><Icon name={p.icon} size={18} /></span>
           <div className="adminIndexCard-text">
-            <div className="adminIndexCard-title">{p.title}</div>
-            <div className="adminIndexCard-desc">{p.desc}</div>
+            <div className="adminIndexCard-title">{t(p.titleKey)}</div>
+            <div className="adminIndexCard-desc">{t(p.descKey)}</div>
           </div>
           <span className="adminIndexCard-arrow"><Icon name="arrow-right-01" size={16} /></span>
         </Link>

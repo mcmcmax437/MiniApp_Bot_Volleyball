@@ -338,6 +338,7 @@ body.keyboard-open .app-container {
   content: "";
   position: absolute;
   inset: 0;
+  border-radius: inherit;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, transparent 50%);
   pointer-events: none;
 }
@@ -1243,4 +1244,36 @@ body.keyboard-open .app-container {
 .profileHero-photoWrap {
   position: relative;
   display: inline-block;
+}
+
+.spotsWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.venuePicker-price {
+  flex: 0 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profilePhotoStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.profilePhotoStatus-admin {
+  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+  color: #fff;
 }

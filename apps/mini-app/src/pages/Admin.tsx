@@ -11,12 +11,12 @@ import "./Admin.css";
 
 type SubPage = "stats" | "users" | "games" | "venues" | "reports";
 
-const SUB_PAGE_META: Record<SubPage, { label: string; icon: IconName }> = {
-  stats:   { label: "Stats",   icon: "chart-line-data-01" },
-  users:   { label: "Users",   icon: "user-account" },
-  games:   { label: "Games",   icon: "tennis-ball" },
-  venues:  { label: "Venues",  icon: "building-01" },
-  reports: { label: "Reports", icon: "report" },
+const SUB_PAGE_META: Record<SubPage, { labelKey: string; icon: IconName }> = {
+  stats:   { labelKey: "admin.stats",   icon: "chart-line-data-01" },
+  users:   { labelKey: "admin.users",   icon: "user-account" },
+  games:   { labelKey: "admin.games",   icon: "tennis-ball" },
+  venues:  { labelKey: "admin.venues",  icon: "building-01" },
+  reports: { labelKey: "admin.reports", icon: "report" },
 };
 
 /**
@@ -31,6 +31,7 @@ export function AdminPage({ subPage }: { subPage?: SubPage }) {
   // /admin and /admin/stats etc. — when subPage is set, render the matching page.
   if (subPage) {
     const meta = SUB_PAGE_META[subPage];
+    const label = t(meta.labelKey);
     return (
       <div className="adminPage">
         <header className="page-header">
@@ -47,8 +48,8 @@ export function AdminPage({ subPage }: { subPage?: SubPage }) {
             <Icon name={meta.icon} size={20} />
           </div>
           <div>
-            <h1 className="page-header-title">{meta.label}</h1>
-            <p className="page-header-sub">Admin · {meta.label}</p>
+            <h1 className="page-header-title">{label}</h1>
+            <p className="page-header-sub">{t('admin.subtitleSection', { section: label })}</p>
           </div>
         </header>
         {subPage === "stats"   && <AdminStatsPage />}
@@ -68,7 +69,7 @@ export function AdminPage({ subPage }: { subPage?: SubPage }) {
         </div>
         <div>
           <h1 className="page-header-title">{t('admin.title')}</h1>
-          <p className="page-header-sub">Manage users, games, and venues.</p>
+          <p className="page-header-sub">{t('admin.subtitle')}</p>
         </div>
       </header>
       <AdminIndexPage />

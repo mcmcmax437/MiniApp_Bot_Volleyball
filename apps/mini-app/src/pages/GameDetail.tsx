@@ -187,7 +187,12 @@ export function GameDetailPage() {
       <div className="detailCard">
         <h3>{t('gameDetail.players')}</h3>
         <div className="detailPlayer">
-          <Photo src={g.host.photoUrl} name={g.host.firstName} size={32} />
+          <Photo
+            src={g.host.photoUrl}
+            name={g.host.firstName}
+            size={32}
+            bottomRightBadge={g.host.skillLevel ? <SkillBadge level={g.host.skillLevel} size="sm" /> : null}
+          />
           <span style={{ flex: 1 }}>
             {g.host.firstName} {g.host.lastName ?? ''} <em style={{ color: 'var(--brand-300)', fontStyle: 'normal', fontSize: 12 }}>· host</em>
           </span>
@@ -212,6 +217,7 @@ export function GameDetailPage() {
                 src={p.user.photoUrl}
                 name={`${p.user.firstName}${p.user.lastName ?? ''}`}
                 size={32}
+                bottomRightBadge={p.user.skillLevel ? <SkillBadge level={p.user.skillLevel as SkillLevel} size="sm" /> : null}
               />
               <span style={{ flex: 1 }}>
                 {p.user.firstName}{p.user.lastName ? ` ${p.user.lastName}` : ''}

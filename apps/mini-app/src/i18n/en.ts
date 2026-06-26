@@ -14,6 +14,10 @@ export const en: Record<string, string> = {
   'nav.profile': 'Profile',
   'nav.admin': 'Admin',
   'nav.test': 'Test',
+  'status.open': 'Open',
+  'status.full': 'Full',
+  'status.cancelled': 'Cancelled',
+  'status.finished': 'Finished',
 
   // ===== Welcome / onboarding =====
   'welcome.title': 'Welcome to VolleyBot',
@@ -38,8 +42,15 @@ export const en: Record<string, string> = {
   'home.noGames': 'No upcoming games yet',
   'home.findGame': 'Find a game',
   'home.createGame': 'Create a game',
+  'home.createGameSub': 'Invite players in seconds',
   'home.pickYourLevel': 'Pick your playing level',
   'home.pickYourLevelSub': 'Tell other players how strong you are so they can match you up.',
+  'home.openGames': 'Open games',
+  'home.freeSpots': 'Free spots',
+  'home.allGames': 'All games',
+  'home.openGamesInCity': '{count} open games in your city.',
+  'home.noGamesSub': 'No games yet - be the first to organize one.',
+  'home.emptyCta': 'Be the first to organize a volleyball game in {city}. Tap "Create Game" to start.',
 
   // ===== Profile =====
   'profile.title': 'Profile',
@@ -58,6 +69,7 @@ export const en: Record<string, string> = {
   'profile.blacklist': 'Blocked players',
   'profile.invitations': 'Invitations',
   'profile.payments': 'Payments',
+  'profile.status.admin': 'Admin',
 
   // ===== Games list =====
   'games.title': 'Games',
@@ -87,6 +99,8 @@ export const en: Record<string, string> = {
   'game.paid': 'Paid game',
   'game.free': 'Free game',
   'game.host': 'Host',
+  'game.perPlayerShort': '/ player',
+  'game.spotsLeftShort': '{count} free',
   'game.join': 'Join',
   'game.leave': 'Leave',
   'game.cancel': 'Cancel game',
@@ -114,6 +128,12 @@ export const en: Record<string, string> = {
   'create.section.cost': 'Cost',
   'create.section.notes': 'Notes',
   'create.field.venue': 'Venue',
+  'create.field.savedPlaces': 'Saved places',
+  'create.field.noSavedPlaces': 'No saved places yet. Your address will be saved after you create the game.',
+  'create.field.placeName': 'Place name',
+  'create.field.placeNamePlaceholder': 'e.g. Park court or School gym',
+  'create.field.venueAddress': 'Address',
+  'create.field.venueAddressPlaceholder': 'e.g. ul. Piekary 17, Poznan',
   'create.field.selectVenue': '— select a venue —',
   'create.field.start': 'Start',
   'create.field.duration': 'Hours',
@@ -123,6 +143,7 @@ export const en: Record<string, string> = {
   'create.field.totalCost': 'Total court cost',
   'create.field.currency': 'Currency',
   'create.field.addressHint': 'Address / meeting point',
+  'create.field.addressHintPlaceholder': 'e.g. Side entrance, park behind the mall',
   'create.field.coverImage': 'Cover photo URL (optional)',
   'create.field.paid': 'This is a paid game',
   'create.paidStatus.on': 'Paid game — players will owe the per-player price.',
@@ -134,6 +155,7 @@ export const en: Record<string, string> = {
   'create.cost.auto': 'Auto: {venue} × {hours}h.',
   'create.cost.custom': 'You set a custom amount.',
   'create.cost.empty': 'Select a venue to auto-fill.',
+  'create.cost.manual': 'Saved places with pricing will auto-fill the cost. Otherwise you can enter it manually.',
   'create.perPlayer': 'Per player: {amount}',
   'create.splitBetween': 'Split between {n} players',
   'create.unlimitedHint': 'No upper limit on players',
@@ -226,6 +248,8 @@ export const en: Record<string, string> = {
 
   // ===== Admin =====
   'admin.title': 'Admin panel',
+  'admin.subtitle': 'Manage users, games, reports, and saved places.',
+  'admin.subtitleSection': 'Admin · {section}',
   'admin.users': 'Users',
   'admin.games': 'Games',
   'admin.venues': 'Venues',
@@ -241,6 +265,13 @@ export const en: Record<string, string> = {
   'admin.resolve': 'Mark reviewed',
   'admin.dismiss': 'Dismiss',
   'admin.resolveAndBan': 'Mark reviewed & ban',
+  'admin.index.stats': 'Users, games, places, and signups',
+  'admin.index.users': 'Manage roles, bans, and user activity',
+  'admin.index.games': 'Cancel, finish, or review any game',
+  'admin.index.venues': 'Review saved places reused in games',
+  'admin.index.reports': 'Review and resolve user reports',
+  'venue.indoor': 'Indoor',
+  'venue.outdoor': 'Outdoor',
 
   // ===== Errors =====
   'error.network': 'Network error. Please try again.',

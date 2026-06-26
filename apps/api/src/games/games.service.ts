@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { SchedulerService } from '../scheduler/scheduler.service';
 import { CreateGameDto, ListGamesQuery } from './dto';
@@ -18,6 +19,7 @@ export class GamesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly scheduler: SchedulerService,
+    private readonly config: ConfigService,
   ) {}
 
   /** Per-player cost for a game given the current number of participants. */
@@ -27,8 +29,7 @@ export class GamesService {
   }
 
   async create(me: User, dto: CreateGameDto) {
-    const venue = await this.prisma.venue.findUnique({ where: { id: dto.venueId } });
-    if (!venue) throw new NotFoundException('Venue not found');
+    const venue = await this.resolveVenue(me, dto);
 
     const start = new Date(dto.startAt);
     const end = new Date(dto.endAt);
@@ -46,7 +47,7 @@ export class GamesService {
 
     const game = await this.prisma.game.create({
       data: {
-        venueId: dto.venueId,
+        venueId: venue.id,
         hostId: me.id,
         startAt: start,
         endAt: end,
@@ -68,6 +69,52 @@ export class GamesService {
     });
 
     return this.findOne(game.id);
+  }
+
+  private async resolveVenue(me: User, dto: CreateGameDto) {
+    if (dto.venueId) {
+      const venue = await this.prisma.venue.findUnique({ where: { id: dto.venueId } });
+      if (!venue) throw new NotFoundException('Venue not found');
+      return venue;
+    }
+
+    const normalizedAddress = dto.venueAddress.trim();
+    if (!normalizedAddress) {
+      throw new BadRequestException('venueAddress is required');
+    }
+
+    const city = me.city || this.config.get<string>('DEFAULT_CITY') || 'Unknown';
+    const existing = await this.prisma.venue.findFirst({
+      where: {
+        city,
+        address: normalizedAddress,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (existing) return existing;
+
+    const defaultLat = Number(this.config.get<string>('DEFAULT_CITY_LAT') ?? 0) || 0;
+    const defaultLng = Number(this.config.get<string>('DEFAULT_CITY_LNG') ?? 0) || 0;
+    const name =
+      dto.venueName?.trim() ||
+      normalizedAddress.split(',')[0]?.trim() ||
+      normalizedAddress;
+
+    return this.prisma.venue.create({
+      data: {
+        name: name.slice(0, 120),
+        address: normalizedAddress,
+        lat: me.lat ?? defaultLat,
+        lng: me.lng ?? defaultLng,
+        indoor: false,
+        surface: null,
+        hourlyPrice: 0,
+        capacity: Math.max(2, Math.min(40, dto.spotsTotal)),
+        city,
+        status: 'PUBLISHED',
+        submittedById: me.id,
+      },
+    });
   }
 
   async findOne(id: string) {

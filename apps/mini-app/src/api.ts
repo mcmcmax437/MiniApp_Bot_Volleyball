@@ -130,7 +130,9 @@ export interface ApiGameDetail extends ApiGame {
 }
 
 export interface CreateGamePayload {
-  venueId: string;
+  venueId?: string;
+  venueName?: string;
+  venueAddress: string;
   startAt: string;
   endAt: string;
   skillLevel: SkillLevel;

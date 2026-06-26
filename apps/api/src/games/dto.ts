@@ -28,8 +28,18 @@ function toBool(v: unknown): boolean | undefined {
 }
 
 export class CreateGameDto {
+  @IsOptional()
   @IsString()
-  venueId!: string;
+  venueId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  venueName?: string;
+
+  @IsString()
+  @MaxLength(240)
+  venueAddress!: string;
 
   @IsDateString()
   startAt!: string;

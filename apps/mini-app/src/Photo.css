@@ -60,3 +60,19 @@
 .photo-fallback {
   color: var(--text-inverse);
 }
+
+.photo-badge {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.photo-badge-topLeft {
+  top: -2px;
+  left: -2px;
+}
+
+.photo-badge-bottomRight {
+  right: -2px;
+  bottom: -2px;
+}

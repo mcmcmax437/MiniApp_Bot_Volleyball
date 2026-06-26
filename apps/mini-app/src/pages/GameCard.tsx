@@ -11,12 +11,12 @@ function statusToBadgeClass(status: ApiGame["status"]): string {
   return `badge badge-${status.toLowerCase()}`;
 }
 
-function statusLabel(status: ApiGame["status"]): string {
+function statusLabel(status: ApiGame["status"], t: (key: string) => string): string {
   switch (status) {
-    case "OPEN": return "Open";
-    case "FULL": return "Full";
-    case "CANCELLED": return "Cancelled";
-    case "FINISHED": return "Finished";
+    case "OPEN": return t('status.open');
+    case "FULL": return t('status.full');
+    case "CANCELLED": return t('status.cancelled');
+    case "FINISHED": return t('status.finished');
     default: return status;
   }
 }
@@ -80,7 +80,7 @@ export function GameCard({ game }: GameCardProps) {
             )}
             <div className={statusToBadgeClass(game.status)}>
               <span className="badge-dot" />
-              {statusLabel(game.status)}
+              {statusLabel(game.status, t)}
             </div>
           </div>
         </div>
@@ -98,16 +98,13 @@ export function GameCard({ game }: GameCardProps) {
             src={game.host.photoUrl ?? null}
             name={game.host.firstName}
             size={36}
+            bottomRightBadge={game.host.skillLevel ? <SkillBadge level={game.host.skillLevel} size="sm" /> : null}
           />
           <div className="gameCard-hostInfo">
             <div className="gameCard-title">{game.venue.name}</div>
             <div className="gameCard-hostName">
               {t('game.host')}: {game.host.firstName}
-              {game.host.skillLevel && (
-                <span className="gameCard-hostLevel">
-                  · {skillLabel(game.host.skillLevel)}
-                </span>
-              )}
+              {game.host.skillLevel && <span className="gameCard-hostLevel">· {skillLabel(game.host.skillLevel)}</span>}
             </div>
           </div>
         </div>
@@ -129,7 +126,7 @@ export function GameCard({ game }: GameCardProps) {
               <strong>{game.participantsCount}</strong>/{game.spotsTotal} players
             </span>
             {spotsLeft > 0 && (
-              <span className="gameCard-capacityFree">· {spotsLeft} free</span>
+              <span className="gameCard-capacityFree">· {t('game.spotsLeftShort', { count: spotsLeft })}</span>
             )}
           </div>
           <div className="capacity-bar">
@@ -146,7 +143,7 @@ export function GameCard({ game }: GameCardProps) {
             <SkillBadge level={game.skillLevel} size="sm" />
             <span className="tag info">
               <Icon name="building-01" size={10} className="icon-inline" style={{ marginRight: 2 }} />
-              {game.venue.indoor ? "Indoor" : "Outdoor"}
+              {game.venue.indoor ? t('venue.indoor') : t('venue.outdoor')}
             </span>
             {game.isPaid && (
               <span className="tag warning">
@@ -161,7 +158,7 @@ export function GameCard({ game }: GameCardProps) {
                 {CURRENCY_SYMBOLS[game.currency] ?? game.currency}
                 {formatMoney(game.perPlayerCost)}
               </span>
-              <span className="gameCard-priceLabel"> / player</span>
+              <span className="gameCard-priceLabel"> {t('game.perPlayerShort')}</span>
             </div>
           )}
         </div>
@@ -169,7 +166,7 @@ export function GameCard({ game }: GameCardProps) {
         {spotsLeft > 0 && spotsLeft <= 3 && game.status === "OPEN" && (
           <div className="gameCard-urgent">
             <Icon name="bell-dot" size={12} />
-            <span>Only {spotsLeft} spot{spotsLeft === 1 ? "" : "s"} left</span>
+            <span>{t(spotsLeft === 1 ? 'game.spotsOneLeft' : 'game.spotsLeft', { n: spotsLeft })}</span>
           </div>
         )}
       </article>

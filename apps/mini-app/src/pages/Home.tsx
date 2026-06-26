@@ -171,8 +171,8 @@ export function HomePage() {
           )}
           <p className="home-hero-sub">
             {openGames.length > 0
-              ? `${openGames.length} open game${openGames.length === 1 ? "" : "s"} in your city.`
-              : "No games yet — be the first to organize one."}
+              ? t('home.openGamesInCity', { count: openGames.length })
+              : t('home.noGamesSub')}
           </p>
         </div>
         <div className="home-hero-photoWrap">
@@ -181,6 +181,15 @@ export function HomePage() {
               src={meQ.data?.photoUrl ?? photoUrl}
               name={firstName}
               size={80}
+              topLeftBadge={
+                meQ.data?.isSuperAdmin ? (
+                  <span className="profilePhotoStatus profilePhotoStatus-admin">
+                    <Icon name="crown" size={10} />
+                    <span>{t('profile.status.admin')}</span>
+                  </span>
+                ) : null
+              }
+              bottomRightBadge={meQ.data?.skillLevel ? <SkillBadge level={meQ.data.skillLevel} size="sm" /> : null}
             />
           ) : (
             <div className="home-hero-mascot" aria-hidden="true">
@@ -253,7 +262,7 @@ export function HomePage() {
           </div>
           <div>
             <div className="hero-cta-title">{t('home.createGame')}</div>
-            <div className="hero-cta-sub">Invite players in seconds</div>
+            <div className="hero-cta-sub">{t('home.createGameSub')}</div>
           </div>
         </div>
         <div className="hero-cta-arrow">
@@ -264,19 +273,19 @@ export function HomePage() {
       <div className="stat-strip">
         <div className="stat">
           <div className="stat-value">{openGames.length}</div>
-          <div className="stat-label">Open games</div>
+          <div className="stat-label">{t('home.openGames')}</div>
         </div>
         <div className="stat-divider" />
         <div className="stat">
           <div className="stat-value">
             {openGames.reduce((sum, g) => sum + (g.spotsTotal - g.participantsCount), 0)}
           </div>
-          <div className="stat-label">Free spots</div>
+          <div className="stat-label">{t('home.freeSpots')}</div>
         </div>
         <div className="stat-divider" />
         <div className="stat">
           <div className="stat-value">{gamesQ.data?.length ?? 0}</div>
-          <div className="stat-label">All games</div>
+          <div className="stat-label">{t('home.allGames')}</div>
         </div>
       </div>
 
@@ -320,7 +329,7 @@ export function HomePage() {
             </div>
             <div className="empty-state-title">{t('home.noGames')}</div>
             <div className="empty-state-text">
-              Be the first to organize a volleyball game in {city}. Tap "Create Game" to start.
+              {t('home.emptyCta', { city })}
             </div>
           </div>
         )}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { Icon } from './Icon';
 import './Photo.css';
 
@@ -13,6 +14,8 @@ interface PhotoProps {
   variant?: 'circle' | 'rounded';
   /** Extra class name on the wrapper. */
   className?: string;
+  topLeftBadge?: ReactNode;
+  bottomRightBadge?: ReactNode;
 }
 
 /**
@@ -20,7 +23,15 @@ interface PhotoProps {
  * gradient if the photo is missing or fails to load. The gradient rotates
  * through 4 palettes so consecutive users don't all look the same.
  */
-export function Photo({ src, name, size = 40, variant = 'circle', className }: PhotoProps) {
+export function Photo({
+  src,
+  name,
+  size = 40,
+  variant = 'circle',
+  className,
+  topLeftBadge,
+  bottomRightBadge,
+}: PhotoProps) {
   const [error, setError] = useState(false);
   const initials = name
     ? name
@@ -66,6 +77,8 @@ export function Photo({ src, name, size = 40, variant = 'circle', className }: P
           <Icon name="user-account" size={Math.round(size * 0.55)} />
         </span>
       )}
+      {topLeftBadge ? <span className="photo-badge photo-badge-topLeft">{topLeftBadge}</span> : null}
+      {bottomRightBadge ? <span className="photo-badge photo-badge-bottomRight">{bottomRightBadge}</span> : null}
     </span>
   );
 }

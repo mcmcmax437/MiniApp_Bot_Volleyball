@@ -41,12 +41,15 @@ export function CreateGamePage() {
   const qc = useQueryClient();
   const { t } = useI18n();
 
+  useQuery(['me'], () => api.me());
   const cityQ = useQuery(['default-city'], () => api.defaultCity());
   const venuesQ = useQuery(['venues', cityQ.data?.city], () =>
     api.listVenues({ city: cityQ.data?.city ?? undefined }),
   );
 
   const [venueId, setVenueId] = useState('');
+  const [venueName, setVenueName] = useState('');
+  const [venueAddress, setVenueAddress] = useState('');
   const [startAt, setStartAt] = useState(defaultStartAt());
   const [durationHours, setDurationHours] = useState<number | ''>(2);
   const [skill, setSkill] = useState<SkillLevel>('LEVEL_3');
@@ -98,7 +101,9 @@ export function CreateGamePage() {
   const createMut = useMutation(
     () =>
       api.createGame({
-        venueId,
+        venueId: venueId || undefined,
+        venueName: venueName.trim() || undefined,
+        venueAddress: venueAddress.trim(),
         startAt: toIsoLocal(startAt),
         endAt: endAtIso,
         skillLevel: skill,
@@ -130,7 +135,7 @@ export function CreateGamePage() {
     );
   }
 
-  const canSubmit = !!venueId && !createMut.isLoading;
+  const canSubmit = !!venueAddress.trim() && !createMut.isLoading;
 
   return (
     <form
@@ -159,7 +164,7 @@ export function CreateGamePage() {
         <div className="field">
           <label className="field-label" htmlFor="venue">
             <Icon name="building-01" size={12} className="icon-inline" />
-            {t('create.field.venue')}
+            {t('create.field.savedPlaces')}
           </label>
           {/* Native <select> elements render inconsistently across iOS Safari
               and Android WebView and are easy to miss on small phones. We
@@ -168,10 +173,10 @@ export function CreateGamePage() {
           <div
             className="venuePicker"
             role="radiogroup"
-            aria-label={t('create.field.venue')}
+            aria-label={t('create.field.savedPlaces')}
           >
             {(venuesQ.data ?? []).length === 0 && (
-              <div className="venuePicker-empty">{t('create.field.noVenues')}</div>
+              <div className="venuePicker-empty">{t('create.field.noSavedPlaces')}</div>
             )}
             {venuesQ.data?.map((v) => {
               const active = v.id === venueId;
@@ -182,7 +187,11 @@ export function CreateGamePage() {
                   role="radio"
                   aria-checked={active}
                   className={`venuePicker-item ${active ? 'isActive' : ''}`}
-                  onClick={() => setVenueId(v.id)}
+                  onClick={() => {
+                    setVenueId(v.id);
+                    setVenueName(v.name);
+                    setVenueAddress(v.address);
+                  }}
                   data-analytics-label={`create-venue-${v.id}`}
                 >
                   <span className="venuePicker-icon">
@@ -191,11 +200,11 @@ export function CreateGamePage() {
                   <span className="venuePicker-info">
                     <span className="venuePicker-name">{v.name}</span>
                     <span className="venuePicker-meta">
-                      {v.address} · {v.indoor ? 'Indoor' : 'Outdoor'} · up to {v.capacity}
+                      {v.address}
                     </span>
                   </span>
                   <span className="venuePicker-price">
-                    {CURRENCY_SYMBOLS[currency]}{(v.hourlyPrice / 100).toFixed(2)}/hr
+                    {active ? <Icon name="check" size={14} /> : null}
                   </span>
                 </button>
               );
@@ -221,15 +230,47 @@ export function CreateGamePage() {
         </div>
 
         <div className="field">
+          <label className="field-label" htmlFor="venueName">
+            <Icon name="building-01" size={12} className="icon-inline" />
+            {t('create.field.placeName')}
+          </label>
+          <input
+            id="venueName"
+            value={venueName}
+            onChange={(e) => {
+              setVenueId('');
+              setVenueName(e.target.value);
+            }}
+            placeholder={t('create.field.placeNamePlaceholder')}
+          />
+        </div>
+
+        <div className="field">
           <label className="field-label" htmlFor="address">
             <Icon name="map-pin" size={12} className="icon-inline" />
-            {t('create.field.addressHint')}
+            {t('create.field.venueAddress')}
           </label>
           <input
             id="address"
+            value={venueAddress}
+            onChange={(e) => {
+              setVenueId('');
+              setVenueAddress(e.target.value);
+            }}
+            placeholder={t('create.field.venueAddressPlaceholder')}
+          />
+        </div>
+
+        <div className="field">
+          <label className="field-label" htmlFor="addressHint">
+            <Icon name="pin" size={12} className="icon-inline" />
+            {t('create.field.addressHint')}
+          </label>
+          <input
+            id="addressHint"
             value={addressHint}
             onChange={(e) => setAddressHint(e.target.value)}
-            placeholder="e.g. Side entrance, park behind the mall"
+            placeholder={t('create.field.addressHintPlaceholder')}
           />
         </div>
 
@@ -454,7 +495,7 @@ export function CreateGamePage() {
               ? t('create.cost.custom')
               : selectedVenue
                 ? t('create.cost.auto', { venue: selectedVenue.name, hours: durationHours === '' ? 1 : durationHours })
-                : t('create.cost.empty')}
+                : t('create.cost.manual')}
           </div>
         </div>
 
