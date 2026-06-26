@@ -273,6 +273,18 @@ export function App() {
           </span>
           <span>{t('nav.profile')}</span>
         </NavLink>
+        {meQ.data?.role === 'ADMIN' && (
+          <NavLink
+            to="/admin"
+            className={({ isActive }) => (isActive ? 'active' : '')}
+            data-analytics-label="nav-test-admin"
+          >
+            <span className="nav-icon">
+              <Icon name="crown" size={20} />
+            </span>
+            <span>{t('nav.test')}</span>
+          </NavLink>
+        )}
       </nav>
     </>
   );

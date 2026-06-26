@@ -9,6 +9,7 @@ export const ru: Record<string, string> = {
   'nav.games': 'Игры',
   'nav.create': 'Создать',
   'nav.profile': 'Профиль',
+  'nav.test': 'Тест',
 
   'welcome.title': 'Добро пожаловать в VolleyBot',
   'welcome.subtitle': 'Выберите свой уровень игры, чтобы начать.',

@@ -175,7 +175,7 @@ export function HomePage() {
             <Photo
               src={meQ.data?.photoUrl ?? photoUrl}
               name={firstName}
-              size={56}
+              size={80}
             />
           ) : (
             <div className="home-hero-mascot" aria-hidden="true">

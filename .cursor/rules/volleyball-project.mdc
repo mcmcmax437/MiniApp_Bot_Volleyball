@@ -30,7 +30,7 @@ alwaysApply: true
 - Skill levels are 6 enums `LEVEL_1`…`LEVEL_6`; displayed numbers are 1-based. Use `<SkillBadge>` for any level indicator.
 - The skill chip on the photo must be **prominent** (the user complained twice about it being too small). Use `size="xl" withLabel` under the name, not a corner overlay.
 - i18n keys live in `apps/mini-app/src/i18n/*.ts`. Every new `t('...')` call needs the key added in **all 4** locale files.
-- Bottom nav has 4 fixed slots: Home, Games, Create, Profile. No 5th.
+- Bottom nav has 4 standard slots: Home, Games, Create, Profile, plus a 5th "Test" tab visible only for admins (`me.role === 'ADMIN'`) that links to `/admin`.
 
 ## CSS
 - Page styles go in `pages/<Name>.css`. Global tokens in `App.css` — use them, no raw hex.
