@@ -157,8 +157,11 @@ export function HomePage() {
               className="home-hero-skill"
               title={SKILL_LEVEL_LABELS[meQ.data.skillLevel]}
             >
-              <SkillBadge level={meQ.data.skillLevel} size="sm" />
-              <span>Level {SKILL_LEVELS.indexOf(meQ.data.skillLevel) + 1}</span>
+              <SkillBadge
+                level={meQ.data.skillLevel}
+                size="lg"
+                withLabel
+              />
             </span>
           )}
           <p className="home-hero-sub">
@@ -180,11 +183,6 @@ export function HomePage() {
               <div className="mascot-orbit" />
               <img className="mascot-img" src="/robot.png" alt="" />
             </div>
-          )}
-          {meQ.data?.skillLevel && (
-            <span className="skillBadge-on-photo">
-              <SkillBadge level={meQ.data.skillLevel} size="md" />
-            </span>
           )}
         </div>
       </header>

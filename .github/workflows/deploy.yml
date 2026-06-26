@@ -17,6 +17,7 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          VPS_TELEGRAM_SUPERADMIN_ID: ${{ secrets.VPS_TELEGRAM_SUPERADMIN_ID }}
           VPS_APP_DIR: /usr/src/volleyball_miniApp/MiniApp_Bot_Volleyball
         run: |
           if [ -z "$VPS_HOST" ] || [ -z "$VPS_USER" ] || [ -z "$VPS_SSH_KEY" ]; then
@@ -29,7 +30,7 @@ jobs:
 
           ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/deploy_key \
             "${VPS_USER}@${VPS_HOST}" \
-            "VPS_APP_DIR='${VPS_APP_DIR}' VPS_REPO_URL='https://github.com/mcmcmax437/MiniApp_Bot_Volleyball.git' bash -s" <<'REMOTE'
+            "VPS_APP_DIR='${VPS_APP_DIR}' VPS_REPO_URL='https://github.com/mcmcmax437/MiniApp_Bot_Volleyball.git' VPS_TELEGRAM_SUPERADMIN_ID='${VPS_TELEGRAM_SUPERADMIN_ID:-}' bash -s" <<'REMOTE'
           set -eo pipefail
           APP_DIR="$VPS_APP_DIR"
           VPS_USER="${VPS_USER:-root}"

@@ -110,6 +110,12 @@
   letter-spacing: 0.01em;
 }
 
+/* Big skill chip right under the name — the most prominent way to show the
+   user's playing level next to the photo, in the form of "🏅 3 LEVEL_3" */
+.profileHero-skillBig {
+  margin: 4px 0 8px;
+}
+
 /* ============================================================
    Profile hero meta (username + admin badge)
    ============================================================ */

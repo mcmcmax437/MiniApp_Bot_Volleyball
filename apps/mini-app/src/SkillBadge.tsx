@@ -1,4 +1,4 @@
-import { SkillLevel, SKILL_LEVELS } from './api';
+import { SkillLevel, SKILL_LEVELS, SKILL_LEVEL_LABELS } from './api';
 import { Icon, IconName } from './Icon';
 
 const SKILL_ICONS: Record<SkillLevel, IconName> = {
@@ -12,7 +12,7 @@ const SKILL_ICONS: Record<SkillLevel, IconName> = {
 
 interface SkillBadgeProps {
   level: SkillLevel | null | undefined;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   withLabel?: boolean;
   title?: string;
 }
@@ -37,9 +37,9 @@ export function SkillBadge({ level, size = 'md', withLabel, title }: SkillBadgeP
       title={title ?? `Level ${num}`}
       aria-label={`Skill level ${num}`}
     >
-      <Icon name={SKILL_ICONS[level]} size={size === 'sm' ? 10 : size === 'lg' ? 16 : 12} />
+      <Icon name={SKILL_ICONS[level]} size={size === 'sm' ? 10 : size === 'lg' ? 16 : size === 'xl' ? 20 : 12} />
       <span className="skillBadge-num">{num}</span>
-      {withLabel && <span className="skillBadge-label">{level.replace('LEVEL_', '')}</span>}
+      {withLabel && <span className="skillBadge-label">{SKILL_LEVEL_LABELS[level]}</span>}
     </span>
   );
 }

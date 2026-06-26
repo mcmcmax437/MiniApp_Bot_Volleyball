@@ -1,0 +1,40 @@
+---
+description: Volleyball Mini App — deploy, secrets, and project-specific conventions
+alwaysApply: true
+---
+
+# Volleyball Mini App — project rules
+
+## Deploys
+- **Never** commit, push, or trigger a deploy without the user saying "go" in the current turn.
+- After non-trivial changes, stop and report: what's modified, what's committed, what's pushed, what the user must still do.
+- One canonical deploy path: push to `main` → GitHub Actions runs `vps-update.sh`. Don't suggest manual SSH + git pull.
+
+## VPS server (read-only from the agent)
+- **Read freely**, **never write**. The agent can SSH to the VPS to inspect files, query the database, read logs, check service status — anything read-only.
+- The agent must **not** modify, create, delete, or move any file on the VPS, edit `.env`, restart services, run `pm2` commands, or otherwise change server state. All writes go through the deploy workflow: local edit → commit → push → `vps-update.sh`.
+
+
+## `.env` is sourced by bash
+`scripts/vps-update.sh` runs `set -a; . ./.env` on the server, so the file is **executed** as a shell script.
+- Never put `<`, `>`, backticks, or unquoted `$` in values. Use `KEY=` (empty) or `KEY=value`.
+- `vps-apply-production-env.mjs` strips `<placeholder>` values on every deploy — that's the safety net.
+- The server's `.env` is git-ignored and **persists** between deploys. Local `.env` edits don't auto-propagate.
+
+## Secrets
+- Treat `BOT_TOKEN`, `MYSQL_PASSWORD`, `JWT_SECRET`, and `TELEGRAM_SUPERADMIN_ID` as secrets. Never commit, never echo verbatim in chat.
+- Mask when debugging: `BOT_TOKEN=890…PZE`, not the full value. Use non-secret probes (`grep -c`, counts) when possible.
+- The superadmin ID is `468133256` (digits only). The API does an exact string match against the logged-in Telegram user ID to grant `ADMIN`.
+
+## Mini-app UI
+- Skill levels are 6 enums `LEVEL_1`…`LEVEL_6`; displayed numbers are 1-based. Use `<SkillBadge>` for any level indicator.
+- The skill chip on the photo must be **prominent** (the user complained twice about it being too small). Use `size="xl" withLabel` under the name, not a corner overlay.
+- i18n keys live in `apps/mini-app/src/i18n/*.ts`. Every new `t('...')` call needs the key added in **all 4** locale files.
+- Bottom nav has 4 fixed slots: Home, Games, Create, Profile. No 5th.
+
+## CSS
+- Page styles go in `pages/<Name>.css`. Global tokens in `App.css` — use them, no raw hex.
+- `.btn-icon` is `36×36` with no full-width stretch and no `.btn::after` highlight. The `::after` is a brand-gradient meant for big primary CTAs; on a square it looks like a yellow square. Any new icon-button class must suppress `::after`.
+
+## When a user reports "I don't see X"
+First check: did the deploy run? Is the change in the bundle on the server? The deployed app lags the local repo by however long it takes the user to commit + push + wait for Actions.

@@ -155,25 +155,26 @@ export function ProfilePage() {
             name={fullName}
             size={84}
           />
-          {meQ.data.skillLevel && (
-            <span className="skillBadge-on-photo">
-              <SkillBadge level={meQ.data.skillLevel} size="lg" />
-            </span>
-          )}
         </div>
         <div className="profileHero-info">
           <h1 className="profileHero-name">
             {meQ.data.firstName} {meQ.data.lastName ?? ""}
           </h1>
+          {meQ.data.skillLevel && (
+            <div
+              className="profileHero-skillBig"
+              title={SKILL_LEVEL_LABELS[meQ.data.skillLevel]}
+            >
+              <SkillBadge
+                level={meQ.data.skillLevel}
+                size="xl"
+                withLabel
+              />
+            </div>
+          )}
           <div className="profileHero-meta">
             {meQ.data.username && (
               <span className="profileHero-username">@{meQ.data.username}</span>
-            )}
-            {meQ.data.skillLevel && (
-              <span className="profileHero-skill" title={SKILL_LEVEL_LABELS[meQ.data.skillLevel]}>
-                <SkillBadge level={meQ.data.skillLevel} size="sm" />
-                <span>Level {SKILL_LEVELS.indexOf(meQ.data.skillLevel) + 1}</span>
-              </span>
             )}
             {isAdmin && (
               <span className="profileHero-badge profileHero-badge-admin">

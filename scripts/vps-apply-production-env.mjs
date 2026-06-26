@@ -68,6 +68,23 @@ if (vars.PUBLIC_URL && !vars.CORS_ORIGINS) {
   lines = setLine(lines, "CORS_ORIGINS", vars.PUBLIC_URL);
 }
 
+// Self-defence: an older deploy of the project shipped a `.env` template that
+// had placeholder values like `JWT_SECRET=<paste a long random secret here>`.
+// The placeholder was never replaced on the server, so the next deploy would
+// fail with `syntax error near unexpected token 'newline'` when bash tried to
+// source the file (`set -a; . ./.env`). Strip any value that starts with `<`
+// so the .env is always sourceable, even if a real value was never written.
+lines = lines.map((line) => {
+  const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
+  if (!m) return line;
+  const [, key, value] = m;
+  if (value.trim().startsWith("<")) {
+    console.warn(`  stripping placeholder value for ${key}`);
+    return `${key}=`;
+  }
+  return line;
+});
+
 fs.writeFileSync(
   envPath,
   `${lines.filter((l, i, a) => !(i === a.length - 1 && l === "")).join("\n")}\n`,

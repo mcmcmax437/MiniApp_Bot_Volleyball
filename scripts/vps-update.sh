@@ -28,6 +28,25 @@ git pull --ff-only origin "$BRANCH"
 echo "==> Apply production .env (VPS_MYSQL_* → MYSQL_*)"
 node scripts/vps-apply-production-env.mjs
 
+# Allow the deploy to override the superadmin Telegram ID. The .env on the
+# server is git-ignored and persists between deploys, so a stale value (e.g.
+# from a previous superadmin account) would keep overriding the new one. We
+# accept VPS_TELEGRAM_SUPERADMIN_ID from the CI environment and rewrite the
+# .env line in place. This keeps the .env the single source of truth while
+# letting us promote/demote the admin from GitHub Actions.
+if [[ -n "${VPS_TELEGRAM_SUPERADMIN_ID:-}" ]]; then
+  if grep -qE '^TELEGRAM_SUPERADMIN_ID=' .env; then
+    # Value is restricted to digits at the CI side, so we don't need to
+    # escape regex metachars here.
+    sed -i.bak -E "s|^TELEGRAM_SUPERADMIN_ID=.*\$|TELEGRAM_SUPERADMIN_ID=${VPS_TELEGRAM_SUPERADMIN_ID}|" .env
+    rm -f .env.bak
+    echo "==> TELEGRAM_SUPERADMIN_ID set from VPS_TELEGRAM_SUPERADMIN_ID"
+  else
+    printf '\nTELEGRAM_SUPERADMIN_ID=%s\n' "$VPS_TELEGRAM_SUPERADMIN_ID" >> .env
+    echo "==> TELEGRAM_SUPERADMIN_ID appended from VPS_TELEGRAM_SUPERADMIN_ID"
+  fi
+fi
+
 # Install deps BEFORE exporting the production .env into the shell.
 # vps-apply-production-env.mjs writes NODE_ENV=production into .env, and
 # if that variable is in the shell environment, `npm ci` skips

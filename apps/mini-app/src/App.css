@@ -775,6 +775,7 @@ body.keyboard-open .app-container {
 .skillBadge-sm { padding: 2px 6px; font-size: 10px; }
 .skillBadge-md { padding: 3px 8px; font-size: 11px; }
 .skillBadge-lg { padding: 6px 12px; font-size: 14px; }
+.skillBadge-xl { padding: 8px 14px; font-size: 16px; gap: 8px; border-radius: 999px; font-weight: 800; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
 .skillBadge-num { font-variant-numeric: tabular-nums; }
 .skillBadge-label { font-weight: 500; color: var(--text-tertiary); margin-left: 4px; }
 
