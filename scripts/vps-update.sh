@@ -39,6 +39,18 @@ npm ci --include=dev
 # Prisma and Nest both need DATABASE_URL etc. The repo-root .env isn't
 # auto-discovered when npm changes cwd into apps/api, so source it into
 # the shell environment now that `npm ci` has finished.
+# `set -a` exports every variable assignment, so a stray placeholder like
+# `JWT_SECRET=<paste here>` would have made bash treat `<` as a redirect
+# and abort the whole script. Detect that up front so we fail with a clear
+# message instead of a cryptic parse error from line N.
+if grep -qE '^[A-Z_][A-Z0-9_]*[[:space:]]*=' .env && \
+   grep -qE '^[[:space:]]*[A-Z_][A-Z0-9_]*=<' .env; then
+  echo "ERROR: .env contains an empty/placeholder value wrapped in <>."
+  echo "Replace every 'KEY=<...>' line with a real value or an empty value (KEY=)."
+  echo "Offending line(s):"
+  grep -nE '^[[:space:]]*[A-Z_][A-Z0-9_]*=<' .env || true
+  exit 2
+fi
 set -a
 # shellcheck disable=SC1091
 . ./.env
