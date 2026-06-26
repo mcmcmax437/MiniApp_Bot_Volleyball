@@ -97,6 +97,7 @@ export function ReportUserModal({ open, target, gameId, onClose }: Props) {
           )}
           <div className="modal-actions">
             <button className="btn btn-ghost" onClick={onClose} type="button">
+              <Icon name="cancel-01" size={14} />
               {t('common.cancel')}
             </button>
             <button

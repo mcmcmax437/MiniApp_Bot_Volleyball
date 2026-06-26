@@ -156,9 +156,8 @@ export function ProfilePage() {
             size={84}
             topLeftBadge={
               isAdmin ? (
-                <span className="profilePhotoStatus profilePhotoStatus-admin">
+                <span className="profilePhotoStatus profilePhotoStatus-admin" title={t('profile.status.admin')}>
                   <Icon name="crown" size={10} />
-                  <span>{t('profile.status.admin')}</span>
                 </span>
               ) : null
             }
@@ -177,7 +176,21 @@ export function ProfilePage() {
             {meQ.data.username && (
               <span className="profileHero-username">@{meQ.data.username}</span>
             )}
+            {isAdmin && (
+              <span className="profileHero-badge profileHero-badge-admin">
+                <Icon name="crown" size={11} />
+                {t('profile.status.admin')}
+              </span>
+            )}
           </div>
+          {meQ.data.skillLevel && (
+            <div
+              className="profileHero-skillBig"
+              title={SKILL_LEVEL_LABELS[meQ.data.skillLevel]}
+            >
+              <SkillBadge level={meQ.data.skillLevel} size="md" withLabel />
+            </div>
+          )}
           {meQ.data.evaluatedSkillLevel && (
             <div className="profileHero-eval">
               <SkillBadge level={meQ.data.evaluatedSkillLevel} size="sm" />

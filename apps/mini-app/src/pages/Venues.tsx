@@ -48,6 +48,7 @@ export function VenuesPage() {
       ))}
 
       <button className="btn secondary" onClick={() => setShowForm((s) => !s)} style={{ marginTop: 12 }}>
+        <Icon name={showForm ? 'cancel-01' : 'plus-sign'} size={18} />
         {showForm ? 'Cancel' : 'Suggest a venue'}
       </button>
 
@@ -145,6 +146,7 @@ function SuggestVenueForm({ onDone }: { onDone: () => void }) {
         disabled={!name || !address || mut.isLoading}
         onClick={() => mut.mutate()}
       >
+        <Icon name="send-01" size={18} />
         Submit
       </button>
       {mut.isError && <div className="error">{(mut.error as Error).message}</div>}

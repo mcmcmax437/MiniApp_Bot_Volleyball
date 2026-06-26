@@ -64,7 +64,10 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
         </div>
       )}
       <div className="modal-actions">
-        <button className="btn btn-ghost" onClick={onClose}>{t('common.cancel')}</button>
+        <button className="btn btn-ghost" onClick={onClose}>
+          <Icon name="cancel-01" size={14} />
+          {t('common.cancel')}
+        </button>
         <button
           className="btn"
           onClick={() => inviteMut.mutate()}

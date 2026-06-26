@@ -21,6 +21,15 @@ function hasOnboardedLocally(): boolean {
 
 const STORAGE_LAT = 'volley:lat:v1';
 const STORAGE_LNG = 'volley:lng:v1';
+const STORAGE_CITY = 'volley:city:v1';
+
+function getStoredCity(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_CITY);
+  } catch {
+    return null;
+  }
+}
 
 export function HomePage() {
   const api = useApi();
@@ -44,8 +53,14 @@ export function HomePage() {
   const navigate = useNavigate();
 
   const [locating, setLocating] = useState(false);
+  const [storedCity, setStoredCity] = useState<string | null>(() => getStoredCity());
   const firstName = meQ.data?.firstName ?? user?.first_name ?? "friend";
-  const city = meQ.data?.city ?? cityQ.data?.city ?? "your city";
+  const city =
+    (storedCity && meQ.data?.city === cityQ.data?.city ? storedCity : null) ??
+    meQ.data?.city ??
+    storedCity ??
+    cityQ.data?.city ??
+    "your city";
   const openGames = (gamesQ.data ?? []).filter((g) => g.status === "OPEN");
   const nextGames = (gamesQ.data ?? []).slice(0, 3);
   const needsOnboarding =
@@ -57,7 +72,7 @@ export function HomePage() {
   useEffect(() => {
     if (!navigator.geolocation) return;
     try {
-      if (localStorage.getItem(STORAGE_LAT)) return;
+      if (localStorage.getItem(STORAGE_CITY)) return;
     } catch {}
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -73,7 +88,13 @@ export function HomePage() {
           // Try to refresh the city too so the Home header doesn't keep
           // showing the old default ("Kyiv") next to the real coordinates.
           const city = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
-          if (city) patch.city = city;
+          if (city) {
+            patch.city = city;
+            try {
+              localStorage.setItem(STORAGE_CITY, city);
+            } catch {}
+            setStoredCity(city);
+          }
           await api.updateMe(patch as any);
           qcRefetchMe();
         } catch {}
@@ -107,7 +128,13 @@ export function HomePage() {
           // too — otherwise the user sees the old default ("Kyiv") next to
           // their real coordinates.
           const city = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
-          if (city) patch.city = city;
+          if (city) {
+            patch.city = city;
+            try {
+              localStorage.setItem(STORAGE_CITY, city);
+            } catch {}
+            setStoredCity(city);
+          }
           await api.updateMe(patch as any);
         } catch {
           // Even if reverse geocoding or the PATCH fails, we still
@@ -183,9 +210,8 @@ export function HomePage() {
               size={80}
               topLeftBadge={
                 meQ.data?.isSuperAdmin ? (
-                  <span className="profilePhotoStatus profilePhotoStatus-admin">
+                  <span className="profilePhotoStatus profilePhotoStatus-admin" title={t('profile.status.admin')}>
                     <Icon name="crown" size={10} />
-                    <span>{t('profile.status.admin')}</span>
                   </span>
                 ) : null
               }
