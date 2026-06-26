@@ -51,6 +51,7 @@ export interface ApiUser {
   reminderOffsets: number[];
   photoUrl: string | null;
   role: UserRole;
+  isSuperAdmin: boolean;
   // v3:
   language: Language | null;
   evaluatedSkillLevel: SkillLevel | null;
@@ -404,6 +405,19 @@ export function useApi() {
     me: () => http<ApiUser | null>('/auth/me', { method: 'GET' }, initData),
     updateMe: (patch: Partial<ApiUser>) =>
       http<ApiUser>('/me', { method: 'PATCH', body: JSON.stringify(patch) }, initData),
+
+    /**
+     * TEMP debug — fetches the server's configured TELEGRAM_SUPERADMIN_ID,
+     * masked to first-2 / last-2 digits. Used by the Home debug banner so
+     * we can confirm the deploy actually wrote the expected value. Remove
+     * the banner once admin role is confirmed working.
+     */
+    serverSuperadminId: () =>
+      http<{ configured: boolean; masked?: string; length?: number }>(
+        '/healthz/superadmin-id',
+        { method: 'GET' },
+        initData,
+      ),
 
     listVenues: (q: { city?: string } = {}) => {
       const params = new URLSearchParams();

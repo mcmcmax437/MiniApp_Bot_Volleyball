@@ -64,8 +64,8 @@ function markOnboardedLocally() {
 }
 
 /**
- * Client-side gate for /admin sub-pages. The server already enforces admin
- * access via AdminGuard on every /api/v1/admin/* endpoint, so a non-admin
+ * Client-side gate for /admin sub-pages. The server already enforces super
+ * admin access via AdminGuard on every /api/v1/admin/* endpoint, so a non-admin
  * navigating here would get 403s on every call. This gate makes the UX
  * clear: they don't even see the page chrome. The real check is on the API.
  */
@@ -82,7 +82,7 @@ function AdminGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (meQ.data?.role !== 'ADMIN') {
+  if (!meQ.data?.isSuperAdmin) {
     return (
       <div className="empty-state" style={{ marginTop: 40 }}>
         <div className="empty-state-icon" style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}>
@@ -273,16 +273,16 @@ export function App() {
           </span>
           <span>{t('nav.profile')}</span>
         </NavLink>
-        {meQ.data?.role === 'ADMIN' && (
+        {meQ.data?.isSuperAdmin && (
           <NavLink
             to="/admin"
             className={({ isActive }) => (isActive ? 'active' : '')}
-            data-analytics-label="nav-test-admin"
+            data-analytics-label="nav-admin"
           >
             <span className="nav-icon">
               <Icon name="crown" size={20} />
             </span>
-            <span>{t('nav.test')}</span>
+            <span>{t('nav.admin')}</span>
           </NavLink>
         )}
       </nav>

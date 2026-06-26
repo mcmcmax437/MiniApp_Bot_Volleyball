@@ -144,7 +144,7 @@ export function ProfilePage() {
   const canSave = !save.isLoading;
   const fullName =
     `${meQ.data.firstName}${meQ.data.lastName ? " " + meQ.data.lastName : ""}`;
-  const isAdmin = meQ.data.role === "ADMIN";
+  const isAdmin = meQ.data.isSuperAdmin;
 
   return (
     <div className="profilePage">

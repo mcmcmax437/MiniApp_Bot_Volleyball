@@ -12,6 +12,7 @@ export const en: Record<string, string> = {
   'nav.games': 'Games',
   'nav.create': 'Create',
   'nav.profile': 'Profile',
+  'nav.admin': 'Admin',
   'nav.test': 'Test',
 
   // ===== Welcome / onboarding =====

@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 import { IsString } from 'class-validator';
+import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard, AuthedRequest } from './jwt.guard';
 import { PrismaService } from '../prisma/prisma.service';
@@ -15,6 +16,7 @@ export class AuthController {
   constructor(
     private readonly auth: AuthService,
     private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
   ) {}
 
   @Post('telegram')
@@ -57,6 +59,12 @@ export class AuthController {
       reminderOffsets: u.reminderOffsets,
       photoUrl: u.photoUrl ?? null,
       role: u.role ?? 'USER',
+      isSuperAdmin: this.isSuperAdmin(u.telegramId),
     };
+  }
+
+  private isSuperAdmin(telegramId: bigint | string | number) {
+    const configured = this.config.get<string>('TELEGRAM_SUPERADMIN_ID')?.trim();
+    return !!configured && String(telegramId) === configured;
   }
 }
