@@ -197,11 +197,38 @@ export function ProfilePage() {
       {/* === Section: Quick links === */}
       <div className="profileLinks">
         {isAdmin && (
-          <Link to="/admin" className="profileLink" data-analytics-label="profile-admin">
-            <span className="profileLink-icon"><Icon name="crown" size={16} /></span>
-            {t('profile.adminPanel')}
-            <span className="profileLink-arrow"><Icon name="arrow-right-01" size={16} /></span>
-          </Link>
+          <>
+            <Link to="/admin" className="profileLink" data-analytics-label="profile-admin">
+              <span className="profileLink-icon"><Icon name="crown" size={16} /></span>
+              {t('profile.adminPanel')}
+              <span className="profileLink-arrow"><Icon name="arrow-right-01" size={16} /></span>
+            </Link>
+            <Link to="/admin/stats" className="profileLink" data-analytics-label="profile-admin-stats">
+              <span className="profileLink-icon"><Icon name="chart-line-data-01" size={16} /></span>
+              Stats
+              <span className="profileLink-arrow"><Icon name="arrow-right-01" size={16} /></span>
+            </Link>
+            <Link to="/admin/users" className="profileLink" data-analytics-label="profile-admin-users">
+              <span className="profileLink-icon"><Icon name="user-account" size={16} /></span>
+              Users
+              <span className="profileLink-arrow"><Icon name="arrow-right-01" size={16} /></span>
+            </Link>
+            <Link to="/admin/games" className="profileLink" data-analytics-label="profile-admin-games">
+              <span className="profileLink-icon"><Icon name="tennis-ball" size={16} /></span>
+              Games
+              <span className="profileLink-arrow"><Icon name="arrow-right-01" size={16} /></span>
+            </Link>
+            <Link to="/admin/venues" className="profileLink" data-analytics-label="profile-admin-venues">
+              <span className="profileLink-icon"><Icon name="building-01" size={16} /></span>
+              Venues
+              <span className="profileLink-arrow"><Icon name="arrow-right-01" size={16} /></span>
+            </Link>
+            <Link to="/admin/reports" className="profileLink" data-analytics-label="profile-admin-reports">
+              <span className="profileLink-icon"><Icon name="report" size={16} /></span>
+              Reports
+              <span className="profileLink-arrow"><Icon name="arrow-right-01" size={16} /></span>
+            </Link>
+          </>
         )}
         <Link to="/calendar" className="profileLink" data-analytics-label="profile-calendar">
           <span className="profileLink-icon"><Icon name="calendar-02" size={16} /></span>

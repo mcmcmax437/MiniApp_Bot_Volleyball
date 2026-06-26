@@ -132,7 +132,6 @@ export function HomePage() {
 
   return (
     <div className="home">
-      <div className="deploy-test-marker" aria-hidden="true" />
       <header className="home-hero">
         <div className="home-hero-text">
           <div className="home-hero-eyebrow">

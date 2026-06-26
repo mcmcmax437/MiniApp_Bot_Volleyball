@@ -1,23 +1,6 @@
 .home {
   display: flex;
   flex-direction: column;
-  position: relative;
-}
-
-/* TEMP deploy-test marker — red dot in the top-right corner. If you see this
-   on the live mini-app after a deploy, the new bundle is being served. Remove
-   once we've confirmed the deploy pipeline. */
-.deploy-test-marker {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #ff0000;
-  box-shadow: 0 0 0 3px #ffffff, 0 0 8px rgba(255, 0, 0, 0.6);
-  z-index: 1000;
-  pointer-events: none;
 }
   padding-top: 8px;
 }

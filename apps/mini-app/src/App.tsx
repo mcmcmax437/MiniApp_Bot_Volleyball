@@ -13,6 +13,11 @@ import { VenuesPage } from './pages/Venues';
 import { ProfilePage } from './pages/Profile';
 import { WelcomePage } from './pages/Welcome';
 import { AdminPage } from './pages/Admin';
+import { AdminStatsPage } from './pages/AdminStats';
+import { AdminUsersPage } from './pages/AdminUsers';
+import { AdminGamesPage } from './pages/AdminGames';
+import { AdminVenuesPage } from './pages/AdminVenues';
+import { AdminReportsPage } from './pages/AdminReports';
 import { CalendarPage } from './pages/Calendar';
 import { BlacklistPage } from './pages/Blacklist';
 import { InvitationsPage } from './pages/Invitations';
@@ -56,6 +61,42 @@ function markOnboardedLocally() {
   } catch {
     /* ignore */
   }
+}
+
+/**
+ * Client-side gate for /admin sub-pages. The server already enforces admin
+ * access via AdminGuard on every /api/v1/admin/* endpoint, so a non-admin
+ * navigating here would get 403s on every call. This gate makes the UX
+ * clear: they don't even see the page chrome. The real check is on the API.
+ */
+function AdminGate({ children }: { children: React.ReactNode }) {
+  const api = useApi();
+  const meQ = useQuery(['me'], () => api.me(), { retry: false });
+  const { t } = useI18n();
+
+  if (meQ.isLoading) {
+    return (
+      <div className="empty-state">
+        <div className="empty-state-icon skeleton" style={{ width: 56, height: 56, borderRadius: '50%' }} />
+      </div>
+    );
+  }
+
+  if (meQ.data?.role !== 'ADMIN') {
+    return (
+      <div className="empty-state" style={{ marginTop: 40 }}>
+        <div className="empty-state-icon" style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}>
+          <Icon name="lock" size={20} />
+        </div>
+        <div className="empty-state-title">Admin only</div>
+        <div className="empty-state-text">
+          {t('error.unknown')}
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
 }
 
 export function App() {
@@ -180,7 +221,12 @@ export function App() {
           <Route path="/venues" element={<VenuesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/welcome" element={<WelcomePage />} />
-          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin" element={<AdminGate><AdminPage /></AdminGate>} />
+          <Route path="/admin/stats" element={<AdminGate><AdminPage subPage="stats" /></AdminGate>} />
+          <Route path="/admin/users" element={<AdminGate><AdminPage subPage="users" /></AdminGate>} />
+          <Route path="/admin/games" element={<AdminGate><AdminPage subPage="games" /></AdminGate>} />
+          <Route path="/admin/venues" element={<AdminGate><AdminPage subPage="venues" /></AdminGate>} />
+          <Route path="/admin/reports" element={<AdminGate><AdminPage subPage="reports" /></AdminGate>} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/blacklist" element={<BlacklistPage />} />
           <Route path="/invitations" element={<InvitationsPage />} />
