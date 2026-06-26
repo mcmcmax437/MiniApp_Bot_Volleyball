@@ -94,12 +94,14 @@ export function GamesPage() {
         </div>
         <button
           type="button"
-          className="btn btn-ghost"
+          className="btn btn-ghost btn-icon"
           onClick={() => setShowFilters((s) => !s)}
           data-analytics-label="games-toggle-filters"
+          aria-label={t('games.filter.apply')}
+          title={t('games.filter.apply')}
         >
           <Icon name="filter" size={14} />
-          {filtersActive ? '•' : ''}
+          {filtersActive && <span className="btn-icon-dot" aria-hidden="true" />}
         </button>
         <Link
           to="/calendar"

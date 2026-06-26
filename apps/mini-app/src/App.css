@@ -397,6 +397,38 @@ body.keyboard-open .app-container {
   transform: scale(0.97);
 }
 
+/* Icon-only buttons (square 36x36) should not stretch to full width, should
+   not have the brand-colored 48px min-height, and should not have the
+   `.btn::after` highlight gradient (which on a square icon button looks like
+   a random yellow square). */
+.btn-icon,
+.btn.btn-icon {
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+}
+
+.btn-icon::after {
+  display: none;
+}
+
+/* Small dot in the corner of an icon button (e.g. "filters are active" badge
+   on the Games page). */
+.btn-icon-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--brand);
+  box-shadow: 0 0 0 2px var(--surface-1);
+  pointer-events: none;
+}
+
 /* ============================================================
    Icons
    ============================================================ */

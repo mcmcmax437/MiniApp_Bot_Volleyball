@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { useApi } from "../api";
+import { useApi, SKILL_LEVELS, SKILL_LEVEL_LABELS } from "../api";
 import { useTelegram } from "../tg";
 import { Icon } from "../Icon";
 import { Photo } from "../Photo";
 import { SkillBadge } from "../SkillBadge";
 import { useI18n } from "../i18n";
+import { reverseGeocode } from "../geo";
 import { GameCard } from "./GameCard";
 import "./Home.css";
 
@@ -60,7 +61,15 @@ export function HomePage() {
           localStorage.setItem(STORAGE_LNG, String(pos.coords.longitude));
         } catch {}
         try {
-          await api.updateMe({ lat: pos.coords.latitude, lng: pos.coords.longitude } as any);
+          const patch: Record<string, unknown> = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+          };
+          // Try to refresh the city too so the Home header doesn't keep
+          // showing the old default ("Kyiv") next to the real coordinates.
+          const city = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+          if (city) patch.city = city;
+          await api.updateMe(patch as any);
           qcRefetchMe();
         } catch {}
       },
@@ -85,7 +94,20 @@ export function HomePage() {
           localStorage.setItem(STORAGE_LNG, String(pos.coords.longitude));
         } catch {}
         try {
-          await api.updateMe({ lat: pos.coords.latitude, lng: pos.coords.longitude } as any);
+          const patch: Record<string, unknown> = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+          };
+          // Best-effort: figure out the city name so the city field updates
+          // too — otherwise the user sees the old default ("Kyiv") next to
+          // their real coordinates.
+          const city = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+          if (city) patch.city = city;
+          await api.updateMe(patch as any);
+        } catch {
+          // Even if reverse geocoding or the PATCH fails, we still
+          // saved the coords to localStorage; the city will fall back to
+          // whatever the server already had.
         } finally {
           setLocating(false);
           meQ.refetch();
@@ -130,6 +152,15 @@ export function HomePage() {
             {t('home.hello', { name: firstName })}
             <span className="wave" aria-hidden="true">👋</span>
           </h1>
+          {meQ.data?.skillLevel && (
+            <span
+              className="home-hero-skill"
+              title={SKILL_LEVEL_LABELS[meQ.data.skillLevel]}
+            >
+              <SkillBadge level={meQ.data.skillLevel} size="sm" />
+              <span>Level {SKILL_LEVELS.indexOf(meQ.data.skillLevel) + 1}</span>
+            </span>
+          )}
           <p className="home-hero-sub">
             {openGames.length > 0
               ? `${openGames.length} open game${openGames.length === 1 ? "" : "s"} in your city.`

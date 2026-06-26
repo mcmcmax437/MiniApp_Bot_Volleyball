@@ -16,6 +16,7 @@ import { Icon, IconName } from "../Icon";
 import { Photo } from "../Photo";
 import { SkillBadge } from "../SkillBadge";
 import { useI18n, LANG_LABELS, LANG_FLAGS } from "../i18n";
+import { reverseGeocode } from "../geo";
 import "./Profile.css";
 
 function scrollIntoViewSafe(el: HTMLElement) {
@@ -168,6 +169,12 @@ export function ProfilePage() {
             {meQ.data.username && (
               <span className="profileHero-username">@{meQ.data.username}</span>
             )}
+            {meQ.data.skillLevel && (
+              <span className="profileHero-skill" title={SKILL_LEVEL_LABELS[meQ.data.skillLevel]}>
+                <SkillBadge level={meQ.data.skillLevel} size="sm" />
+                <span>Level {SKILL_LEVELS.indexOf(meQ.data.skillLevel) + 1}</span>
+              </span>
+            )}
             {isAdmin && (
               <span className="profileHero-badge profileHero-badge-admin">
                 <Icon name="crown" size={11} />
@@ -208,11 +215,6 @@ export function ProfilePage() {
         <Link to="/blacklist" className="profileLink" data-analytics-label="profile-blacklist">
           <span className="profileLink-icon"><Icon name="user-remove-01" size={16} /></span>
           {t('profile.blacklist')}
-          <span className="profileLink-arrow"><Icon name="arrow-right-01" size={16} /></span>
-        </Link>
-        <Link to="/payments" className="profileLink" data-analytics-label="profile-payments">
-          <span className="profileLink-icon"><Icon name="wallet-01" size={16} /></span>
-          {t('profile.payments')}
           <span className="profileLink-arrow"><Icon name="arrow-right-01" size={16} /></span>
         </Link>
       </div>
@@ -261,10 +263,21 @@ export function ProfilePage() {
                 className="cityRow-locateBtn"
                 onClick={async () => {
                   const pos = await requestLocation();
-                  if (pos) {
-                    await api.updateMe({ lat: pos.lat, lng: pos.lng } as any);
-                    qc.invalidateQueries(['me']);
+                  if (!pos) return;
+                  const patch: Record<string, unknown> = {
+                    lat: pos.lat,
+                    lng: pos.lng,
+                  };
+                  // Try to resolve the city name from the coordinates so the
+                  // city field updates — otherwise the user just sees the old
+                  // default (e.g. "Kyiv") next to their real location.
+                  const resolved = await reverseGeocode(pos.lat, pos.lng);
+                  if (resolved) {
+                    patch.city = resolved;
+                    setCity(resolved);
                   }
+                  await api.updateMe(patch as any);
+                  qc.invalidateQueries(['me']);
                 }}
                 title="Use my location"
                 aria-label="Use my location"
