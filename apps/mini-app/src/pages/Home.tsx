@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { useApi, SKILL_LEVELS, SKILL_LEVEL_LABELS } from "../api";
+import { useApi } from "../api";
 import { useTelegram } from "../tg";
 import { Icon } from "../Icon";
 import { Photo } from "../Photo";
@@ -40,11 +40,6 @@ export function HomePage() {
     staleTime: 0,
   });
   const cityQ = useQuery(["default-city"], () => api.defaultCity());
-  // TEMP debug — see if the server's superadmin id matches yours.
-  const superadminIdQ = useQuery(
-    ["debug", "superadmin-id"],
-    () => api.serverSuperadminId(),
-  );
   const gamesQ = useQuery(
     ["games", cityQ.data?.city, "HOME"],
     () => api.listGames({ city: cityQ.data?.city ?? undefined }),
@@ -180,21 +175,41 @@ export function HomePage() {
               <Icon name={locating ? "loading" : "target"} size={11} />
             </button>
           </div>
-          <h1 className="home-hero-title">
-            {t('home.hello', { name: firstName })}
-            <span className="wave" aria-hidden="true">👋</span>
-          </h1>
-          {meQ.data?.skillLevel && (
-            <span
-              className="home-hero-skill"
-              title={SKILL_LEVEL_LABELS[meQ.data.skillLevel]}
-            >
+          <div className="home-hero-titleRow">
+            <h1 className="home-hero-title">
+              {t('home.hello', { name: firstName })}
+              <span className="wave" aria-hidden="true">👋</span>
+            </h1>
+            {meQ.data?.isSuperAdmin && (
+              <span
+                className="home-hero-adminPill"
+                title={t('profile.status.admin')}
+                aria-label={t('profile.status.admin')}
+                data-analytics-label="home-admin-pill"
+              >
+                <Icon name="crown" size={11} />
+                <span>{t('profile.status.admin')}</span>
+              </span>
+            )}
+          </div>
+          {meQ.data?.skillLevel ? (
+            <div className="home-hero-skill">
               <SkillBadge
                 level={meQ.data.skillLevel}
-                size="lg"
+                size="xl"
                 withLabel
               />
-            </span>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="home-hero-skillPick"
+              onClick={goWelcome}
+              data-analytics-label="home-skill-pick"
+            >
+              <Icon name="award-01" size={12} />
+              <span>{t('home.pickYourLevel')}</span>
+            </button>
           )}
           <p className="home-hero-sub">
             {openGames.length > 0
@@ -208,14 +223,6 @@ export function HomePage() {
               src={meQ.data?.photoUrl ?? photoUrl}
               name={firstName}
               size={80}
-              topLeftBadge={
-                meQ.data?.isSuperAdmin ? (
-                  <span className="profilePhotoStatus profilePhotoStatus-admin" title={t('profile.status.admin')}>
-                    <Icon name="crown" size={10} />
-                  </span>
-                ) : null
-              }
-              bottomRightBadge={meQ.data?.skillLevel ? <SkillBadge level={meQ.data.skillLevel} size="sm" /> : null}
             />
           ) : (
             <div className="home-hero-mascot" aria-hidden="true">
@@ -226,47 +233,6 @@ export function HomePage() {
           )}
         </div>
       </header>
-
-      {/* TEMP debug banner — shows my role, telegramId, and the server's
-          configured superadmin id (masked). Helps confirm why /admin is
-          hidden: usually it's because TELEGRAM_SUPERADMIN_ID on the VPS
-          doesn't match the logged-in user's telegramId. Sign out and back
-          in to re-trigger the role-elevation check on login. Remove this
-          banner once admin role is confirmed working. */}
-      <div className="home-debug" aria-label="admin debug info">
-        <div className="home-debug-title">DEBUG · admin role</div>
-        <div className="home-debug-row">
-          <span>me.role</span>
-          <strong>{meQ.data?.role ?? "—"}</strong>
-        </div>
-        <div className="home-debug-row">
-          <span>me.telegramId</span>
-          <strong>{meQ.data?.telegramId ?? "—"}</strong>
-        </div>
-        <div className="home-debug-row">
-          <span>server superadmin (masked)</span>
-          <strong>
-            {superadminIdQ.isLoading
-              ? "…"
-              : superadminIdQ.data?.configured
-              ? superadminIdQ.data.masked
-              : "NOT SET"}
-          </strong>
-        </div>
-        <div className="home-debug-row">
-          <span>match?</span>
-          <strong>
-            {meQ.data?.telegramId && superadminIdQ.data?.masked
-              ? String(meQ.data.telegramId).slice(0, 2) +
-                "…" +
-                String(meQ.data.telegramId).slice(-2) ===
-                superadminIdQ.data.masked
-                ? "YES"
-                : "NO"
-              : "—"}
-          </strong>
-        </div>
-      </div>
 
       {needsOnboarding && (
         <button type="button" className="home-onboardBanner" onClick={goWelcome}>
