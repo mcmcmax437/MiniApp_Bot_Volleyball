@@ -306,4 +306,17 @@ export const ru: Record<string, string> = {
   'msg.languageUpdated': 'Язык обновлён',
   'msg.locationUpdated': 'Локация обновлена',
   'msg.signOutDone': 'Вы вышли',
+
+  // ===== Weighted skill level feature =====
+  'welcome.changeMode.title': 'Изменить уровень игры',
+  'welcome.changeMode.subtitle':
+    'Выберите уровень, который лучше всего описывает вашу игру сейчас. Это повлияет на рекомендации матчей.',
+  'welcome.changeMode.cta': 'Сохранить уровень',
+  'welcome.changeMode.successTitle': 'Уровень обновлён',
+  'welcome.changeMode.successSub':
+    'Новый уровень сохранён. Он будет применён к будущим матчам.',
+  'home.tapToChangeLevel': 'Нажмите, чтобы изменить уровень игры',
+  'profile.tapToChangeLevel': 'Нажмите, чтобы изменить уровень игры',
+  'eval.looksRight': 'Всё верно · Уровень {n}',
+  'eval.suggestDifferent': 'Предложить другой уровень',
 };

@@ -60,6 +60,14 @@ export class AuthController {
       photoUrl: u.photoUrl ?? null,
       role: u.role ?? 'USER',
       isSuperAdmin: this.isSuperAdmin(u.telegramId),
+      // v3 fields — kept in sync with MeController.toPublicUser so the
+      // client's `ApiUser` interface is fully populated from the very first
+      // /auth/me call (no half-hydrated user object).
+      language: u.language ?? null,
+      evaluatedSkillLevel: u.evaluatedSkillLevel ?? null,
+      evaluatedAt: u.evaluatedAt ?? null,
+      isBanned: u.isBanned ?? false,
+      bannedReason: u.bannedReason ?? null,
     };
   }
 

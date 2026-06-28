@@ -6,6 +6,7 @@ import { Icon } from '../Icon';
 import { Photo } from '../Photo';
 import { SkillBadge } from '../SkillBadge';
 import { useI18n } from '../i18n';
+import { effectiveSkillLevel } from '../lib/skill';
 import { Modal } from '../Modal';
 import { ReportUserModal } from './ReportUserModal';
 import { EvaluatePlayersModal } from './EvaluatePlayersModal';
@@ -191,12 +192,18 @@ export function GameDetailPage() {
             src={g.host.photoUrl}
             name={g.host.firstName}
             size={32}
-            bottomRightBadge={g.host.skillLevel ? <SkillBadge level={g.host.skillLevel} size="sm" /> : null}
+            bottomRightBadge={(() => {
+              const lvl = effectiveSkillLevel(g.host);
+              return lvl ? <SkillBadge level={lvl} size="sm" /> : null;
+            })()}
           />
           <span style={{ flex: 1 }}>
             {g.host.firstName} {g.host.lastName ?? ''} <em style={{ color: 'var(--brand-300)', fontStyle: 'normal', fontSize: 12 }}>· host</em>
           </span>
-          {g.host.skillLevel && <SkillBadge level={g.host.skillLevel} size="sm" />}
+          {(() => {
+            const lvl = effectiveSkillLevel(g.host);
+            return lvl ? <SkillBadge level={lvl} size="sm" /> : null;
+          })()}
           {!isHost && meQ.data && g.host.id !== meQ.data.id && (
             <button
               className="btn btn-ghost"
@@ -211,18 +218,20 @@ export function GameDetailPage() {
         </div>
         {g.participants
           .filter((p) => p.userId !== g.host.id)
-          .map((p) => (
-            <div className="detailPlayer" key={p.id}>
-              <Photo
-                src={p.user.photoUrl}
-                name={`${p.user.firstName}${p.user.lastName ?? ''}`}
-                size={32}
-                bottomRightBadge={p.user.skillLevel ? <SkillBadge level={p.user.skillLevel as SkillLevel} size="sm" /> : null}
-              />
-              <span style={{ flex: 1 }}>
-                {p.user.firstName}{p.user.lastName ? ` ${p.user.lastName}` : ''}
-              </span>
-              {p.user.skillLevel && <SkillBadge level={p.user.skillLevel as SkillLevel} size="sm" />}
+          .map((p) => {
+            const pLevel = effectiveSkillLevel(p.user);
+            return (
+              <div className="detailPlayer" key={p.id}>
+                <Photo
+                  src={p.user.photoUrl}
+                  name={`${p.user.firstName}${p.user.lastName ?? ''}`}
+                  size={32}
+                  bottomRightBadge={pLevel ? <SkillBadge level={pLevel} size="sm" /> : null}
+                />
+                <span style={{ flex: 1 }}>
+                  {p.user.firstName}{p.user.lastName ? ` ${p.user.lastName}` : ''}
+                </span>
+                {pLevel && <SkillBadge level={pLevel} size="sm" />}
               {meQ.data && p.userId !== meQ.data.id && (
                 <button
                   className="btn btn-ghost"
@@ -235,7 +244,8 @@ export function GameDetailPage() {
                 </button>
               )}
             </div>
-          ))}
+            );
+          })}
         {g.participants.length === 1 && (
           <div className="empty" style={{ padding: '12px 0' }}>{t('gameDetail.noPlayers')}</div>
         )}

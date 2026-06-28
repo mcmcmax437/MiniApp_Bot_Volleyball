@@ -9,6 +9,30 @@
 /* ============================================================
    Progress dots
    ============================================================ */
+
+/* Back button shown in "change mode" so the user can leave without saving. */
+.welcome-backBtn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.welcome-backBtn:hover {
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+
 .welcome-progress {
   display: flex;
   gap: 6px;

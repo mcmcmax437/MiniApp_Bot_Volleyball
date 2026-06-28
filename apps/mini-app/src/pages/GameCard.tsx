@@ -5,6 +5,7 @@ import { SKILL_LEVEL_LABELS, SkillLevel, CURRENCY_SYMBOLS } from "../api";
 import type { ApiGame } from "../api";
 import { SkillBadge } from "../SkillBadge";
 import { useI18n } from "../i18n";
+import { effectiveSkillLevel } from "../lib/skill";
 import "./GameCard.css";
 
 function statusToBadgeClass(status: ApiGame["status"]): string {
@@ -61,6 +62,9 @@ export function GameCard({ game }: GameCardProps) {
   const { t } = useI18n();
   const spotsLeft = game.spotsTotal - game.participantsCount;
   const fillPercent = Math.min((game.participantsCount / game.spotsTotal) * 100, 100);
+  // Use the weighted (peer-corrected) level for the host's badge so the
+  // card reflects the most up-to-date rating we know about.
+  const hostLevel = effectiveSkillLevel(game.host);
 
   return (
     <Link to={`/games/${game.id}`} className="gameCard-link">
@@ -98,13 +102,13 @@ export function GameCard({ game }: GameCardProps) {
             src={game.host.photoUrl ?? null}
             name={game.host.firstName}
             size={36}
-            bottomRightBadge={game.host.skillLevel ? <SkillBadge level={game.host.skillLevel} size="sm" /> : null}
+            bottomRightBadge={hostLevel ? <SkillBadge level={hostLevel} size="sm" /> : null}
           />
           <div className="gameCard-hostInfo">
             <div className="gameCard-title">{game.venue.name}</div>
             <div className="gameCard-hostName">
               {t('game.host')}: {game.host.firstName}
-              {game.host.skillLevel && <span className="gameCard-hostLevel">· {skillLabel(game.host.skillLevel)}</span>}
+              {hostLevel && <span className="gameCard-hostLevel">· {skillLabel(hostLevel)}</span>}
             </div>
           </div>
         </div>

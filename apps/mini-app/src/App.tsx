@@ -5,6 +5,7 @@ import { useTelegram } from './tg';
 import { useApi } from './api';
 import { Icon } from './Icon';
 import { useI18n } from './i18n';
+import { effectiveSkillLevel } from './lib/skill';
 import { HomePage } from './pages/Home';
 import { GamesPage } from './pages/Games';
 import { GameDetailPage } from './pages/GameDetail';
@@ -97,6 +98,29 @@ function AdminGate({ children }: { children: React.ReactNode }) {
   }
 
   return <>{children}</>;
+}
+
+/**
+ * Wrapper for the "change my level" entry point. Pre-selects the user's
+ * current level so they can confirm or pick a new one in one tap. Safe to
+ * open without a server-level (e.g. user never onboarded) — in that case
+ * the picker opens empty.
+ */
+function WelcomeChangePage() {
+  const api = useApi();
+  const meQ = useQuery(['me'], () => api.me(), { retry: false, staleTime: 0 });
+  // Pre-select the user's current *effective* level (peer-corrected if
+  // present, else their self pick). If the user has neither, fall back to
+  // the self-level (which may still be null) so the picker opens empty.
+  const prefill = meQ.data
+    ? (effectiveSkillLevel(meQ.data) ?? meQ.data.skillLevel ?? null)
+    : null;
+  return (
+    <WelcomePage
+      mode="change"
+      initialLevel={prefill as any}
+    />
+  );
 }
 
 export function App() {
@@ -221,6 +245,7 @@ export function App() {
           <Route path="/venues" element={<VenuesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/welcome" element={<WelcomePage />} />
+          <Route path="/welcome/change" element={<WelcomeChangePage />} />
           <Route path="/admin" element={<AdminGate><AdminPage /></AdminGate>} />
           <Route path="/admin/stats" element={<AdminGate><AdminPage subPage="stats" /></AdminGate>} />
           <Route path="/admin/users" element={<AdminGate><AdminPage subPage="users" /></AdminGate>} />

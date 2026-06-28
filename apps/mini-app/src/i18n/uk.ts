@@ -37,6 +37,13 @@ export const uk: Record<string, string> = {
     'Оберіть рівень, який найкраще описує вашу гру. Ми підберемо вам ігри з відповідним рівнем.',
   'welcome.skill.cta': 'Продовжити',
   'welcome.skill.saving': 'Збереження…',
+  // Welcome page when opened from a "change my level" tap.
+  'welcome.changeMode.title': 'Змінити рівень гри',
+  'welcome.changeMode.subtitle':
+    'Оберіть рівень, який найкраще описує вашу гру зараз. Це вплине на рекомендації ігор.',
+  'welcome.changeMode.cta': 'Зберегти рівень',
+  'welcome.changeMode.successTitle': 'Рівень оновлено',
+  'welcome.changeMode.successSub': 'Новий рівень збережено. Він діятиме для наступних ігор.',
 
   'skill.LEVEL_1': 'Початківець',
   'skill.LEVEL_2': 'Початківець (Аматор)',
@@ -69,6 +76,7 @@ export const uk: Record<string, string> = {
   'home.openGamesInCity': '{count} відкритих ігор у вашому місті.',
   'home.noGamesSub': 'Ігор ще немає - створіть першу.',
   'home.emptyCta': 'Створіть першу волейбольну гру в {city}. Натисніть "Створити гру", щоб почати.',
+  'home.tapToChangeLevel': 'Натисніть, щоб змінити рівень гри',
 
   'profile.title': 'Профіль',
   'profile.about': 'Про вас',
@@ -87,6 +95,7 @@ export const uk: Record<string, string> = {
   'profile.invitations': 'Запрошення',
   'profile.payments': 'Платежі',
   'profile.status.admin': 'Адмін',
+  'profile.tapToChangeLevel': 'Натисніть, щоб змінити рівень гри',
 
   'games.title': 'Ігри',
   'games.filter.city': 'Місто',
@@ -201,6 +210,9 @@ export const uk: Record<string, string> = {
   'eval.skip': 'Пропустити',
   'eval.submit': 'Надіслати оцінки',
   'eval.thanks': 'Дякуємо — ваші оцінки збережено.',
+  // New "Looks right / Suggest different" UX.
+  'eval.looksRight': 'Все вірно · Рівень {n}',
+  'eval.suggestDifferent': 'Запропонувати інший рівень',
 
   'invite.title': 'Запрошення',
   'invite.empty': 'Немає нових запрошень.',

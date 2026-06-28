@@ -8,8 +8,9 @@ import { Photo } from "../Photo";
 import { Icon, IconName } from "../Icon";
 import "./Welcome.css";
 
-const STEPS = ["intro", "skill", "done"] as const;
-type Step = (typeof STEPS)[number];
+const STEPS_ONBOARD: readonly Step[] = ["intro", "skill", "done"];
+const STEPS_CHANGE: readonly Step[] = ["skill", "done"];
+type Step = "intro" | "skill" | "done";
 
 const SKILL_ICONS: Record<SkillLevel, IconName> = {
   LEVEL_1: "tennis-ball",
@@ -20,18 +21,35 @@ const SKILL_ICONS: Record<SkillLevel, IconName> = {
   LEVEL_6: "crown",
 };
 
+interface WelcomePageProps {
+  /**
+   * `onboard` — first-time greeting flow shown only when `skillLevel` is null
+   *              on the server. Walks: intro → skill → done → home.
+   * `change`  — re-entry from the home/profile tap-to-change button. Skips
+   *              the intro, skips writing the localStorage "onboarded"
+   *              flag, and pops back to the previous screen on success.
+   */
+  mode?: "onboard" | "change";
+  /**
+   * Level to pre-select when the user enters the picker. Only used in
+   * `mode === "change"`. Defaults to no pre-selection.
+   */
+  initialLevel?: SkillLevel | null;
+}
+
 /**
- * Full-screen onboarding shown only on first visit (when skillLevel is null).
- * Walks the user through: greeting -> pick skill level -> confirm -> home.
+ * Full-screen onboarding shown only on first visit (when skillLevel is null),
+ * OR the "change your level" flow reachable from the home/profile badge.
  */
-export function WelcomePage() {
+export function WelcomePage({ mode = "onboard", initialLevel = null }: WelcomePageProps = {}) {
   const api = useApi();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { user, webApp, photoUrl } = useTelegram();
   const { t } = useI18n();
-  const [step, setStep] = useState<Step>("intro");
-  const [selected, setSelected] = useState<SkillLevel | null>(null);
+  const STEPS = mode === "change" ? STEPS_CHANGE : STEPS_ONBOARD;
+  const [step, setStep] = useState<Step>(mode === "change" ? "skill" : "intro");
+  const [selected, setSelected] = useState<SkillLevel | null>(initialLevel);
   const [expandedLevel, setExpandedLevel] = useState<SkillLevel | null>(null);
 
   const save = useMutation(
@@ -45,32 +63,61 @@ export function WelcomePage() {
           qc.setQueryData(["me"], updatedUser);
         }
         qc.invalidateQueries(["me"]);
-        // Persist a local "onboarded" flag so the welcome page never pops up
-        // again for this device, even if the server temporarily returns
-        // skillLevel=null.
-        try {
-          localStorage.setItem("volley:onboarded:v1", "1");
-        } catch {}
+        // Persist a local "onboarded" flag so the welcome page never pops
+        // up again for this device, even if the server temporarily returns
+        // skillLevel=null. Only relevant for the first-time onboard flow —
+        // a returning "change my level" visit shouldn't write this flag.
+        if (mode === "onboard") {
+          try {
+            localStorage.setItem("volley:onboarded:v1", "1");
+          } catch {}
+        }
         setStep("done");
         webApp?.HapticFeedback?.notificationOccurred?.("success");
-        // Brief celebration then auto-dismiss to home
-        setTimeout(() => navigate("/", { replace: true }), 1400);
+        // Brief celebration then auto-dismiss to home. In "change" mode
+        // we go back to wherever the user came from instead of pushing
+        // them all the way to the root.
+        const nextTimeout = mode === "change" ? 900 : 1400;
+        setTimeout(
+          () =>
+            mode === "change"
+              ? navigate(-1)
+              : navigate("/", { replace: true }),
+          nextTimeout,
+        );
       },
     },
   );
 
   const firstName = user?.first_name ?? "friend";
 
+  const isChange = mode === "change";
+
   return (
     <div className="welcome">
+      {isChange && step !== "done" && (
+        <button
+          type="button"
+          className="welcome-backBtn"
+          onClick={() => navigate(-1)}
+          aria-label={t('common.close')}
+          data-analytics-label="welcome-change-back"
+        >
+          <Icon name="arrow-left-01" size={16} />
+          <span>{t('common.cancel')}</span>
+        </button>
+      )}
       {/* === Progress dots === */}
       <div className="welcome-progress" aria-hidden="true">
-        {STEPS.map((s, i) => (
-          <span
-            key={s}
-            className={`welcome-dot ${i <= STEPS.indexOf(step) ? "welcome-dot-active" : ""}`}
-          />
-        ))}
+        {STEPS.map((s, i) => {
+          const activeIdx = STEPS.indexOf(step as Step);
+          return (
+            <span
+              key={s}
+              className={`welcome-dot ${i <= activeIdx ? "welcome-dot-active" : ""}`}
+            />
+          );
+        })}
       </div>
 
       {step === "intro" && (
@@ -132,9 +179,11 @@ export function WelcomePage() {
       {step === "skill" && (
         <div className="welcome-step welcome-fadeIn">
           <div className="welcome-skillHeader">
-            <h1 className="welcome-title">{t('welcome.skill.title')}</h1>
+            <h1 className="welcome-title">
+              {isChange ? t('welcome.changeMode.title') : t('welcome.skill.title')}
+            </h1>
             <p className="welcome-sub">
-              {t('welcome.skill.subtitle')}
+              {isChange ? t('welcome.changeMode.subtitle') : t('welcome.skill.subtitle')}
             </p>
           </div>
 
@@ -188,7 +237,11 @@ export function WelcomePage() {
               disabled={!selected || save.isLoading}
               onClick={() => save.mutate()}
             >
-              {save.isLoading ? t('welcome.skill.saving') : t('welcome.skill.cta')}
+              {save.isLoading
+                ? t('welcome.skill.saving')
+                : isChange
+                ? t('welcome.changeMode.cta')
+                : t('welcome.skill.cta')}
               {!save.isLoading && <Icon name="arrow-right-01" size={18} />}
             </button>
             {save.isError && (
@@ -206,9 +259,11 @@ export function WelcomePage() {
           <div className="welcome-doneCheck">
             <Icon name="checkmark-badge-01" size={56} />
           </div>
-          <h1 className="welcome-title">{t('welcome.done.title')}</h1>
+          <h1 className="welcome-title">
+            {isChange ? t('welcome.changeMode.successTitle') : t('welcome.done.title')}
+          </h1>
           <p className="welcome-sub">
-            {t('welcome.done.subtitle')}
+            {isChange ? t('welcome.changeMode.successSub') : t('welcome.done.subtitle')}
           </p>
         </div>
       )}

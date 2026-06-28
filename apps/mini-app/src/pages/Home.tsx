@@ -8,6 +8,7 @@ import { Photo } from "../Photo";
 import { SkillBadge } from "../SkillBadge";
 import { useI18n } from "../i18n";
 import { reverseGeocode } from "../geo";
+import { effectiveSkillLevel } from "../lib/skill";
 import { GameCard } from "./GameCard";
 import "./Home.css";
 
@@ -60,7 +61,7 @@ export function HomePage() {
   const nextGames = (gamesQ.data ?? []).slice(0, 3);
   const needsOnboarding =
     meQ.data != null &&
-    meQ.data.skillLevel == null &&
+    effectiveSkillLevel(meQ.data) == null &&
     !hasOnboardedLocally();
 
   // Try to geolocate once on first mount, if user has not stored coords yet.
@@ -192,15 +193,23 @@ export function HomePage() {
               </span>
             )}
           </div>
-          {meQ.data?.skillLevel ? (
-            <div className="home-hero-skill">
+          {effectiveSkillLevel(meQ.data) ? (
+            <button
+              type="button"
+              className="home-hero-skill"
+              onClick={() => navigate('/welcome/change')}
+              aria-label={t('home.tapToChangeLevel')}
+              title={t('home.tapToChangeLevel')}
+              data-analytics-label="home-change-level"
+            >
               <SkillBadge
-                level={meQ.data.skillLevel}
+                level={effectiveSkillLevel(meQ.data)}
                 size="xl"
                 withLabel
               />
-            </div>
-          ) : (
+              <Icon name="edit-01" size={12} className="home-hero-skill-edit" />
+            </button>
+          ) : !hasOnboardedLocally() ? (
             <button
               type="button"
               className="home-hero-skillPick"
@@ -210,7 +219,7 @@ export function HomePage() {
               <Icon name="award-01" size={12} />
               <span>{t('home.pickYourLevel')}</span>
             </button>
-          )}
+          ) : null}
           <p className="home-hero-sub">
             {openGames.length > 0
               ? t('home.openGamesInCity', { count: openGames.length })

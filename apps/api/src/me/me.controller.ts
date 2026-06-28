@@ -16,6 +16,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { SKILL_LEVELS } from '../shared/skill-levels';
+import { EvaluationsService } from '../evaluations/evaluations.service';
 import type { User } from '@prisma/client';
 
 const SUPPORTED_LANGUAGES = ['uk', 'pl', 'en', 'ru'] as const;
@@ -74,6 +75,7 @@ export class MeController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly evaluations: EvaluationsService,
   ) {}
 
   /**
@@ -128,6 +130,13 @@ export class MeController {
       return this.toPublicUser(me);
     }
 
+    // The self-declared skill level takes part in the weighted average that
+    // drives the user-facing badge. If the client is changing it (including
+    // clearing it), kick a recompute so the cached `evaluatedSkillLevel`
+    // reflects the new self-value against existing peer evaluations.
+    const skillLevelChanged =
+      dto.skillLevel !== undefined && dto.skillLevel !== me.skillLevel;
+
     const updated = await this.prisma.user.update({
       where: { id: me.id },
       data: {
@@ -140,6 +149,17 @@ export class MeController {
         lng: dto.lng ?? undefined,
       },
     });
+
+    if (skillLevelChanged) {
+      try {
+        await this.evaluations.recalibrateUserSkill(updated.id);
+      } catch {
+        // The self-level change still went through; an aggregation failure
+        // should not 500 the entire PATCH. Worst case: the badge lags by
+        // one render until the next evaluation.
+      }
+    }
+
     return this.toPublicUser(updated);
   }
 }

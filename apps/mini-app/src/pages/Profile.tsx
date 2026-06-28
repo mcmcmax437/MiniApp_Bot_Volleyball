@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import {
   useApi,
@@ -17,6 +17,7 @@ import { Photo } from "../Photo";
 import { SkillBadge } from "../SkillBadge";
 import { useI18n, LANG_LABELS, LANG_FLAGS } from "../i18n";
 import { reverseGeocode } from "../geo";
+import { effectiveSkillLevel } from "../lib/skill";
 import "./Profile.css";
 
 function scrollIntoViewSafe(el: HTMLElement) {
@@ -63,6 +64,7 @@ const SKILL_ICONS: Record<SkillLevel, IconName> = {
 export function ProfilePage() {
   const api = useApi();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { t, lang, setLang } = useI18n();
   const meQ = useQuery<ApiUser | null>(["me"], () => api.me(), {
     refetchOnMount: "always",
@@ -162,8 +164,8 @@ export function ProfilePage() {
               ) : null
             }
             bottomRightBadge={
-              meQ.data.skillLevel ? (
-                <SkillBadge level={meQ.data.skillLevel} size="sm" />
+              effectiveSkillLevel(meQ.data) ? (
+                <SkillBadge level={effectiveSkillLevel(meQ.data)!} size="sm" />
               ) : null
             }
           />
@@ -183,13 +185,18 @@ export function ProfilePage() {
               </span>
             )}
           </div>
-          {meQ.data.skillLevel && (
-            <div
+          {effectiveSkillLevel(meQ.data) && (
+            <button
+              type="button"
               className="profileHero-skillBig"
-              title={SKILL_LEVEL_LABELS[meQ.data.skillLevel]}
+              onClick={() => navigate('/welcome/change')}
+              aria-label={t('profile.tapToChangeLevel')}
+              title={t('profile.tapToChangeLevel')}
+              data-analytics-label="profile-change-level"
             >
-              <SkillBadge level={meQ.data.skillLevel} size="md" withLabel />
-            </div>
+              <SkillBadge level={effectiveSkillLevel(meQ.data)!} size="md" withLabel />
+              <Icon name="edit-01" size={12} className="profileHero-skillBig-edit" />
+            </button>
           )}
           {meQ.data.evaluatedSkillLevel && (
             <div className="profileHero-eval">

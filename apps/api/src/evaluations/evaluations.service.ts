@@ -1,22 +1,17 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { SKILL_LEVELS } from '../shared/skill-levels';
+import { type SkillLevel } from '../shared/skill-levels';
 import type { User } from '@prisma/client';
-
-type SkillLevel = (typeof SKILL_LEVELS)[number];
-
-/**
- * Convert numeric mean → nearest SkillLevel.
- * Uses midpoints between adjacent levels (1.5, 2.5, 3.5, 4.5, 5.5).
- */
-function levelFromAverage(avg: number): SkillLevel {
-  if (avg < 1.5) return 'LEVEL_1';
-  if (avg < 2.5) return 'LEVEL_2';
-  if (avg < 3.5) return 'LEVEL_3';
-  if (avg < 4.5) return 'LEVEL_4';
-  if (avg < 5.5) return 'LEVEL_5';
-  return 'LEVEL_6';
-}
+import {
+  computeWeightedSkillLevel,
+  skillLevelToNumber,
+} from './skill-aggregator';
 
 @Injectable()
 export class EvaluationsService {
@@ -50,43 +45,54 @@ export class EvaluationsService {
       if (!validEvaluatees.has(it.evaluateeId)) {
         throw new BadRequestException(`User ${it.evaluateeId} was not in this game`);
       }
-      if (!SKILL_LEVELS.includes(it.skillLevel)) {
-        throw new BadRequestException(`Invalid skill level ${it.skillLevel}`);
-      }
+      // Note: we don't validate the SkillLevel value here — it's already
+      // enforced by the DTO (`@IsIn(SKILL_LEVELS)`).
     }
 
-    const results = await this.prisma.$transaction(
-      items.map((it) =>
-        this.prisma.gameEvaluation.upsert({
-          where: {
-            gameId_evaluatorId_evaluateeId: {
+    // Snapshot the set of evaluatees we need to recalibrate. Done up front
+    // so the work after the transaction is independent of what changed
+    // inside it.
+    const affectedIds = Array.from(new Set(items.map((i) => i.evaluateeId)));
+
+    // Transaction: upsert each evaluation row AND recompute each affected
+    // user's evaluatedSkillLevel inside the same DB transaction. This
+    // guarantees the cached aggregated level can never be left stale
+    // relative to the evaluation rows that produced it (if the process
+    // dies mid-transaction, both halves roll back together).
+    const txResults = await this.prisma.$transaction(async (tx) => {
+      const upserts = await Promise.all(
+        items.map((it) =>
+          tx.gameEvaluation.upsert({
+            where: {
+              gameId_evaluatorId_evaluateeId: {
+                gameId,
+                evaluatorId: me.id,
+                evaluateeId: it.evaluateeId,
+              },
+            },
+            create: {
               gameId,
               evaluatorId: me.id,
               evaluateeId: it.evaluateeId,
+              skillLevel: it.skillLevel,
+              note: it.note ?? null,
             },
-          },
-          create: {
-            gameId,
-            evaluatorId: me.id,
-            evaluateeId: it.evaluateeId,
-            skillLevel: it.skillLevel,
-            note: it.note ?? null,
-          },
-          update: {
-            skillLevel: it.skillLevel,
-            note: it.note ?? null,
-          },
-        }),
-      ),
-    );
+            update: {
+              skillLevel: it.skillLevel,
+              note: it.note ?? null,
+            },
+          }),
+        ),
+      );
 
-    // After inserting, recalibrate each evaluatee's stored skill level.
-    const affectedIds = Array.from(new Set(items.map((i) => i.evaluateeId)));
-    for (const id of affectedIds) {
-      await this.recalibrateUserSkill(id);
-    }
+      for (const id of affectedIds) {
+        await this.recalibrateUserSkillInTx(tx, id);
+      }
 
-    return { count: results.length };
+      return upserts;
+    });
+
+    return { count: txResults.length };
   }
 
   /** List the evaluations I have already submitted for a game. */
@@ -98,23 +104,55 @@ export class EvaluationsService {
   }
 
   /**
-   * Recompute a user's `evaluatedSkillLevel` from the average of all
-   * evaluation rows they've received. Persists the result and timestamp.
+   * Public, standalone recompute. Used by callers that don't already hold a
+   * transaction (e.g. the user's own level edit). Wraps the inner work in a
+   * transaction so partial failures don't corrupt `evaluatedSkillLevel`.
    */
   async recalibrateUserSkill(userId: string) {
-    const rows = await this.prisma.gameEvaluation.findMany({
+    return this.prisma.$transaction(async (tx) =>
+      this.recalibrateUserSkillInTx(tx, userId),
+    );
+  }
+
+  /**
+   * Compute and persist the user-facing weighted skill level for a single
+   * user. Must be called inside a transaction (see {@link recalibrateUserSkill}
+   * for the standalone wrapper).
+   */
+  private async recalibrateUserSkillInTx(
+    tx: Prisma.TransactionClient,
+    userId: string,
+  ) {
+    const user = await tx.user.findUnique({
+      where: { id: userId },
+      select: { skillLevel: true },
+    });
+    if (!user) return null;
+
+    const rows = await tx.gameEvaluation.findMany({
       where: { evaluateeId: userId },
       select: { skillLevel: true },
     });
-    if (!rows.length) return null;
-    const numeric = rows.map((r) => SKILL_LEVELS.indexOf(r.skillLevel) + 1);
-    const avg = numeric.reduce((a, b) => a + b, 0) / numeric.length;
-    const level = levelFromAverage(avg);
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { evaluatedSkillLevel: level, evaluatedAt: new Date() },
+    const peerLevels = rows.map((r) => r.skillLevel as SkillLevel);
+
+    const result = computeWeightedSkillLevel({
+      selfLevel: (user.skillLevel as SkillLevel | null) ?? null,
+      peerLevels,
     });
-    return { average: avg, level, samples: rows.length };
+
+    // Persist only when there's a level to display — keeps the column
+    // sparse for users with no signal at all.
+    if (result.level === null) {
+      // Don't blindly null out an existing value — only clear it if the
+      // caller explicitly wants that. For now, leave it untouched.
+      return null;
+    }
+
+    await tx.user.update({
+      where: { id: userId },
+      data: { evaluatedSkillLevel: result.level, evaluatedAt: new Date() },
+    });
+    return { ...result, meanNumeric: result.mean ?? skillLevelToNumber(result.level) };
   }
 
   /** Eligible co-players in a finished game. */

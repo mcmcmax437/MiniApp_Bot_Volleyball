@@ -306,4 +306,17 @@ export const pl: Record<string, string> = {
   'msg.languageUpdated': 'Język zaktualizowany',
   'msg.locationUpdated': 'Lokalizacja zaktualizowana',
   'msg.signOutDone': 'Wylogowano',
+
+  // ===== Weighted skill level feature =====
+  'welcome.changeMode.title': 'Zmień swój poziom gry',
+  'welcome.changeMode.subtitle':
+    'Wybierz poziom, który najlepiej opisuje jak teraz grasz. Wpłynie to na rekomendacje meczów.',
+  'welcome.changeMode.cta': 'Zapisz poziom',
+  'welcome.changeMode.successTitle': 'Poziom zaktualizowany',
+  'welcome.changeMode.successSub':
+    'Twój nowy poziom został zapisany. Zostanie zastosowany do przyszłych meczów.',
+  'home.tapToChangeLevel': 'Kliknij, aby zmienić swój poziom gry',
+  'profile.tapToChangeLevel': 'Kliknij, aby zmienić swój poziom gry',
+  'eval.looksRight': 'Zgadza się · Poziom {n}',
+  'eval.suggestDifferent': 'Zaproponuj inny poziom',
 };

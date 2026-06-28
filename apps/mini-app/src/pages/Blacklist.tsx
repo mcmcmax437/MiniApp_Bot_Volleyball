@@ -5,6 +5,7 @@ import { useI18n } from '../i18n';
 import { Icon } from '../Icon';
 import { Photo } from '../Photo';
 import { SkillBadge } from '../SkillBadge';
+import { effectiveSkillLevel } from '../lib/skill';
 
 export function BlacklistPage() {
   const api = useApi();
@@ -121,9 +122,10 @@ export function BlacklistPage() {
                 )}
               </div>
               <div className="blacklistItem-meta">
-                {entry.user.skillLevel && (
-                  <SkillBadge level={entry.user.skillLevel} size="sm" />
-                )}
+                {(() => {
+                  const lvl = effectiveSkillLevel(entry.user);
+                  return lvl ? <SkillBadge level={lvl} size="sm" /> : null;
+                })()}
                 {entry.reason && <span className="blacklistItem-reason">{entry.reason}</span>}
               </div>
             </div>

@@ -41,6 +41,13 @@ export const en: Record<string, string> = {
     "Pick the level that best describes how you play. We'll match you with games at similar levels.",
   'welcome.skill.cta': 'Continue',
   'welcome.skill.saving': 'Saving…',
+  // Welcome page when opened from a "change my level" tap.
+  'welcome.changeMode.title': 'Change your playing level',
+  'welcome.changeMode.subtitle':
+    'Pick the level that best describes how you play now. This affects which games are recommended to you.',
+  'welcome.changeMode.cta': 'Save level',
+  'welcome.changeMode.successTitle': 'Level updated',
+  'welcome.changeMode.successSub': 'Your new level is saved. It will be applied to future games.',
 
   // ===== Skill labels =====
   'skill.LEVEL_1': 'Beginner',
@@ -73,6 +80,7 @@ export const en: Record<string, string> = {
   'home.openGamesInCity': '{count} open games in your city.',
   'home.noGamesSub': 'No games yet - be the first to organize one.',
   'home.emptyCta': 'Be the first to organize a volleyball game in {city}. Tap "Create Game" to start.',
+  'home.tapToChangeLevel': 'Tap to change your playing level',
 
   // ===== Profile =====
   'profile.title': 'Profile',
@@ -92,6 +100,7 @@ export const en: Record<string, string> = {
   'profile.invitations': 'Invitations',
   'profile.payments': 'Payments',
   'profile.status.admin': 'Admin',
+  'profile.tapToChangeLevel': 'Tap to change your playing level',
 
   // ===== Games list =====
   'games.title': 'Games',
@@ -213,6 +222,9 @@ export const en: Record<string, string> = {
   'eval.skip': 'Skip',
   'eval.submit': 'Submit ratings',
   'eval.thanks': 'Thanks — your ratings were submitted.',
+  // New "Looks right / Suggest different" UX.
+  'eval.looksRight': 'Looks right · Level {n}',
+  'eval.suggestDifferent': 'Suggest a different level',
 
   // ===== Invitations =====
   'invite.title': 'Invitations',
