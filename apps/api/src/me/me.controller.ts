@@ -11,6 +11,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -70,11 +71,50 @@ class UpdateMeDto {
 @UseGuards(JwtAuthGuard)
 @Controller('me')
 export class MeController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {}
+
+  /**
+   * Serialize a Prisma user row into the JSON-safe shape the client expects.
+   *
+   * The raw Prisma object has `telegramId` as a BigInt, which breaks
+   * `JSON.stringify` and would crash the response. The AuthController's
+   * `toPublicUser` already does this conversion; we replicate it here so that
+   * `/me` GET and PATCH responses match the `/auth/me` shape exactly.
+   */
+  private toPublicUser(u: User) {
+    const configured = this.config.get<string>('TELEGRAM_SUPERADMIN_ID')?.trim();
+    const isSuperAdmin =
+      !!configured && String(u.telegramId) === configured;
+    return {
+      id: u.id,
+      telegramId: u.telegramId.toString(),
+      firstName: u.firstName,
+      lastName: u.lastName,
+      username: u.username,
+      age: u.age,
+      skillLevel: u.skillLevel,
+      city: u.city,
+      lat: u.lat,
+      lng: u.lng,
+      reminderOffsets: u.reminderOffsets,
+      photoUrl: u.photoUrl ?? null,
+      role: u.role ?? 'USER',
+      isSuperAdmin,
+      // v3 fields that aren't currently on User but the client expects:
+      language: (u as any).language ?? null,
+      evaluatedSkillLevel: (u as any).evaluatedSkillLevel ?? null,
+      evaluatedAt: (u as any).evaluatedAt ?? null,
+      isBanned: u.isBanned,
+      bannedReason: u.bannedReason,
+    };
+  }
 
   @Get()
   async get(@CurrentUser() me: User | null) {
-    return me;
+    return me ? this.toPublicUser(me) : null;
   }
 
   @Patch()
@@ -85,7 +125,7 @@ export class MeController {
     // can't mutate anything. The guard does not enforce this because we want
     // /me to keep returning the user so the client can show the ban screen.
     if (me.isBanned) {
-      return me;
+      return this.toPublicUser(me);
     }
 
     const updated = await this.prisma.user.update({
@@ -100,6 +140,6 @@ export class MeController {
         lng: dto.lng ?? undefined,
       },
     });
-    return updated;
+    return this.toPublicUser(updated);
   }
 }

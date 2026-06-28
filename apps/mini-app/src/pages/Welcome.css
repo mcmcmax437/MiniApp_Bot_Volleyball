@@ -310,9 +310,10 @@
   width: 112px;
   height: 112px;
   border-radius: 50%;
-  /* Brand gradient (warm orange) instead of green to match the rest of the
-     app's identity. The white check inside reads as "completed". */
-  background: var(--gradient-brand);
+  /* Green check on a green disc — universal "all good" signal. Distinct from
+     the orange brand gradient used by CTAs, so the user immediately knows
+     the action succeeded rather than being prompted to act. */
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   display: flex;
   align-items: center;
@@ -327,7 +328,7 @@
   position: absolute;
   inset: -10px;
   border-radius: 50%;
-  background: var(--gradient-brand);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   filter: blur(24px);
   opacity: 0.45;
   z-index: -1;
