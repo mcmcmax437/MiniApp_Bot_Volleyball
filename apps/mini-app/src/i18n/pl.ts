@@ -21,6 +21,22 @@ export const pl: Record<string, string> = {
   'welcome.cta': 'Dalej',
   'welcome.done.title': 'Wszystko gotowe!',
   'welcome.done.subtitle': 'Ładowanie strony głównej…',
+  'welcome.hello': 'Cześć, {name}!',
+  'welcome.intro':
+    'VolleyBot pomaga znajdować i organizować mecze siatkówki w Twoim mieście. Skonfigurujemy Twój profil w 30 sekund.',
+  'welcome.feature.findGames.title': 'Znajdź mecze w pobliżu',
+  'welcome.feature.findGames.desc': 'Otwarte mecze w Twoim mieście, filtrowane według poziomu gry.',
+  'welcome.feature.join.title': 'Dołącz jednym kliknięciem',
+  'welcome.feature.join.desc': 'Widzisz, kto gra, dzielisz koszt kortu, dostajesz przypomnienia.',
+  'welcome.feature.organize.title': 'Zorganizuj własny mecz',
+  'welcome.feature.organize.desc': 'Wybierz miejsce, czas i poziom — zaproś graczy w sekundy.',
+  'welcome.getStarted': 'Zaczynamy',
+  'welcome.footNote': 'Zawsze możesz to zmienić w Profilu.',
+  'welcome.skill.title': 'Jaki jest Twój poziom gry?',
+  'welcome.skill.subtitle':
+    'Wybierz poziom, który najlepiej opisuje Twoją grę. Dobierzemy Ci mecze o podobnym poziomie.',
+  'welcome.skill.cta': 'Dalej',
+  'welcome.skill.saving': 'Zapisywanie…',
 
   'skill.LEVEL_1': 'Początkujący',
   'skill.LEVEL_2': 'Początkujący (Amator)',
@@ -28,6 +44,16 @@ export const pl: Record<string, string> = {
   'skill.LEVEL_4': 'Zaawansowany',
   'skill.LEVEL_5': 'Półpro',
   'skill.LEVEL_6': 'Profesjonalny',
+  'skill.LEVEL_1.desc':
+    'Zna zasady, ale podstawowe elementy (przyjęcie, zagrywka, wystawa) są niestabilne.',
+  'skill.LEVEL_2.desc': 'Górna zagrywka, pozycyjna obrona, proste przyjęcie.',
+  'skill.LEVEL_3.desc': 'Stabilne przyjęcie, pewne ataki, pierwsze próby zbiorowego bloku.',
+  'skill.LEVEL_4.desc':
+    'Pewna gra z rozgrywającym, ataki w pierwszym tempie, mocne i taktyczne zagrywki.',
+  'skill.LEVEL_5.desc':
+    'Głębokie rozumienie taktyki, mocne zagrywki, wyćwiczone kombinacje.',
+  'skill.LEVEL_6.desc':
+    'Byli zawodowcy, mistrzowie sportu, doskonała technika, błyskawiczna praca zespołowa.',
 
   'home.title': 'Główna',
   'home.hello': 'Cześć, {name}!',

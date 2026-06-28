@@ -25,6 +25,22 @@ export const en: Record<string, string> = {
   'welcome.cta': 'Continue',
   'welcome.done.title': "You're all set!",
   'welcome.done.subtitle': 'Loading your home page…',
+  'welcome.hello': 'Welcome, {name}!',
+  'welcome.intro':
+    "VolleyBot helps you find and organize volleyball games in your city. Let's set up your profile in 30 seconds.",
+  'welcome.feature.findGames.title': 'Find games near you',
+  'welcome.feature.findGames.desc': 'Open games in your city, filtered by skill level.',
+  'welcome.feature.join.title': 'Join with one tap',
+  'welcome.feature.join.desc': "See who's playing, split the court cost, get reminders.",
+  'welcome.feature.organize.title': 'Organize your own game',
+  'welcome.feature.organize.desc': 'Pick a venue, time, and skill — invite players in seconds.',
+  'welcome.getStarted': 'Get started',
+  'welcome.footNote': 'You can always change this later in Profile.',
+  'welcome.skill.title': "What's your playing level?",
+  'welcome.skill.subtitle':
+    "Pick the level that best describes how you play. We'll match you with games at similar levels.",
+  'welcome.skill.cta': 'Continue',
+  'welcome.skill.saving': 'Saving…',
 
   // ===== Skill labels =====
   'skill.LEVEL_1': 'Beginner',
@@ -33,6 +49,12 @@ export const en: Record<string, string> = {
   'skill.LEVEL_4': 'Advanced',
   'skill.LEVEL_5': 'Semi-Pro',
   'skill.LEVEL_6': 'Professional',
+  'skill.LEVEL_1.desc': 'Knows the rules, but basic elements (receive, serve, pass) are inconsistent.',
+  'skill.LEVEL_2.desc': 'Overhand serve, positional defense, simple receive.',
+  'skill.LEVEL_3.desc': 'Consistent reception, confident attacks, first attempts at a group block.',
+  'skill.LEVEL_4.desc': 'Confident play with the setter, first-tempo attacks, powerful & tactical serves.',
+  'skill.LEVEL_5.desc': 'Deep tactical understanding, powerful serves / gliders, well-rehearsed combinations.',
+  'skill.LEVEL_6.desc': 'Former pro athletes, MS / CMS holders, excellent technique, lightning-fast teamwork.',
 
   // ===== Home =====
   'home.title': 'Home',

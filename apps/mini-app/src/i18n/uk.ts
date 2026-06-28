@@ -21,6 +21,22 @@ export const uk: Record<string, string> = {
   'welcome.cta': 'Продовжити',
   'welcome.done.title': 'Все готово!',
   'welcome.done.subtitle': 'Завантажуємо головну сторінку…',
+  'welcome.hello': 'Привіт, {name}!',
+  'welcome.intro':
+    'VolleyBot допомагає знаходити та організовувати волейбольні ігри у вашому місті. Налаштуймо ваш профіль за 30 секунд.',
+  'welcome.feature.findGames.title': 'Знаходьте ігри поруч',
+  'welcome.feature.findGames.desc': 'Відкриті ігри у вашому місті, відфільтровані за рівнем гри.',
+  'welcome.feature.join.title': 'Приєднуйтесь одним дотиком',
+  'welcome.feature.join.desc': 'Бачте, хто грає, діліть вартість корту, отримуйте нагадування.',
+  'welcome.feature.organize.title': 'Організуйте власну гру',
+  'welcome.feature.organize.desc': 'Оберіть місце, час і рівень — запросіть гравців за секунди.',
+  'welcome.getStarted': 'Почати',
+  'welcome.footNote': 'Це завжди можна змінити у Профілі.',
+  'welcome.skill.title': 'Який у вас рівень гри?',
+  'welcome.skill.subtitle':
+    'Оберіть рівень, який найкраще описує вашу гру. Ми підберемо вам ігри з відповідним рівнем.',
+  'welcome.skill.cta': 'Продовжити',
+  'welcome.skill.saving': 'Збереження…',
 
   'skill.LEVEL_1': 'Початківець',
   'skill.LEVEL_2': 'Початківець (Аматор)',
@@ -28,6 +44,14 @@ export const uk: Record<string, string> = {
   'skill.LEVEL_4': 'Просунутий',
   'skill.LEVEL_5': 'Напівпрофі',
   'skill.LEVEL_6': 'Професіонал',
+  'skill.LEVEL_1.desc':
+    'Знає правила, але базові елементи (прийом, подача, передача) поки нестабільні.',
+  'skill.LEVEL_2.desc': 'Верхня подача, позиційний захист, простий прийом.',
+  'skill.LEVEL_3.desc': 'Стабільний прийом, впевнені атаки, перші спроби групового блоку.',
+  'skill.LEVEL_4.desc':
+    'Впевнена гра з пасуючим, атаки першим темпом, потужні та тактичні подачі.',
+  'skill.LEVEL_5.desc': 'Глибоке тактичне розуміння, потужні подачі, відпрацьовані комбінації.',
+  'skill.LEVEL_6.desc': 'Колишні профі, майстри спорту, відмінна техніка, блискавична командна робота.',
 
   'home.title': 'Головна',
   'home.hello': 'Привіт, {name}!',
