@@ -101,7 +101,7 @@ export function AdminReportsPage() {
                   disabled={resolveMut.isLoading}
                   title={t('admin.resolve')}
                 >
-                  <Icon name="check" size={14} />
+                  <Icon name="checkmark-square-01" size={14} />
                 </button>
                 <button
                   type="button"

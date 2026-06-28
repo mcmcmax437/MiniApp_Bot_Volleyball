@@ -204,7 +204,7 @@ export function CreateGamePage() {
                     </span>
                   </span>
                   <span className="venuePicker-price">
-                    {active ? <Icon name="check" size={14} /> : null}
+                    {active ? <Icon name="checkmark-square-01" size={14} /> : null}
                   </span>
                 </button>
               );

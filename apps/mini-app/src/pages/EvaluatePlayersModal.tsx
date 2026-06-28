@@ -74,7 +74,7 @@ export function EvaluatePlayersModal({ open, gameId, onClose }: Props) {
     >
       {done ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0' }}>
-          <Icon name="check" size={36} style={{ color: 'var(--success)' }} />
+          <Icon name="checkmark-circle-01" size={36} style={{ color: 'var(--success)' }} />
         </div>
       ) : (
         <>
@@ -140,7 +140,7 @@ export function EvaluatePlayersModal({ open, gameId, onClose }: Props) {
               onClick={() => submitMut.mutate()}
               disabled={Object.keys(selected).length === 0 || submitMut.isLoading}
             >
-              <Icon name="check" size={14} />
+              <Icon name="checkmark-square-01" size={14} />
               {t('eval.submit')}
             </button>
           </div>

@@ -59,7 +59,7 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
       )}
       {inviteMut.isSuccess && (
         <div className="success-banner">
-          <Icon name="check" size={14} />
+          <Icon name="checkmark-square-01" size={14} />
           <span>{t('invite.invited')}</span>
         </div>
       )}

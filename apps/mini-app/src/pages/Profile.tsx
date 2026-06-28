@@ -416,7 +416,7 @@ export function ProfilePage() {
       )}
       {save.isSuccess && (
         <div className="success-banner">
-          <Icon name="check" size={16} />
+          <Icon name="checkmark-square-01" size={16} />
           <span>{t('profile.saved')}</span>
         </div>
       )}
@@ -427,7 +427,7 @@ export function ProfilePage() {
         disabled={!canSave}
         onClick={() => save.mutate()}
       >
-        <Icon name="check" size={18} />
+        <Icon name="checkmark-square-01" size={18} />
         {save.isLoading ? t('common.loading') : t('profile.save')}
       </button>
 

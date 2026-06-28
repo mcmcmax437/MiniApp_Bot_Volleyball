@@ -72,7 +72,7 @@ export function InvitationsPage() {
                 onClick={() => respondMut.mutate({ id: inv.id, accept: true })}
                 disabled={respondMut.isLoading}
               >
-                <Icon name="check" size={14} />
+                <Icon name="checkmark-square-01" size={14} />
                 {t('invite.accept')}
               </button>
               <button

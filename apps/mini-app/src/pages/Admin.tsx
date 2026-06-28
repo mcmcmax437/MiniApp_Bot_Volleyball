@@ -16,7 +16,7 @@ const SUB_PAGE_META: Record<SubPage, { labelKey: string; icon: IconName }> = {
   users:   { labelKey: "admin.users",   icon: "user-account" },
   games:   { labelKey: "admin.games",   icon: "tennis-ball" },
   venues:  { labelKey: "admin.venues",  icon: "building-01" },
-  reports: { labelKey: "admin.reports", icon: "report" },
+  reports: { labelKey: "admin.reports", icon: "flag-01" },
 };
 
 /**

@@ -334,7 +334,7 @@
   z-index: -1;
 }
 
-.welcome-doneCheck .hg {
+.welcome-doneCheck .hgi-stroke {
   /* Stroke-rounded check tends to look thin at this size; nudge it up. */
   font-size: 60px;
   line-height: 1;

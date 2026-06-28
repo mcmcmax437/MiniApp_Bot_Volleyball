@@ -101,7 +101,7 @@ export function AdminGamesPage() {
                   disabled={setStatus.isLoading}
                   title="Mark as finished"
                 >
-                  <Icon name="check" size={14} />
+                  <Icon name="checkmark-square-01" size={14} />
                 </button>
               )}
               <button

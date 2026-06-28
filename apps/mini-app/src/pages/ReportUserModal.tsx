@@ -59,7 +59,7 @@ export function ReportUserModal({ open, target, gameId, onClose }: Props) {
     >
       {done ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 0' }}>
-          <Icon name="check" size={36} style={{ color: 'var(--success)' }} />
+          <Icon name="checkmark-circle-01" size={36} style={{ color: 'var(--success)' }} />
           <p style={{ marginTop: 8, color: 'var(--text-tertiary)' }}>{target.name}</p>
         </div>
       ) : (
@@ -106,7 +106,7 @@ export function ReportUserModal({ open, target, gameId, onClose }: Props) {
               disabled={!reason || submitMut.isLoading}
               type="button"
             >
-              <Icon name="report" size={14} />
+              <Icon name="flag-01" size={14} />
               {t('report.submit')}
             </button>
           </div>

@@ -204,7 +204,7 @@ export function WelcomePage() {
       {step === "done" && (
         <div className="welcome-step welcome-fadeIn welcome-done">
           <div className="welcome-doneCheck">
-            <Icon name="check" size={56} />
+            <Icon name="checkmark-badge-01" size={56} />
           </div>
           <h1 className="welcome-title">{t('welcome.done.title')}</h1>
           <p className="welcome-sub">

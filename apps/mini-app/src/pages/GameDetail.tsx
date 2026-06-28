@@ -205,7 +205,7 @@ export function GameDetailPage() {
               title="Report"
               data-analytics-label="game-report-host"
             >
-              <Icon name="report" size={12} />
+              <Icon name="flag-01" size={12} />
             </button>
           )}
         </div>
@@ -231,7 +231,7 @@ export function GameDetailPage() {
                   title="Report"
                   data-analytics-label="game-report-player"
                 >
-                  <Icon name="report" size={12} />
+                  <Icon name="flag-01" size={12} />
                 </button>
               )}
             </div>
@@ -266,7 +266,7 @@ export function GameDetailPage() {
                 disabled={finishMut.isLoading}
                 data-analytics-label="game-finish"
               >
-                <Icon name="check" size={16} /> {t('game.finish')}
+                <Icon name="checkmark-square-01" size={16} /> {t('game.finish')}
               </button>
               <button
                 className="btn danger"
@@ -461,7 +461,7 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
                   disabled={setPaidMut.isLoading}
                   aria-label={p.isPaid ? t('payments.markUnpaid') : t('payments.markPaid')}
                 >
-                  <Icon name={p.isPaid ? 'cancel-01' : 'check'} size={12} />
+                  <Icon name={p.isPaid ? 'cancel-01' : 'checkmark-square-01'} size={12} />
                 </button>
               </div>
             ))}
