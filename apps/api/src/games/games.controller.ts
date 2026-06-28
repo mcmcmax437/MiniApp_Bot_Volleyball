@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
@@ -54,7 +55,7 @@ export class GamesController {
   @Post()
   @UseGuards(JwtAuthGuard)
   create(@CurrentUser() me: User | null, @Body() dto: CreateGameDto) {
-    if (!me) throw new Error('unauthorized');
+    if (!me) throw new UnauthorizedException('User not found');
     return this.games.create(me, dto);
   }
 
@@ -65,28 +66,28 @@ export class GamesController {
     @Param('id') id: string,
     @Body() dto: UpdateGameDto,
   ) {
-    if (!me) throw new Error('unauthorized');
+    if (!me) throw new UnauthorizedException('User not found');
     return this.games.update(me, id, dto);
   }
 
   @Post(':id/join')
   @UseGuards(JwtAuthGuard)
   join(@CurrentUser() me: User | null, @Param('id') id: string) {
-    if (!me) throw new Error('unauthorized');
+    if (!me) throw new UnauthorizedException('User not found');
     return this.games.join(me, id);
   }
 
   @Post(':id/leave')
   @UseGuards(JwtAuthGuard)
   leave(@CurrentUser() me: User | null, @Param('id') id: string) {
-    if (!me) throw new Error('unauthorized');
+    if (!me) throw new UnauthorizedException('User not found');
     return this.games.leave(me, id);
   }
 
   @Post(':id/cancel')
   @UseGuards(JwtAuthGuard)
   cancel(@CurrentUser() me: User | null, @Param('id') id: string) {
-    if (!me) throw new Error('unauthorized');
+    if (!me) throw new UnauthorizedException('User not found');
     return this.games.cancel(me, id);
   }
 
@@ -98,7 +99,7 @@ export class GamesController {
     @Param('id') id: string,
     @Body() _dto: FinishGameDto,
   ) {
-    if (!me) throw new Error('unauthorized');
+    if (!me) throw new UnauthorizedException('User not found');
     return this.games.finish(me, id);
   }
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -39,12 +39,14 @@ export class EvaluationsController {
 
   @Get('games/:gameId/evaluations')
   listMine(@CurrentUser() me: User | null, @Param('gameId') gameId: string) {
-    return this.evaluations.listMine(me!, gameId);
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.evaluations.listMine(me, gameId);
   }
 
   @Get('games/:gameId/evaluations/candidates')
   candidates(@CurrentUser() me: User | null, @Param('gameId') gameId: string) {
-    return this.evaluations.listEligibleEvaluators(me!, gameId);
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.evaluations.listEligibleEvaluators(me, gameId);
   }
 
   @Post('games/:gameId/evaluations')
@@ -53,6 +55,7 @@ export class EvaluationsController {
     @Param('gameId') gameId: string,
     @Body() dto: SubmitDto,
   ) {
-    return this.evaluations.submitMany(me!, gameId, dto.items);
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.evaluations.submitMany(me, gameId, dto.items);
   }
 }

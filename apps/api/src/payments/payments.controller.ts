@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { IsBoolean, IsString } from 'class-validator';
 import { PaymentsService } from './payments.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
@@ -17,7 +17,8 @@ export class PaymentsController {
 
   @Get('games/:gameId/payments')
   listForGame(@CurrentUser() me: User | null, @Param('gameId') gameId: string) {
-    return this.payments.listForGame(me!, gameId);
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.payments.listForGame(me, gameId);
   }
 
   @Post('games/:gameId/payments')
@@ -26,11 +27,13 @@ export class PaymentsController {
     @Param('gameId') gameId: string,
     @Body() dto: SetPaidDto,
   ) {
-    return this.payments.setPaid(me!, gameId, dto.userId, dto.isPaid);
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.payments.setPaid(me, gameId, dto.userId, dto.isPaid);
   }
 
   @Get('payments/mine')
   listMine(@CurrentUser() me: User | null) {
-    return this.payments.listMine(me!);
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.payments.listMine(me);
   }
 }

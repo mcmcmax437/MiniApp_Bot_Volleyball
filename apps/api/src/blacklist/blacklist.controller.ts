@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, NotFoundException, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, NotFoundException, Param, Post, Query, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { IsOptional, IsString, MaxLength } from 'class-validator';
 import { BlacklistService } from './blacklist.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
@@ -22,11 +22,13 @@ export class BlacklistController {
 
   @Get()
   list(@CurrentUser() me: User | null) {
-    return this.blacklist.list(me!);
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.blacklist.list(me);
   }
 
   @Post()
   async add(@CurrentUser() me: User | null, @Body() dto: AddBlacklistDto) {
+    if (!me) throw new UnauthorizedException('User not found');
     let blockedId = dto.blockedId;
     if (!blockedId && dto.telegramId) {
       const u = await this.prisma.user.findUnique({
@@ -39,12 +41,13 @@ export class BlacklistController {
     if (!blockedId) {
       throw new BadRequestException('blockedId or telegramId required');
     }
-    return this.blacklist.add(me!, blockedId, dto.reason);
+    return this.blacklist.add(me, blockedId, dto.reason);
   }
 
   @Delete(':blockedId')
   remove(@CurrentUser() me: User | null, @Param('blockedId') blockedId: string) {
-    return this.blacklist.remove(me!, blockedId);
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.blacklist.remove(me, blockedId);
   }
 
   @Get('intersect')
@@ -52,8 +55,9 @@ export class BlacklistController {
     @CurrentUser() me: User | null,
     @Query('ids') ids?: string,
   ) {
+    if (!me) throw new UnauthorizedException('User not found');
     const idList = (ids ?? '').split(',').filter(Boolean);
-    const set = await this.blacklist.blockedSetFor(me!, idList);
+    const set = await this.blacklist.blockedSetFor(me, idList);
     return { blocked: Array.from(set) };
   }
 }

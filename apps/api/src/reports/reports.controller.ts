@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 import { ReportsService, VALID_REASONS } from './reports.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
@@ -19,11 +19,13 @@ export class ReportsController {
 
   @Post()
   file(@CurrentUser() me: User | null, @Body() dto: FileReportDto) {
-    return this.reports.file(me!, dto.targetId, dto.reason, dto.gameId, dto.details);
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.reports.file(me, dto.targetId, dto.reason, dto.gameId, dto.details);
   }
 
   @Get('mine')
   listMine(@CurrentUser() me: User | null) {
-    return this.reports.listMine(me!);
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.reports.listMine(me);
   }
 }

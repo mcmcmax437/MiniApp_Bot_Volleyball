@@ -36,5 +36,14 @@ alwaysApply: true
 - Page styles go in `pages/<Name>.css`. Global tokens in `App.css` — use them, no raw hex.
 - `.btn-icon` is `36×36` with no full-width stretch and no `.btn::after` highlight. The `::after` is a brand-gradient meant for big primary CTAs; on a square it looks like a yellow square. Any new icon-button class must suppress `::after`.
 
+## Backend auth & the `CurrentUser` decorator
+- `JwtAuthGuard` (in `apps/api/src/auth/jwt.guard.ts`) is the single source of truth for resolving the authenticated user. It runs after the JWT is verified and hydrates the full `User` row onto `req.userRecord`. Do **not** put `req.prisma` lookups in controllers or custom decorators — read `req.userRecord` (or the `@CurrentUser()` decorator).
+- `@CurrentUser()` (in `apps/api/src/auth/current-user.decorator.ts`) returns `req.userRecord`. It returns `null` only when the request is unauthenticated. Authenticated handlers must still null-check before dereferencing, but in practice `JwtAuthGuard` runs first and the value is always present.
+- Never use `me!` (non-null assertion) on a `@CurrentUser()` result. The old code did this everywhere; it masked the real bug where `@CurrentUser()` silently returned `null` because `req.prisma` was never wired up. Use `UnauthorizedException` or `if (!me) throw …` explicitly.
+- The `AnalyticsService.heartbeat` crash loop is the canonical "silent null user" symptom: `Cannot read properties of null (reading 'id')` from `analytics.service.js` every few seconds. If you see that pattern in pm2 logs, the `@CurrentUser()` chain is broken, not the analytics code itself.
+
 ## When a user reports "I don't see X"
 First check: did the deploy run? Is the change in the bundle on the server? The deployed app lags the local repo by however long it takes the user to commit + push + wait for Actions.
+
+## When a user reports "Internal server error" on a write action
+Open pm2 logs (`pm2 logs volleyball-api --lines 200 --nostream --raw` over SSH) and grep for the failing controller/service. The `Cannot read properties of null (reading 'id')` family of errors means `@CurrentUser()` returned null — the request hit a guarded route but the user lookup failed. Fix that, not the action's own code.

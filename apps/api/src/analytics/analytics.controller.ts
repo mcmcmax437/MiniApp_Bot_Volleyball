@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -43,6 +43,7 @@ export class AnalyticsController {
 
   @Post('heartbeat')
   heartbeat(@CurrentUser() me: User | null) {
-    return this.analytics.heartbeat(me!);
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.analytics.heartbeat(me);
   }
 }

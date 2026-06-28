@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { IsIn, IsOptional } from 'class-validator';
@@ -56,13 +57,18 @@ export class AdminController {
     return this.admin.getUser(id);
   }
 
+  private requireMe(me: User | null): User {
+    if (!me) throw new UnauthorizedException('User not found');
+    return me;
+  }
+
   @Patch('users/:id')
   updateUser(
     @CurrentUser() me: User | null,
     @Param('id') id: string,
     @Body() dto: AdminUpdateUserDto,
   ) {
-    return this.admin.updateUser(me!.id, id, dto);
+    return this.admin.updateUser(this.requireMe(me).id, id, dto);
   }
 
   @Post('users/:id/ban')
@@ -71,7 +77,7 @@ export class AdminController {
     @Param('id') id: string,
     @Body() body: { reason?: string },
   ) {
-    return this.admin.updateUser(me!.id, id, {
+    return this.admin.updateUser(this.requireMe(me).id, id, {
       isBanned: true,
       bannedReason: body.reason,
     });
@@ -79,12 +85,12 @@ export class AdminController {
 
   @Post('users/:id/unban')
   unbanUser(@CurrentUser() me: User | null, @Param('id') id: string) {
-    return this.admin.updateUser(me!.id, id, { isBanned: false });
+    return this.admin.updateUser(this.requireMe(me).id, id, { isBanned: false });
   }
 
   @Delete('users/:id')
   deleteUser(@CurrentUser() me: User | null, @Param('id') id: string) {
-    return this.admin.deleteUser(me!.id, id);
+    return this.admin.deleteUser(this.requireMe(me).id, id);
   }
 
   // ---------- Games ----------
@@ -103,17 +109,17 @@ export class AdminController {
     @Param('id') id: string,
     @Body() dto: AdminUpdateGameDto,
   ) {
-    return this.admin.updateGame(me!.id, id, dto);
+    return this.admin.updateGame(this.requireMe(me).id, id, dto);
   }
 
   @Post('games/:id/cancel')
   cancelGame(@CurrentUser() me: User | null, @Param('id') id: string) {
-    return this.admin.cancelGame(me!.id, id);
+    return this.admin.cancelGame(this.requireMe(me).id, id);
   }
 
   @Delete('games/:id')
   deleteGame(@CurrentUser() me: User | null, @Param('id') id: string) {
-    return this.admin.deleteGame(me!.id, id);
+    return this.admin.deleteGame(this.requireMe(me).id, id);
   }
 
   // ---------- Venues ----------
@@ -132,12 +138,12 @@ export class AdminController {
     @Param('id') id: string,
     @Body() dto: AdminUpdateVenueDto,
   ) {
-    return this.admin.updateVenue(me!.id, id, dto);
+    return this.admin.updateVenue(this.requireMe(me).id, id, dto);
   }
 
   @Delete('venues/:id')
   deleteVenue(@CurrentUser() me: User | null, @Param('id') id: string) {
-    return this.admin.deleteVenue(me!.id, id);
+    return this.admin.deleteVenue(this.requireMe(me).id, id);
   }
 
   // ---------- Audit ----------
@@ -169,12 +175,13 @@ export class AdminController {
     @Param('id') id: string,
     @Body() dto: ResolveReportDto,
   ) {
-    const resolved = await this.admin.resolveReport(me!.id, id, dto.status);
+    const actorId = this.requireMe(me).id;
+    const resolved = await this.admin.resolveReport(actorId, id, dto.status);
     if (dto.ban) {
       const target = (resolved as any).targetId as string | undefined;
       // The report record has targetId. We re-fetch and ban.
       if (target) {
-        await this.admin.updateUser(me!.id, target, {
+        await this.admin.updateUser(actorId, target, {
           isBanned: true,
           bannedReason: dto.banReason ?? 'Banned via report review',
         });

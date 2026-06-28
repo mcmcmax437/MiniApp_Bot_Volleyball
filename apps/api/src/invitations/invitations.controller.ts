@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { IsBoolean, IsString } from 'class-validator';
 import { InvitationsService } from './invitations.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
@@ -24,12 +24,14 @@ export class InvitationsController {
     @Param('gameId') gameId: string,
     @Body() dto: InviteDto,
   ) {
-    return this.inv.invite(me!, gameId, dto.inviteeId);
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.inv.invite(me, gameId, dto.inviteeId);
   }
 
   @Delete('invitations/:id')
   cancelInvite(@CurrentUser() me: User | null, @Param('id') id: string) {
-    return this.inv.cancelInvite(me!, id);
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.inv.cancelInvite(me, id);
   }
 
   @Post('invitations/:id/respond')
@@ -38,11 +40,13 @@ export class InvitationsController {
     @Param('id') id: string,
     @Body() dto: RespondDto,
   ) {
-    return this.inv.respond(me!, id, dto.accept);
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.inv.respond(me, id, dto.accept);
   }
 
   @Get('invitations/mine')
   listMine(@CurrentUser() me: User | null) {
-    return this.inv.listMinePending(me!);
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.inv.listMinePending(me);
   }
 }

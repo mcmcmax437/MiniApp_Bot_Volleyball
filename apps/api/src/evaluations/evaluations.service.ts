@@ -2,7 +2,9 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
+  OnApplicationBootstrap,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -14,8 +16,48 @@ import {
 } from './skill-aggregator';
 
 @Injectable()
-export class EvaluationsService {
+export class EvaluationsService implements OnApplicationBootstrap {
+  private readonly logger = new Logger(EvaluationsService.name);
+
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * One-shot backfill on app start: any user who already has a self-declared
+   * `skillLevel` but no `evaluatedSkillLevel` (e.g. they picked their level
+   * before the weighted-aggregator hook shipped) gets recalibrated here so
+   * the very next `/auth/me` response carries the cached weighted value and
+   * the client badge renders immediately.
+   *
+   * Runs once at boot. Idempotent. Errors on individual users are logged and
+   * skipped so a single bad row can't block startup.
+   */
+  async onApplicationBootstrap(): Promise<void> {
+    try {
+      const stale = await this.prisma.user.findMany({
+        where: {
+          skillLevel: { not: null },
+          evaluatedSkillLevel: null,
+        },
+        select: { id: true },
+      });
+      if (stale.length === 0) return;
+      this.logger.log(
+        `Backfilling evaluatedSkillLevel for ${stale.length} user(s) on startup`,
+      );
+      for (const u of stale) {
+        try {
+          await this.recalibrateUserSkill(u.id);
+        } catch (e) {
+          this.logger.warn(
+            `Backfill failed for user ${u.id}: ${(e as Error).message}`,
+          );
+        }
+      }
+    } catch (e) {
+      // Never block app startup on a backfill failure.
+      this.logger.error(`Startup backfill error: ${(e as Error).message}`);
+    }
+  }
 
   /** Submit evaluations for one or more co-players from a finished game. */
   async submitMany(
