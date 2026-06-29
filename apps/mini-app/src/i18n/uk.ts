@@ -141,6 +141,12 @@ export const uk: Record<string, string> = {
   'gameDetail.startsAt': 'Початок',
   'gameDetail.notes': 'Нотатки',
   'gameDetail.cover': 'Фото майданчика',
+  'gameDetail.roleOrganizer': 'Організатор',
+  'gameDetail.rolePlayer': 'Гравець',
+  'gameDetail.tagHost': 'ОРГАНІЗАТОР',
+  'gameDetail.tagYou': 'ВИ',
+  'gameDetail.reportAction': 'Поскаржитися',
+  'gameDetail.actionsFor': 'Дії для {name}',
 
   'create.title': 'Нова гра',
   'create.subtitle': 'Заповніть деталі та запросіть гравців',

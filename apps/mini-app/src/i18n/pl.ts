@@ -134,6 +134,12 @@ export const pl: Record<string, string> = {
   'gameDetail.startsAt': 'Początek',
   'gameDetail.notes': 'Notatki',
   'gameDetail.cover': 'Zdjęcie obiektu',
+  'gameDetail.roleOrganizer': 'Organizator',
+  'gameDetail.rolePlayer': 'Gracz',
+  'gameDetail.tagHost': 'ORG',
+  'gameDetail.tagYou': 'TY',
+  'gameDetail.reportAction': 'Zgłoś',
+  'gameDetail.actionsFor': 'Akcje dla {name}',
 
   'create.title': 'Nowy mecz',
   'create.subtitle': 'Wypełnij szczegóły i zaproś graczy',

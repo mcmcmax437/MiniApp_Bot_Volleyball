@@ -134,6 +134,12 @@ export const ru: Record<string, string> = {
   'gameDetail.startsAt': 'Начало',
   'gameDetail.notes': 'Заметки',
   'gameDetail.cover': 'Фото площадки',
+  'gameDetail.roleOrganizer': 'Организатор',
+  'gameDetail.rolePlayer': 'Игрок',
+  'gameDetail.tagHost': 'ОРГ',
+  'gameDetail.tagYou': 'ВЫ',
+  'gameDetail.reportAction': 'Пожаловаться',
+  'gameDetail.actionsFor': 'Действия для {name}',
 
   'create.title': 'Новая игра',
   'create.subtitle': 'Заполните детали и пригласите игроков',

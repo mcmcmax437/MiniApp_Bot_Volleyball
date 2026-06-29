@@ -13,6 +13,7 @@ import { EvaluatePlayersModal } from './EvaluatePlayersModal';
 import { InvitePlayerModal } from './InvitePlayerModal';
 import './GameDetail.css';
 
+
 function formatGameTime(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
     weekday: 'short',
@@ -25,6 +26,96 @@ function formatGameTime(iso: string): string {
 
 function formatMoney(minor: number, currency: string): string {
   return `${CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] ?? currency}${(minor / 100).toFixed(2)}`;
+}
+
+interface PlayerRowProps {
+  userId: string;
+  photoUrl: string | null;
+  firstName: string;
+  lastName: string | null | undefined;
+  isHost: boolean;
+  isYou: boolean;
+  roleLabel: string;
+  onReport: () => void;
+  menuOpen: boolean;
+  onToggleMenu: () => void;
+}
+
+/**
+ * One row of the Players list. Layout matches the reference:
+ *   [Photo]  [Name + role label]            [⋯ menu]
+ * Report is hidden inside the overflow menu instead of a wide button in every
+ * row — that was the "huge button next to every player" you saw on the old
+ * build (a padded `.btn-ghost` rendering as a pill, not the icon-only button
+ * it was supposed to be).
+ */
+function PlayerRow({
+  userId,
+  photoUrl,
+  firstName,
+  lastName,
+  isHost,
+  isYou,
+  roleLabel,
+  onReport,
+  menuOpen,
+  onToggleMenu,
+}: PlayerRowProps) {
+  const { t } = useI18n();
+  const fullName = lastName ? `${firstName} ${lastName}` : firstName;
+  const showMenu = !isYou;
+  return (
+    <li className="detailPlayer" data-user-id={userId}>
+      <Photo src={photoUrl} name={fullName} size={44} variant="rounded" />
+      <span className="detailPlayer-body">
+        <span className="detailPlayer-name">
+          <span className="detailPlayer-nameText">{fullName}</span>
+          {isYou && (
+            <span className="detailPlayer-tag detailPlayer-tag-you">
+              {t('gameDetail.tagYou')}
+            </span>
+          )}
+        </span>
+        <span className="detailPlayer-sub">
+          {isHost && (
+            <span className="detailPlayer-tag detailPlayer-tag-host">
+              {t('gameDetail.tagHost')}
+            </span>
+          )}
+          <span>{roleLabel}</span>
+        </span>
+      </span>
+      {showMenu && (
+        <div className="detailPlayer-menu">
+          <button
+            className="btn-icon detailPlayer-menuBtn"
+            onClick={onToggleMenu}
+            aria-label={t('gameDetail.actionsFor', { name: fullName })}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            data-analytics-label="game-player-menu"
+          >
+            <Icon name="more-horizontal" size={16} />
+          </button>
+          {menuOpen && (
+            <div className="detailPlayer-menuPop" role="menu">
+              <button
+                className="detailPlayer-menuItem"
+                onClick={() => {
+                  onToggleMenu();
+                  onReport();
+                }}
+                role="menuitem"
+                data-analytics-label="game-report-player"
+              >
+                <Icon name="flag-01" size={14} /> {t('gameDetail.reportAction')}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </li>
+  );
 }
 
 export function GameDetailPage() {
@@ -59,6 +150,7 @@ export function GameDetailPage() {
   });
 
   const [reportTarget, setReportTarget] = useState<{ id: string; name: string } | null>(null);
+  const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
   const [showEvaluate, setShowEvaluate] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [showPayments, setShowPayments] = useState(false);
@@ -185,93 +277,100 @@ export function GameDetailPage() {
       )}
 
       {/* Players */}
-      <div className="detailCard">
-        <h3>{t('gameDetail.players')}</h3>
-        <div className="detailPlayer">
-          <Photo
-            src={g.host.photoUrl}
-            name={g.host.firstName}
-            size={32}
-            bottomRightBadge={(() => {
-              const lvl = effectiveSkillLevel(g.host);
-              return lvl ? <SkillBadge level={lvl} size="sm" /> : null;
-            })()}
-          />
-          <span style={{ flex: 1 }}>
-            {g.host.firstName} {g.host.lastName ?? ''} <em style={{ color: 'var(--brand-300)', fontStyle: 'normal', fontSize: 12 }}>· host</em>
+      <div className="detailCard detailCard-players">
+        <div className="detailPlayers-header">
+          <h3>{t('gameDetail.players')}</h3>
+          <span className="detailPlayers-count">
+            {g.participantsCount}/{g.spotsTotal}
           </span>
-          {(() => {
-            const lvl = effectiveSkillLevel(g.host);
-            return lvl ? <SkillBadge level={lvl} size="sm" /> : null;
-          })()}
-          {!isHost && meQ.data && g.host.id !== meQ.data.id && (
-            <button
-              className="btn btn-ghost"
-              onClick={() => setReportTarget({ id: g.host.id, name: g.host.firstName })}
-              aria-label="Report host"
-              title="Report"
-              data-analytics-label="game-report-host"
-            >
-              <Icon name="flag-01" size={12} />
-            </button>
-          )}
         </div>
-        {g.participants
-          .filter((p) => p.userId !== g.host.id)
-          .map((p) => {
-            const pLevel = effectiveSkillLevel(p.user);
-            return (
-              <div className="detailPlayer" key={p.id}>
-                <Photo
-                  src={p.user.photoUrl}
-                  name={`${p.user.firstName}${p.user.lastName ?? ''}`}
-                  size={32}
-                  bottomRightBadge={pLevel ? <SkillBadge level={pLevel} size="sm" /> : null}
-                />
-                <span style={{ flex: 1 }}>
-                  {p.user.firstName}{p.user.lastName ? ` ${p.user.lastName}` : ''}
-                </span>
-                {pLevel && <SkillBadge level={pLevel} size="sm" />}
-              {meQ.data && p.userId !== meQ.data.id && (
-                <button
-                  className="btn btn-ghost"
-                  onClick={() => setReportTarget({ id: p.userId, name: p.user.firstName })}
-                  aria-label={`Report ${p.user.firstName}`}
-                  title="Report"
-                  data-analytics-label="game-report-player"
-                >
-                  <Icon name="flag-01" size={12} />
-                </button>
-              )}
+
+        {/* Confirmed players */}
+        <ul className="detailPlayerList">
+          <PlayerRow
+            key={`host:${g.host.id}`}
+            userId={g.host.id}
+            photoUrl={g.host.photoUrl}
+            firstName={g.host.firstName}
+            lastName={g.host.lastName}
+            isHost
+            isYou={myId === g.host.id}
+            roleLabel={t('gameDetail.roleOrganizer')}
+            onReport={() => setReportTarget({ id: g.host.id, name: g.host.firstName })}
+            menuOpen={openMenuFor === g.host.id}
+            onToggleMenu={() =>
+              setOpenMenuFor(openMenuFor === g.host.id ? null : g.host.id)
+            }
+          />
+          {g.participants
+            .filter((p) => p.userId !== g.host.id)
+            .map((p) => (
+              <PlayerRow
+                key={p.id}
+                userId={p.userId}
+                photoUrl={p.user.photoUrl}
+                firstName={p.user.firstName}
+                lastName={p.user.lastName}
+                isHost={false}
+                isYou={myId === p.userId}
+                roleLabel={t('gameDetail.rolePlayer')}
+                onReport={() =>
+                  setReportTarget({ id: p.userId, name: p.user.firstName })
+                }
+                menuOpen={openMenuFor === p.userId}
+                onToggleMenu={() =>
+                  setOpenMenuFor(openMenuFor === p.userId ? null : p.userId)
+                }
+              />
+            ))}
+          {g.participants.length <= 1 && (
+            <li className="detailPlayer-empty">{t('gameDetail.noPlayers')}</li>
+          )}
+        </ul>
+
+        {/* Spots left as filled placeholder avatars */}
+        {g.spotsTotal - g.participantsCount > 0 && (
+          <>
+            <div className="detailPlayers-subheader">
+              <span>
+                {t('game.spotsLeft', { n: g.spotsTotal - g.participantsCount })}
+              </span>
             </div>
-            );
-          })}
-        {g.participants.length === 1 && (
-          <div className="empty" style={{ padding: '12px 0' }}>{t('gameDetail.noPlayers')}</div>
+            <div
+              className="detailPlayers-spots"
+              aria-label={t('game.spotsLeft', { n: g.spotsTotal - g.participantsCount })}
+            >
+              {Array.from({ length: g.spotsTotal - g.participantsCount }).map((_, i) => (
+                <span key={i} className="detailPlayers-spotSlot">
+                  <Icon name="user-account" size={18} />
+                </span>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
       {/* Action area */}
       {!isClosed && (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div className="detailActions">
           {isHost ? (
             <>
               <button
-                className="btn"
+                className="btn detailActions-primary"
                 onClick={() => setShowInvite(true)}
                 data-analytics-label="game-invite"
               >
                 <Icon name="mail-01" size={16} /> {t('game.invitePlayers')}
               </button>
               <button
-                className="btn btn-ghost"
+                className="btn btn-ghost detailActions-secondary"
                 onClick={() => setShowPayments(true)}
                 data-analytics-label="game-payments"
               >
                 <Icon name="wallet-01" size={16} /> {t('game.managePayments')}
               </button>
               <button
-                className="btn btn-ghost"
+                className="btn btn-ghost detailActions-secondary"
                 onClick={() => finishMut.mutate()}
                 disabled={finishMut.isLoading}
                 data-analytics-label="game-finish"
@@ -279,7 +378,7 @@ export function GameDetailPage() {
                 <Icon name="checkmark-square-01" size={16} /> {t('game.finish')}
               </button>
               <button
-                className="btn danger"
+                className="btn btn-ghost detailActions-danger"
                 onClick={() => {
                   if (window.confirm('Cancel this game?')) cancelMut.mutate();
                 }}
@@ -291,26 +390,24 @@ export function GameDetailPage() {
           ) : isJoined ? (
             <>
               <button
-                className="btn btn-ghost"
+                className="btn detailActions-primary"
+                onClick={() => setShowInvite(true)}
+                data-analytics-label="game-invite"
+              >
+                <Icon name="mail-01" size={16} /> {t('game.invitePlayers')}
+              </button>
+              <button
+                className="btn btn-ghost detailActions-secondary"
                 onClick={() => leaveMut.mutate()}
                 disabled={leaveMut.isLoading}
                 data-analytics-label="game-leave"
               >
                 <Icon name="logout-01" size={16} /> {t('game.leave')}
               </button>
-              {isFinished && (
-                <button
-                  className="btn"
-                  onClick={() => setShowEvaluate(true)}
-                  data-analytics-label="game-evaluate"
-                >
-                  <Icon name="award-01" size={16} /> {t('game.evaluations')}
-                </button>
-              )}
             </>
           ) : g.isClosed && !myJoinRequest && g.status === 'OPEN' ? (
             <button
-              className="btn"
+              className="btn detailActions-primary detailActions-full"
               onClick={handleJoinClick}
               disabled={joinMut.isLoading}
               data-analytics-label="game-request-join"
@@ -318,12 +415,12 @@ export function GameDetailPage() {
               <Icon name="mail-01" size={16} /> {t('game.requestToJoin')}
             </button>
           ) : myJoinRequest ? (
-            <button className="btn" disabled>
+            <button className="btn detailActions-primary detailActions-full" disabled>
               <Icon name="clock-01" size={16} /> {t('game.requestPending')}
             </button>
           ) : (
             <button
-              className="btn"
+              className="btn detailActions-primary detailActions-full"
               onClick={handleJoinClick}
               disabled={isFull || joinMut.isLoading}
               data-analytics-label="game-join"
@@ -334,10 +431,10 @@ export function GameDetailPage() {
         </div>
       )}
 
-      {/* Evaluate (only after finished) */}
+      {/* Evaluate (only after finished and joined) */}
       {!isClosed && isJoined && isFinished && (
         <button
-          className="btn"
+          className="btn detailActions-primary detailActions-full"
           style={{ marginTop: 10 }}
           onClick={() => setShowEvaluate(true)}
         >

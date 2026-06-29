@@ -51,24 +51,259 @@
   margin-right: 4px;
 }
 
-.detailPlayer {
+/* ------------------------------------------------------------
+   Players card — layout matches the reference screen:
+     [Avatar] | [Name + role tag + sub-line] | [⋯ menu]
+------------------------------------------------------------ */
+
+.detailCard-players {
+  /* tightens the inner padding so 8-12 player rows fit comfortably */
+  padding: 18px 18px 14px;
+}
+
+.detailPlayers-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 0;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.detailPlayers-header h3 {
+  margin: 0;
+}
+
+.detailPlayers-count {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--brand-300);
+  font-size: 13px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  border: 1px solid var(--border-subtle);
+}
+
+.detailPlayers-subheader {
+  margin-top: 14px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detailPlayers-subheader::before,
+.detailPlayers-subheader::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.detailPlayers-spots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 8px;
+}
+
+.detailPlayers-spotSlot {
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-subtle);
+  background: var(--surface-2);
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detailPlayerList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.detailPlayer {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 36px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
   color: var(--text-secondary);
   font-size: 14px;
   font-weight: 500;
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.detailPlayer:last-child {
+.detailPlayer:last-of-type {
   border-bottom: none;
 }
 
-.detailPlayer span {
-  flex: 1;
+.detailPlayer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0; /* lets ellipsis kick in inside .detailPlayer-nameText */
+}
+
+.detailPlayer-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
+}
+
+.detailPlayer-nameText {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.detailPlayer-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.detailPlayer-tag {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.detailPlayer-tag-host {
+  background: var(--brand-soft);
+  color: var(--brand-300);
+}
+
+.detailPlayer-tag-you {
+  background: var(--surface-3);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+.detailPlayer-empty {
+  padding: 12px 0 4px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+/* overflow menu: square trigger (btn-icon) + small popover */
+
+.detailPlayer-menu {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.detailPlayer-menuBtn {
+  /* keep the existing .btn-icon square styling but tone down the hover */
+  color: var(--text-tertiary);
+}
+
+.detailPlayer-menuBtn:hover {
+  color: var(--text-primary);
+  background: var(--surface-hover);
+}
+
+.detailPlayer-menuPop {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  min-width: 140px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  z-index: 20;
+  overflow: hidden;
+}
+
+.detailPlayer-menuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-display);
+}
+
+.detailPlayer-menuItem:hover {
+  background: var(--surface-hover);
+}
+
+/* ------------------------------------------------------------
+   Bottom action bar — two equal CTAs at the bottom, just like
+   the reference (Share Game / Invite Players). When there is
+   exactly one primary action it spans the full width.
+------------------------------------------------------------ */
+
+.detailActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: stretch;
+  margin-top: 4px;
+}
+
+.detailActions-full {
+  grid-column: 1 / -1;
+}
+
+.detailActions-primary {
+  /* the existing .btn is fine here, but make sure it stretches to height */
+  height: 100%;
+}
+
+.detailActions-secondary {
+  height: 100%;
+  border: 1px solid var(--border-subtle) !important;
+  background: var(--surface-1) !important;
+  color: var(--text-primary) !important;
+  box-shadow: none !important;
+}
+
+.detailActions-secondary:hover {
+  background: var(--surface-hover) !important;
+}
+
+.detailActions-danger {
+  height: 100%;
+  background: transparent !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  box-shadow: none !important;
+}
+
+.detailActions-danger:hover {
+  background: rgba(239, 68, 68, 0.08) !important;
 }
 
 .detailMap {

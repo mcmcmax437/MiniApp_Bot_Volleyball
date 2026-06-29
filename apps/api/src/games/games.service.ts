@@ -22,10 +22,29 @@ export class GamesService {
     private readonly config: ConfigService,
   ) {}
 
-  /** Per-player cost for a game given the current number of participants. */
+  /**
+   * Per-player cost for a game given the *current* number of participants.
+   * This reflects what each existing participant is actually on the hook for
+   * right now (used by the payments screen — e.g. a late joiner sees the
+   * per-head price update as more people join). Do NOT use this for the
+   * game card / detail summary, which should always show the planned split.
+   */
   perPlayerCost(totalCost: number, participantCount: number): number {
     if (participantCount <= 0) return totalCost;
     return Math.round(totalCost / participantCount);
+  }
+
+  /**
+   * Per-player cost for a game divided by the *capacity* of the game (planned
+   * split assuming every spot fills). Used on the game card and detail view
+   * so the displayed price doesn't shift around as players join or leave —
+   * e.g. a 300 PLN game for 10 spots always shows 30 / player, even when only
+   * 2 players are signed up.
+   */
+  plannedPerPlayerCost(totalCost: number, spotsTotal: number): number {
+    if (!Number.isFinite(totalCost) || totalCost <= 0) return 0;
+    if (!Number.isFinite(spotsTotal) || spotsTotal <= 0) return 0;
+    return Math.round(totalCost / spotsTotal);
   }
 
   async create(me: User, dto: CreateGameDto) {
@@ -172,7 +191,11 @@ export class GamesService {
     return {
       ...game,
       participantsCount: game.participants.length,
-      perPlayerCost: this.perPlayerCost(game.totalCost, game.participants.length),
+      // Display the *planned* per-player price (total / spotsTotal) so the card
+      // and detail view show the same number regardless of who's currently
+      // signed up. The actual share each participant owes is computed in
+      // PaymentsService and surfaced via `/payments/for-game`.
+      perPlayerCost: this.plannedPerPlayerCost(game.totalCost, game.spotsTotal),
     };
   }
 
@@ -254,7 +277,8 @@ export class GamesService {
     return filtered.map((g) => ({
       ...g,
       participantsCount: g.participants.length,
-      perPlayerCost: this.perPlayerCost(g.totalCost, g.participants.length),
+      // Planned split (total / spotsTotal) — see note in `getById`.
+      perPlayerCost: this.plannedPerPlayerCost(g.totalCost, g.spotsTotal),
     }));
   }
 

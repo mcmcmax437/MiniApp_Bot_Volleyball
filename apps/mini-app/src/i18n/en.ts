@@ -149,6 +149,12 @@ export const en: Record<string, string> = {
   'gameDetail.startsAt': 'Starts',
   'gameDetail.notes': 'Notes',
   'gameDetail.cover': 'Venue photo',
+  'gameDetail.roleOrganizer': 'Organizer',
+  'gameDetail.rolePlayer': 'Player',
+  'gameDetail.tagHost': 'HOST',
+  'gameDetail.tagYou': 'YOU',
+  'gameDetail.reportAction': 'Report',
+  'gameDetail.actionsFor': 'Actions for {name}',
 
   // ===== Create game =====
   'create.title': 'New game',
