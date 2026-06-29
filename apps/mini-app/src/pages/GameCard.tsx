@@ -6,6 +6,7 @@ import type { ApiGame } from "../api";
 import { SkillBadge } from "../SkillBadge";
 import { useI18n } from "../i18n";
 import { effectiveSkillLevel } from "../lib/skill";
+import { coverForPlayType } from "../lib/play-type";
 import "./GameCard.css";
 
 function statusToBadgeClass(status: ApiGame["status"]): string {
@@ -89,12 +90,11 @@ export function GameCard({ game }: GameCardProps) {
           </div>
         </div>
 
-        {/* Cover image (if any) */}
-        {game.coverImageUrl && (
-          <div className="coverPreview" style={{ marginBottom: 12 }}>
-            <img src={game.coverImageUrl} alt="" />
-          </div>
-        )}
+        {/* Cover image — derived from the game's playType so the organizer
+            never has to upload or paste a URL during game creation. */}
+        <div className="coverPreview" style={{ marginBottom: 12 }}>
+          <img src={coverForPlayType(game.playType)} alt="" />
+        </div>
 
         {/* Host row with real photo */}
         <div className="gameCard-host">

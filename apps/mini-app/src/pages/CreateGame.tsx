@@ -64,7 +64,6 @@ export function CreateGamePage() {
   const [totalCostDecimal, setTotalCostDecimal] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [addressHint, setAddressHint] = useState('');
-  const [coverImageUrl, setCoverImageUrl] = useState('');
   const [isClosed, setIsClosed] = useState(false);
   const [playType, setPlayType] = useState<PlayType>('OUTDOOR');
 
@@ -116,7 +115,7 @@ export function CreateGamePage() {
         currency,
         isPaid,
         isClosed,
-        coverImageUrl: coverImageUrl.trim() || undefined,
+        coverImageUrl: undefined,
         addressHint: addressHint.trim() || undefined,
         playType,
       }),
@@ -309,23 +308,19 @@ export function CreateGamePage() {
           </div>
         </div>
 
+        {/* The cover image used to be a freeform URL input. We replaced it
+            with an automatic selection: the cover is derived from
+            `playType` (BEACH / OUTDOOR / INDOOR) using static assets that
+            ship with the app. The picker above chooses which one. */}
         <div className="field">
-          <label className="field-label" htmlFor="cover">
+          <label className="field-label">
             <Icon name="image-01" size={12} className="icon-inline" />
-            {t('create.field.coverImage')}
+            {t('create.field.coverPreview')}
           </label>
-          <input
-            id="cover"
-            type="url"
-            value={coverImageUrl}
-            onChange={(e) => setCoverImageUrl(e.target.value)}
-            placeholder="https://maps.googleapis.com/..."
-          />
-          {coverImageUrl && (
-            <div className="coverPreview" style={{ marginTop: 8 }}>
-              <img src={coverImageUrl} alt="cover preview" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />
-            </div>
-          )}
+          <div className="coverPreview" aria-hidden="true">
+            <img src={`/cover-${playType.toLowerCase()}.png`} alt="" />
+          </div>
+          <div className="field-hint">{t('create.field.coverPreviewHint')}</div>
         </div>
       </section>
 

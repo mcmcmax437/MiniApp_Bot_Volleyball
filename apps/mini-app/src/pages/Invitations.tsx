@@ -15,9 +15,13 @@ export function InvitationsPage() {
     ({ id, accept }: { id: string; accept: boolean }) =>
       api.respondInvitation(id, accept),
     {
-      onSuccess: () => {
+      onSuccess: (_data, vars) => {
         qc.invalidateQueries(['invitations', 'mine']);
         qc.invalidateQueries(['games']);
+        // Also drop the specific game's cache so navigating to /games/:id
+        // right after accepting doesn't show the stale pre-join state.
+        const inv = (listQ.data ?? []).find((i) => i.id === vars.id);
+        if (inv) qc.invalidateQueries(['game', inv.game.id]);
       },
     },
   );

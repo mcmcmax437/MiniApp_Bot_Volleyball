@@ -23,6 +23,7 @@ import { CalendarPage } from './pages/Calendar';
 import { BlacklistPage } from './pages/Blacklist';
 import { InvitationsPage } from './pages/Invitations';
 import { PaymentsPage } from './pages/Payments';
+import { InvitationsBanner } from './components/InvitationsBanner';
 import { useAnalytics } from './hooks/useAnalytics';
 import './App.css';
 
@@ -311,6 +312,12 @@ export function App() {
           </NavLink>
         )}
       </nav>
+
+      {/* Persistent pending-invitations banner. Hidden on the dedicated
+          /invitations page (it IS the inbox) and on /games/:id (the user is
+          already acting on that game). */}
+      {window.location.pathname !== '/invitations' &&
+        !window.location.pathname.startsWith('/games/') && <InvitationsBanner />}
     </>
   );
 }

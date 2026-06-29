@@ -7,6 +7,7 @@ import { Photo } from '../Photo';
 import { SkillBadge } from '../SkillBadge';
 import { useI18n } from '../i18n';
 import { effectiveSkillLevel } from '../lib/skill';
+import { coverForPlayType } from '../lib/play-type';
 import { Modal } from '../Modal';
 import { ReportUserModal } from './ReportUserModal';
 import { EvaluatePlayersModal } from './EvaluatePlayersModal';
@@ -95,7 +96,13 @@ function PlayerRow({
             aria-expanded={menuOpen}
             data-analytics-label="game-player-menu"
           >
-            <Icon name="more-horizontal" size={16} />
+            {/* Inline Unicode "⋯" (U+22EF) instead of an icon-font glyph.
+                The Hugeicons webfont occasionally doesn't render this
+                particular glyph depending on cache state, leaving the
+                button blank. Unicode text always renders. */}
+            <span className="detailPlayer-menuDots" aria-hidden="true">
+              ⋯
+            </span>
           </button>
           {menuOpen && (
             <div className="detailPlayer-menuPop" role="menu">
@@ -219,13 +226,14 @@ export function GameDetailPage() {
           green capacity pill anchored top-right, date + location at the
           bottom. Matches the `GameHeroCard` Flutter reference. */}
       <div className="detailHero">
-        {g.coverImageUrl ? (
-          <img className="detailHero-img" src={g.coverImageUrl} alt="" />
-        ) : (
-          <div className="detailHero-img detailHero-img-fallback" aria-hidden>
-            <Icon name="image-01" size={48} />
-          </div>
-        )}
+        <img
+          className="detailHero-img"
+          src={coverForPlayType(g.playType)}
+          alt=""
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).classList.add('detailHero-img-fallback');
+          }}
+        />
         <div className="detailHero-overlay" aria-hidden />
         <div className="detailHero-body">
           <div className="detailHero-top">
@@ -418,71 +426,71 @@ export function GameDetailPage() {
           {isHost ? (
             <>
               <button
-                className="btn detailActions-primary"
+                className="btn btn-sm detailActions-primary"
                 onClick={() => setShowInvite(true)}
                 data-analytics-label="game-invite"
               >
-                <Icon name="mail-01" size={16} /> {t('game.invitePlayers')}
+                <Icon name="mail-01" size={14} /> {t('game.invitePlayers')}
               </button>
               <button
-                className="btn btn-ghost detailActions-secondary"
+                className="btn btn-sm btn-ghost detailActions-secondary"
                 onClick={() => setShowPayments(true)}
                 data-analytics-label="game-payments"
               >
-                <Icon name="wallet-01" size={16} /> {t('game.managePayments')}
+                <Icon name="wallet-01" size={14} /> {t('game.managePayments')}
               </button>
               <button
-                className="btn btn-ghost detailActions-secondary"
+                className="btn btn-sm btn-ghost detailActions-secondary"
                 onClick={() => finishMut.mutate()}
                 disabled={finishMut.isLoading}
                 data-analytics-label="game-finish"
               >
-                <Icon name="checkmark-square-01" size={16} /> {t('game.finish')}
+                <Icon name="checkmark-square-01" size={14} /> {t('game.finish')}
               </button>
               <button
-                className="btn btn-ghost detailActions-danger"
+                className="btn btn-sm btn-ghost detailActions-danger"
                 onClick={() => {
                   if (window.confirm('Cancel this game?')) cancelMut.mutate();
                 }}
                 disabled={cancelMut.isLoading}
               >
-                <Icon name="cancel-01" size={16} /> {t('game.cancel')}
+                <Icon name="cancel-01" size={14} /> {t('game.cancel')}
               </button>
             </>
           ) : isJoined ? (
             <>
               <button
-                className="btn detailActions-primary"
+                className="btn btn-sm detailActions-primary"
                 onClick={() => setShowInvite(true)}
                 data-analytics-label="game-invite"
               >
-                <Icon name="mail-01" size={16} /> {t('game.invitePlayers')}
+                <Icon name="mail-01" size={14} /> {t('game.invitePlayers')}
               </button>
               <button
-                className="btn btn-ghost detailActions-secondary"
+                className="btn btn-sm btn-ghost detailActions-secondary"
                 onClick={() => leaveMut.mutate()}
                 disabled={leaveMut.isLoading}
                 data-analytics-label="game-leave"
               >
-                <Icon name="logout-01" size={16} /> {t('game.leave')}
+                <Icon name="logout-01" size={14} /> {t('game.leave')}
               </button>
             </>
           ) : g.isClosed && !myJoinRequest && g.status === 'OPEN' ? (
             <button
-              className="btn detailActions-primary detailActions-full"
+              className="btn btn-sm detailActions-primary detailActions-full"
               onClick={handleJoinClick}
               disabled={joinMut.isLoading}
               data-analytics-label="game-request-join"
             >
-              <Icon name="mail-01" size={16} /> {t('game.requestToJoin')}
+              <Icon name="mail-01" size={14} /> {t('game.requestToJoin')}
             </button>
           ) : myJoinRequest ? (
-            <button className="btn detailActions-primary detailActions-full" disabled>
-              <Icon name="clock-01" size={16} /> {t('game.requestPending')}
+            <button className="btn btn-sm detailActions-primary detailActions-full" disabled>
+              <Icon name="clock-01" size={14} /> {t('game.requestPending')}
             </button>
           ) : (
             <button
-              className="btn detailActions-primary detailActions-full"
+              className="btn btn-sm detailActions-primary detailActions-full"
               onClick={handleJoinClick}
               disabled={isFull || joinMut.isLoading}
               data-analytics-label="game-join"
@@ -496,11 +504,11 @@ export function GameDetailPage() {
       {/* Evaluate (only after finished and joined) */}
       {!isClosed && isJoined && isFinished && (
         <button
-          className="btn detailActions-primary detailActions-full"
+          className="btn btn-sm detailActions-primary detailActions-full"
           style={{ marginTop: 10 }}
           onClick={() => setShowEvaluate(true)}
         >
-          <Icon name="award-01" size={16} /> {t('game.evaluations')}
+          <Icon name="award-01" size={14} /> {t('game.evaluations')}
         </button>
       )}
 

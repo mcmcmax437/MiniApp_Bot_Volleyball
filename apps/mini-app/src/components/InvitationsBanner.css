@@ -1,0 +1,165 @@
+/* ------------------------------------------------------------
+   InvitationsBanner — slide-down banner shown above the
+   bottom-nav when the current user has pending game
+   invitations. Mounts globally in App.tsx.
+------------------------------------------------------------ */
+
+.inviteBanner {
+  position: fixed;
+  /* sit above the bottom-nav (60px tall + safe-area). The actual height
+     of the banner is computed from its content. */
+  left: 12px;
+  right: 12px;
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  z-index: 50;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, var(--surface-2) 0%, var(--surface-1) 100%);
+  border: 1px solid var(--brand-300);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  /* Slide-in animation on first mount. */
+  animation: inviteBanner-slide-in 280ms var(--ease-out);
+}
+
+@keyframes inviteBanner-slide-in {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.inviteBanner-photo {
+  position: relative;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inviteBanner-badge {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--gradient-brand);
+  color: var(--text-inverse);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 2px var(--surface-1);
+}
+
+.inviteBanner-body {
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-family: var(--font-display);
+}
+
+.inviteBanner-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.inviteBanner-meta {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  max-width: 100%;
+}
+
+.inviteBanner-venue,
+.inviteBanner-when {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.inviteBanner-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.inviteBanner-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: var(--surface-3);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  transition: background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-instant) var(--ease-out);
+}
+
+.inviteBanner-btn:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+  transform: scale(1.05);
+}
+
+.inviteBanner-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.inviteBanner-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inviteBanner-btn-accept {
+  background: var(--gradient-brand);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-sm), var(--shadow-glow);
+}
+
+.inviteBanner-btn-accept:hover:not(:disabled) {
+  color: var(--text-inverse);
+  filter: brightness(1.05);
+  box-shadow: var(--shadow-md), var(--shadow-glow);
+}
+
+.inviteBanner-btn-decline {
+  color: var(--text-tertiary);
+}
+
+.inviteBanner-btn-close {
+  background: transparent;
+  color: var(--text-tertiary);
+}
+
+.inviteBanner-btn-close:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}

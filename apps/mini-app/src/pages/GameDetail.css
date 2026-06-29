@@ -196,11 +196,22 @@
 .detailPlayer-menuBtn {
   /* keep the existing .btn-icon square styling but tone down the hover */
   color: var(--text-tertiary);
+  font-family: var(--font-display);
 }
 
 .detailPlayer-menuBtn:hover {
   color: var(--text-primary);
   background: var(--surface-hover);
+}
+
+.detailPlayer-menuDots {
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: -2px;
+  font-weight: 700;
+  /* Tight optical alignment: visually centered like a glyph would be. */
+  display: inline-block;
+  transform: translateY(1px);
 }
 
 .detailPlayer-menuPop {
@@ -246,7 +257,7 @@
 .detailActions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 6px;
   align-items: stretch;
   margin-top: 4px;
 }
