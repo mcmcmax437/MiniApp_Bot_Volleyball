@@ -18,6 +18,7 @@ export {
 } from '../shared/skill-levels';
 export type { SkillLevel } from '../shared/skill-levels';
 import { SKILL_LEVELS } from '../shared/skill-levels';
+import { PLAY_TYPES, PlayType } from '../games/dto';
 
 export class AdminUpdateUserDto {
   @IsOptional() @IsString() firstName?: string;
@@ -52,6 +53,8 @@ export class AdminUpdateGameDto {
   @IsOptional() @IsString() endAt?: string;
   @IsOptional() @IsIn(SKILL_LEVELS as unknown as string[])
   skillLevel?: (typeof SKILL_LEVELS)[number];
+
+  @IsOptional() @IsIn(PLAY_TYPES as unknown as string[]) playType?: PlayType;
 }
 
 export class AdminUpdateVenueDto {

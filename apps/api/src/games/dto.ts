@@ -12,6 +12,9 @@ import {
 } from 'class-validator';
 import { SKILL_LEVELS } from '../shared/skill-levels';
 
+export const PLAY_TYPES = ['INDOOR', 'OUTDOOR', 'BEACH'] as const;
+export type PlayType = (typeof PLAY_TYPES)[number];
+
 const SUPPORTED_CURRENCIES = ['UAH', 'PLN', 'EUR', 'USD'] as const;
 type Currency = (typeof SUPPORTED_CURRENCIES)[number];
 
@@ -88,6 +91,10 @@ export class CreateGameDto {
   @IsString()
   @MaxLength(280)
   addressHint?: string;
+
+  @IsOptional()
+  @IsIn(PLAY_TYPES as unknown as string[])
+  playType?: PlayType;
 }
 
 export class ListGamesQuery {
@@ -157,4 +164,10 @@ export class ListGamesQuery {
   @IsOptional()
   @Transform(({ value }) => toBool(value))
   includeClosed?: boolean;
+
+  // Surface filter — INDOOR / OUTDOOR / BEACH. Combined with the date / city
+  // filters above. See `PlayType` in the Prisma schema.
+  @IsOptional()
+  @IsIn(PLAY_TYPES as unknown as string[])
+  playType?: PlayType;
 }

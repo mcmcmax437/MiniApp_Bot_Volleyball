@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { GamesService } from './games.service';
-import { CreateGameDto, ListGamesQuery } from './dto';
+import { CreateGameDto, ListGamesQuery, PLAY_TYPES, PlayType } from './dto';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { AdminGuard } from '../auth/admin.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -31,6 +31,7 @@ class UpdateGameDto {
   @IsOptional() isClosed?: boolean;
   @IsOptional() @IsString() @MaxLength(500) coverImageUrl?: string | null;
   @IsOptional() @IsString() @MaxLength(280) addressHint?: string | null;
+  @IsOptional() @IsIn(PLAY_TYPES as unknown as string[]) playType?: PlayType;
 }
 
 class FinishGameDto {

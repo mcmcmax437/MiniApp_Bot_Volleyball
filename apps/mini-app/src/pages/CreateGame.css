@@ -377,6 +377,58 @@
 .venuePicker-item.isActive { border-color: var(--brand); background: var(--brand-soft); }
 .venuePicker-icon { flex: 0 0 36px; width: 36px; height: 36px; border-radius: 10px; background: var(--surface-2); display: inline-flex; align-items: center; justify-content: center; color: var(--brand-300); }
 .venuePicker-info { flex: 1; min-width: 0; }
+
+/* ============================================================
+   PlayType picker ? three-option segmented control for choosing
+   where the game is being played (INDOOR / OUTDOOR / BEACH).
+   ============================================================ */
+
+.playTypePicker {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.playTypePicker-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.playTypePicker-option i {
+  color: var(--brand-300);
+  font-size: 18px;
+}
+
+.playTypePicker-option:hover {
+  border-color: var(--border);
+  background: var(--surface-hover);
+}
+
+.playTypePicker-option.isActive {
+  background: var(--gradient-brand);
+  border-color: transparent;
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-sm), var(--shadow-glow);
+}
+
+.playTypePicker-option.isActive i {
+  color: var(--text-inverse);
+}
 .venuePicker-name { font-weight: 600; font-size: 14px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .venuePicker-meta { font-size: 12px; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .venuePicker-price { flex: 0 0 auto; font-size: 12px; color: var(--brand-300); font-weight: 600; }

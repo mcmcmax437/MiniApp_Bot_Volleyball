@@ -9,6 +9,8 @@ import {
   Currency,
   SUPPORTED_CURRENCIES,
   CURRENCY_SYMBOLS,
+  PlayType,
+  PLAY_TYPES,
 } from '../api';
 import { useI18n } from '../i18n';
 import { Icon, IconName } from '../Icon';
@@ -64,6 +66,7 @@ export function CreateGamePage() {
   const [addressHint, setAddressHint] = useState('');
   const [coverImageUrl, setCoverImageUrl] = useState('');
   const [isClosed, setIsClosed] = useState(false);
+  const [playType, setPlayType] = useState<PlayType>('OUTDOOR');
 
   const selectedVenue = useMemo(
     () => venuesQ.data?.find((v) => v.id === venueId),
@@ -115,6 +118,7 @@ export function CreateGamePage() {
         isClosed,
         coverImageUrl: coverImageUrl.trim() || undefined,
         addressHint: addressHint.trim() || undefined,
+        playType,
       }),
     {
       onSuccess: (g) => {
@@ -272,6 +276,37 @@ export function CreateGamePage() {
             onChange={(e) => setAddressHint(e.target.value)}
             placeholder={t('create.field.addressHintPlaceholder')}
           />
+        </div>
+
+        {/* PlayType — where the game will be played. Independent from
+            Venue.indoor because the venue might be an indoor sports complex
+            that also hosts a beach tournament outside. */}
+        <div className="field">
+          <label className="field-label">
+            <Icon name="globe" size={12} className="icon-inline" />
+            {t('create.field.playType')}
+          </label>
+          <div className="playTypePicker" role="radiogroup" aria-label={t('create.field.playType')}>
+            {PLAY_TYPES.map((pt) => {
+              const active = playType === pt;
+              const iconName =
+                pt === 'INDOOR' ? 'building-01' : pt === 'BEACH' ? 'tennis-ball' : 'globe';
+              return (
+                <button
+                  key={pt}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  className={`playTypePicker-option${active ? ' isActive' : ''}`}
+                  onClick={() => setPlayType(pt)}
+                  data-analytics-label={`play-type-${pt.toLowerCase()}`}
+                >
+                  <Icon name={iconName} size={14} />
+                  <span>{t(`create.playType.${pt.toLowerCase()}`)}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="field">

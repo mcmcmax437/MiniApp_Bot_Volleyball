@@ -80,6 +80,7 @@ export class GamesService {
         isClosed: !!dto.isClosed,
         coverImageUrl: dto.coverImageUrl ?? null,
         addressHint: dto.addressHint ?? null,
+        playType: dto.playType ?? 'OUTDOOR',
         participants: {
           create: { userId: me.id },
         },
@@ -216,6 +217,7 @@ export class GamesService {
     if (typeof opts.isPaid === 'boolean') where.isPaid = opts.isPaid;
     if (typeof opts.isClosed === 'boolean') where.isClosed = opts.isClosed;
     if (opts.q) where.notes = { contains: opts.q };
+    if (opts.playType) where.playType = opts.playType;
 
     // Bucket quick filter (Beginner/Intermediate/Advanced)
     if (opts.bucket) {
@@ -398,6 +400,7 @@ export class GamesService {
     isClosed?: boolean;
     coverImageUrl?: string | null;
     addressHint?: string | null;
+    playType?: 'INDOOR' | 'OUTDOOR' | 'BEACH';
   }) {
     const game = await this.prisma.game.findUnique({ where: { id: gameId } });
     if (!game) throw new NotFoundException('Game not found');
@@ -422,6 +425,7 @@ export class GamesService {
     if (typeof patch.isClosed === 'boolean') data.isClosed = patch.isClosed;
     if (patch.coverImageUrl !== undefined) data.coverImageUrl = patch.coverImageUrl;
     if (patch.addressHint !== undefined) data.addressHint = patch.addressHint;
+    if (patch.playType) data.playType = patch.playType;
 
     if (data.startAt && data.endAt && !(data.startAt < data.endAt)) {
       throw new BadRequestException('startAt must be before endAt');

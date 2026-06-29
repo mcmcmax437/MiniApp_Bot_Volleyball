@@ -232,9 +232,6 @@ export function GameDetailPage() {
             <h2 className="detailHero-title">{g.venue.name}</h2>
             <span className="detailHero-pill">
               {g.participantsCount}/{g.spotsTotal}
-              {isJoined && (
-                <span className="detailHero-pillJoined"> · {t('gameDetail.joined')}</span>
-              )}
             </span>
           </div>
           <div className="detailHero-meta">
@@ -394,7 +391,8 @@ export function GameDetailPage() {
           <div className="detailInfo-tags">
             <SkillBadge level={g.skillLevel} size="sm" />
             <span className="tag info">
-              {g.venue.indoor ? t('venue.indoor') : t('venue.outdoor')}
+              <Icon name={g.playType === 'INDOOR' ? 'building-01' : g.playType === 'BEACH' ? 'tennis-ball' : 'globe'} size={10} className="icon-inline" style={{ marginRight: 4 }} />
+              {t(`game.playType.${g.playType.toLowerCase()}`)}
             </span>
             {g.isPaid && <span className="tag warning">{t('game.paid')}</span>}
             {g.isClosed && (
@@ -589,37 +587,37 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
       {listQ.isLoading && <div className="skeleton" style={{ height: 80, borderRadius: 10 }} />}
       {listQ.data && (
         <>
-          <div className="costRow">
-            <span>{t('payments.totalCost')}</span>
-            <strong>
-              {CURRENCY_SYMBOLS[listQ.data.currency as keyof typeof CURRENCY_SYMBOLS] ?? listQ.data.currency}
-              {(listQ.data.totalCost / 100).toFixed(2)}
-            </strong>
+          {/* Summary card: total + per-player share. Both are minor-unit
+              integers in the API response, so /100 to render as decimal. */}
+          <div className="paymentsSummary">
+            <div className="paymentsSummary-row">
+              <span className="paymentsSummary-label">{t('payments.totalCost')}</span>
+              <strong className="paymentsSummary-value">
+                {CURRENCY_SYMBOLS[listQ.data.currency as keyof typeof CURRENCY_SYMBOLS] ?? listQ.data.currency}
+                {(listQ.data.totalCost / 100).toFixed(2)}
+              </strong>
+            </div>
+            <div className="paymentsSummary-row paymentsSummary-row-accent">
+              <span className="paymentsSummary-label">{t('payments.perPlayer')}</span>
+              <strong className="paymentsSummary-value">
+                {CURRENCY_SYMBOLS[listQ.data.currency as keyof typeof CURRENCY_SYMBOLS] ?? listQ.data.currency}
+                {(listQ.data.perPlayer / 100).toFixed(2)}
+              </strong>
+            </div>
           </div>
-          <div className="costRow" style={{ marginBottom: 12 }}>
-            <span>{t('payments.perPlayer')}</span>
-            <strong>
-              {CURRENCY_SYMBOLS[listQ.data.currency as keyof typeof CURRENCY_SYMBOLS] ?? listQ.data.currency}
-              {listQ.data.perPlayer.toFixed(2)}
-            </strong>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+
+          <div className="paymentsList">
+            <div className="paymentsList-header">
+              <span>{t('payments.players')}</span>
+              <span>{t('payments.status')}</span>
+            </div>
             {listQ.data.participants.map((p) => (
               <div
                 key={p.userId}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr auto auto',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '8px 10px',
-                  borderRadius: 10,
-                  background: 'var(--surface-1)',
-                  border: '1px solid var(--border-subtle)',
-                }}
+                className={`paymentsList-row${p.isPaid ? ' isPaid' : ' isUnpaid'}`}
               >
-                <Photo src={p.user.photoUrl} name={p.user.firstName} size={28} />
-                <span style={{ flex: 1 }}>
+                <Photo src={p.user.photoUrl} name={p.user.firstName} size={32} variant="rounded" />
+                <span className="paymentsList-name">
                   {p.user.firstName}
                   {p.user.lastName ? ` ${p.user.lastName}` : ''}
                 </span>
@@ -627,12 +625,13 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
                   {p.isPaid ? t('payments.paid') : t('payments.unpaid')}
                 </span>
                 <button
-                  className="btn btn-ghost"
+                  className="btn-icon paymentsList-toggle"
                   onClick={() => setPaidMut.mutate({ userId: p.userId, isPaid: !p.isPaid })}
                   disabled={setPaidMut.isLoading}
                   aria-label={p.isPaid ? t('payments.markUnpaid') : t('payments.markPaid')}
+                  data-analytics-label={p.isPaid ? 'payments-mark-unpaid' : 'payments-mark-paid'}
                 >
-                  <Icon name={p.isPaid ? 'cancel-01' : 'checkmark-square-01'} size={12} />
+                  <Icon name={p.isPaid ? 'cancel-01' : 'checkmark-square-01'} size={14} />
                 </button>
               </div>
             ))}

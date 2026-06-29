@@ -146,8 +146,8 @@ export function GameCard({ game }: GameCardProps) {
           <div className="gameCard-tags">
             <SkillBadge level={game.skillLevel} size="sm" />
             <span className="tag info">
-              <Icon name="building-01" size={10} className="icon-inline" style={{ marginRight: 2 }} />
-              {game.venue.indoor ? t('venue.indoor') : t('venue.outdoor')}
+              <Icon name={game.playType === 'INDOOR' ? 'building-01' : game.playType === 'BEACH' ? 'tennis-ball' : 'globe'} size={10} className="icon-inline" style={{ marginRight: 2 }} />
+              {t(`game.playType.${game.playType.toLowerCase()}`)}
             </span>
             {game.isPaid && (
               <span className="tag warning">

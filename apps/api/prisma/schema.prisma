@@ -66,6 +66,15 @@ enum JoinRequestStatus {
   REJECTED
 }
 
+// Where the game is being played. Independent from `Venue.indoor` because
+// a venue tagged as "indoor sports complex" can still host an outdoor beach
+// tournament, and beach games need their own filter in the Games list.
+enum PlayType {
+  INDOOR
+  OUTDOOR
+  BEACH
+}
+
 model User {
   id              String      @id @default(cuid())
   telegramId      BigInt      @unique
@@ -164,6 +173,10 @@ model Game {
   isPaid         Boolean  @default(false)
   coverImageUrl  String?  @db.VarChar(500)
   addressHint    String?  @db.VarChar(280)
+  // Where the game is being played (indoor court, outdoor court, beach).
+  // Defaults to OUTDOOR for back-compat with games created before this column
+  // existed.
+  playType       PlayType @default(OUTDOOR)
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
@@ -179,6 +192,7 @@ model Game {
   @@index([venueId, startAt])
   @@index([hostId])
   @@index([isClosed])
+  @@index([playType])
 }
 
 model GameParticipant {

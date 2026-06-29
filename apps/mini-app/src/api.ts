@@ -10,6 +10,21 @@ export type SkillLevel =
 
 export type UserRole = 'USER' | 'ADMIN';
 
+/** Surface type for a game (where it's being played). */
+export type PlayType = 'INDOOR' | 'OUTDOOR' | 'BEACH';
+
+export const PLAY_TYPES: PlayType[] = ['INDOOR', 'OUTDOOR', 'BEACH'];
+
+/** Lightweight profile used by the user-search dropdown for invitations. */
+export interface InviteSearchUser {
+  id: string;
+  firstName: string;
+  lastName: string | null;
+  username: string | null;
+  photoUrl: string | null;
+  skillLevel: SkillLevel | null;
+}
+
 export const SKILL_LEVELS: SkillLevel[] = [
   'LEVEL_1',
   'LEVEL_2',
@@ -90,6 +105,8 @@ export interface ApiGame {
   currency: Currency;
   coverImageUrl: string | null;
   addressHint: string | null;
+  // v4: where the game is being played (indoor court / outdoor court / beach).
+  playType: PlayType;
   venue: Pick<ApiVenue, 'id' | 'name' | 'address' | 'lat' | 'lng' | 'indoor' | 'city'>;
   host: {
     id: string;
@@ -145,6 +162,8 @@ export interface CreateGamePayload {
   isClosed?: boolean;
   coverImageUrl?: string;
   addressHint?: string;
+  // v4:
+  playType?: PlayType;
 }
 
 export interface UpdateGamePayload {
@@ -159,6 +178,7 @@ export interface UpdateGamePayload {
   isClosed?: boolean;
   coverImageUrl?: string | null;
   addressHint?: string | null;
+  playType?: PlayType;
 }
 
 export interface CreateVenuePayload {
@@ -442,6 +462,7 @@ export function useApi() {
         isPaid?: boolean;
         isClosed?: boolean;
         search?: string;
+        playType?: PlayType;
       } = {},
     ) => {
       const params = new URLSearchParams();
@@ -455,6 +476,7 @@ export function useApi() {
       if (q.isPaid) params.set('isPaid', 'true');
       if (q.isClosed) params.set('isClosed', 'true');
       if (q.search) params.set('q', q.search);
+      if (q.playType) params.set('playType', q.playType);
       const qs = params.toString();
       return http<ApiGame[]>(`/games${qs ? `?${qs}` : ''}`, { method: 'GET' }, initData);
     },
@@ -631,6 +653,16 @@ export function useApi() {
         method: 'POST',
         body: JSON.stringify({ inviteeId }),
       }, initData),
+    searchInvitees: (q: string, excludeIds: string[]) => {
+      const qs = new URLSearchParams();
+      if (q.trim()) qs.set('q', q.trim());
+      if (excludeIds.length) qs.set('exclude', excludeIds.join(','));
+      return http<{ users: InviteSearchUser[] }>(
+        `/users/search${qs.toString() ? `?${qs.toString()}` : ''}`,
+        { method: 'GET' },
+        initData,
+      );
+    },
     cancelInvitation: (id: string) =>
       http<{ ok: boolean }>(`/invitations/${id}`, { method: 'DELETE' }, initData),
     respondInvitation: (id: string, accept: boolean) =>

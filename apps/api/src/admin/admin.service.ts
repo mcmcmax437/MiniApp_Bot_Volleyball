@@ -241,6 +241,7 @@ export class AdminService {
     if (dto.startAt) data.startAt = new Date(dto.startAt);
     if (dto.endAt) data.endAt = new Date(dto.endAt);
     if (dto.skillLevel) data.skillLevel = dto.skillLevel;
+    if (dto.playType) data.playType = dto.playType;
 
     const updated = await this.prisma.game.update({ where: { id }, data });
 
