@@ -41,8 +41,12 @@ export function HomePage() {
     staleTime: 0,
   });
   const cityQ = useQuery(["default-city"], () => api.defaultCity());
+  // Query key includes a version suffix so changes to the games payload
+  // shape (e.g. the v4 fields `playType` / `participants.evaluatedSkillLevel`)
+  // automatically invalidate any cached entries from an older build without
+  // requiring a hard reload.
   const gamesQ = useQuery(
-    ["games", cityQ.data?.city, "HOME"],
+    ["games", cityQ.data?.city, "HOME", "v4"],
     () => api.listGames({ city: cityQ.data?.city ?? undefined }),
     { enabled: !!cityQ.data },
   );

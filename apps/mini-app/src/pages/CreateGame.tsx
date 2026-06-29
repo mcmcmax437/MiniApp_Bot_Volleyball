@@ -121,7 +121,7 @@ export function CreateGamePage() {
       }),
     {
       onSuccess: (g) => {
-        qc.invalidateQueries(['games']);
+        qc.invalidateQueries(['games']); // also matches the versioned keys
         navigate(`/games/${g.id}`);
       },
     },

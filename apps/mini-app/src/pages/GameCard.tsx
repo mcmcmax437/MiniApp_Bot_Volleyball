@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Icon } from "../Icon";
 import { Photo } from "../Photo";
 import { CURRENCY_SYMBOLS } from "../api";
-import type { ApiGame } from "../api";
+import type { ApiGame, ApiGameParticipantUser } from "../api";
 import { SkillBadge } from "../SkillBadge";
 import { useI18n } from "../i18n";
 import { effectiveSkillLevel } from "../lib/skill";
@@ -30,6 +30,22 @@ function playTypeIcon(playType: ApiGame["playType"]) {
     case "OUTDOOR":
     default: return "globe";
   }
+}
+
+/**
+ * Normalize a participant entry from the games list payload to a
+ * `ApiGameParticipantUser`. The list endpoint ships the public user shape
+ * directly (`{id, firstName, ...}`), but a stale React Query cache (from
+ * the previous build where `participants` was a richer join row) can
+ * briefly hand us rows shaped like `{id, userId, user: {...}}`. We unwrap
+ * `.user` when present so the avatar row keeps working across the cache
+ * transition until the user reloads.
+ */
+function toParticipant(u: any): ApiGameParticipantUser {
+  if (u && typeof u === 'object' && 'user' in u && u.user) {
+    return u.user as ApiGameParticipantUser;
+  }
+  return u as ApiGameParticipantUser;
 }
 
 function formatGameTime(iso: string): string {
@@ -131,15 +147,29 @@ export function GameCard({ game }: GameCardProps) {
         <div className="gameCard-info">
           <div className="gameCard-playersRow">
             {(() => {
-              // The list endpoint ships the full participant array (id-only
-              // join on the query side, expanded on the server). We render
-              // the host first (so the organizer is always visible), then
-              // the other participants in their `joinedAt` order.
-              const rest = game.participants.filter((u) => u.id !== game.host.id);
-              const ordered = [game.host, ...rest];
-              // Cap the visible avatars so the row stays compact on phones.
-              // 5 is the sweet spot — fits inside 14px padding on a 360px
-              // viewport, with a `+N` overflow chip for the rest.
+              // The list endpoint ships the full participant array
+              // (id-only join on the query side, expanded on the server).
+              // We render the host first (so the organizer is always
+              // visible), then the other participants in their joinedAt
+              // order.
+              //
+              // `participants` and `host` may both be undefined for one
+              // render cycle if a stale React Query cache is feeding us
+              // an older payload shape. We default to empty arrays so
+              // the card still renders something sensible (the host
+              // avatar) until the cache catches up.
+              const allRaw: any[] = Array.isArray(game.participants)
+                ? game.participants
+                : [];
+              const hostUser: ApiGameParticipantUser = toParticipant(game.host);
+              const rest = allRaw
+                .map(toParticipant)
+                .filter((u) => u && u.id && u.id !== hostUser.id);
+              const ordered = [hostUser, ...rest].filter(Boolean);
+              // Cap the visible avatars so the row stays compact on
+              // phones. 5 is the sweet spot — fits inside 14px padding
+              // on a 360px viewport, with a `+N` overflow chip for the
+              // rest.
               const maxAvatars = 5;
               const visible = ordered.slice(0, maxAvatars);
               const overflow = ordered.length - visible.length;
@@ -151,7 +181,7 @@ export function GameCard({ game }: GameCardProps) {
                       <Photo
                         key={u.id}
                         src={u.photoUrl ?? null}
-                        name={u.firstName}
+                        name={u.firstName ?? null}
                         size={28}
                         bottomRightBadge={lvl ? <SkillBadge level={lvl} size="sm" /> : null}
                       />

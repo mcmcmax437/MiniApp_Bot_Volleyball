@@ -6,8 +6,13 @@ import './Photo.css';
 interface PhotoProps {
   /** Telegram photo URL (time-limited, signed). */
   src: string | null;
-  /** User's display name — used for the fallback initials and alt text. */
-  name: string;
+  /**
+   * User's display name — used for the fallback initials and alt text.
+   * Optional at the type level because older shapes of the games list
+   * payload (and other defensive paths) can briefly hand us an
+   * undefined name before the cache catches up.
+   */
+  name?: string | null;
   /** Optional size in px (default 40). */
   size?: number;
   /** Visual variant. */
@@ -33,8 +38,9 @@ export function Photo({
   bottomRightBadge,
 }: PhotoProps) {
   const [error, setError] = useState(false);
-  const initials = name
-    ? name
+  const safeName = name ?? '';
+  const initials = safeName
+    ? safeName
         .split(/\s+/)
         .map((p) => p[0])
         .filter(Boolean)
@@ -45,7 +51,9 @@ export function Photo({
 
   // Stable gradient index derived from name length, so the same user
   // always gets the same colour without needing a hash function.
-  const gradientIndex = name.length % 4;
+  // `% 4` of a non-negative integer is always safe; we coerce `length`
+  // through `|| 0` so a missing/empty name still picks a stable palette.
+  const gradientIndex = (safeName.length || 1) % 4;
 
   const wrapperStyle = {
     width: size,
@@ -59,7 +67,7 @@ export function Photo({
     <span
       className={`photo photo-${variant}${showPhoto ? ' photo-has-image' : ''}${className ? ` ${className}` : ''}`}
       style={wrapperStyle}
-      aria-label={name ? `${name}'s avatar` : 'avatar'}
+      aria-label={safeName ? `${safeName}'s avatar` : 'avatar'}
       role="img"
     >
       {showPhoto ? (
