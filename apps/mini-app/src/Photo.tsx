@@ -64,27 +64,37 @@ export function Photo({
   const showPhoto = src && !error;
 
   return (
+    // Outer wrapper provides a positioning context for badges that need
+    // to overflow the photo's rounded corners (e.g. the skill badge in
+    // the bottom-right). The inner `.photo` keeps `overflow: hidden` so
+    // the gradient/image stay rounded, but the wrapper's corners are
+    // unconstrained — the badge can poke out by a couple of pixels
+    // without being clipped.
     <span
-      className={`photo photo-${variant}${showPhoto ? ' photo-has-image' : ''}${className ? ` ${className}` : ''}`}
+      className={`photoWrap${className ? ` ${className}` : ''}`}
       style={wrapperStyle}
       aria-label={safeName ? `${safeName}'s avatar` : 'avatar'}
       role="img"
     >
-      {showPhoto ? (
-        <img
-          src={src}
-          alt=""
-          onError={() => setError(true)}
-          loading="lazy"
-          decoding="async"
-        />
-      ) : initials ? (
-        <span className={`photo-initials photo-gradient-${gradientIndex}`}>{initials}</span>
-      ) : (
-        <span className={`photo-fallback photo-gradient-${gradientIndex}`}>
-          <Icon name="user-account" size={Math.round(size * 0.55)} />
-        </span>
-      )}
+      <span
+        className={`photo photo-${variant}${showPhoto ? ' photo-has-image' : ''}`}
+      >
+        {showPhoto ? (
+          <img
+            src={src}
+            alt=""
+            onError={() => setError(true)}
+            loading="lazy"
+            decoding="async"
+          />
+        ) : initials ? (
+          <span className={`photo-initials photo-gradient-${gradientIndex}`}>{initials}</span>
+        ) : (
+          <span className={`photo-fallback photo-gradient-${gradientIndex}`}>
+            <Icon name="user-account" size={Math.round(size * 0.55)} />
+          </span>
+        )}
+      </span>
       {topLeftBadge ? <span className="photo-badge photo-badge-topLeft">{topLeftBadge}</span> : null}
       {bottomRightBadge ? <span className="photo-badge photo-badge-bottomRight">{bottomRightBadge}</span> : null}
     </span>

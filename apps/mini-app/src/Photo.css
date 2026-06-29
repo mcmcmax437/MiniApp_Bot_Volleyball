@@ -1,3 +1,15 @@
+/* Outer wrapper — provides a positioning context for badges that
+   overflow the photo's rounded corners. Sized to the photo so the
+   layout still takes the right amount of space, but corners are
+   unconstrained. */
+.photoWrap {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  line-height: 0;
+  vertical-align: middle;
+}
+
 .photo {
   display: inline-flex;
   align-items: center;
@@ -13,6 +25,8 @@
   letter-spacing: -0.02em;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   vertical-align: middle;
+  width: 100%;
+  height: 100%;
 }
 
 .photo-circle {
@@ -61,18 +75,22 @@
   color: var(--text-inverse);
 }
 
+/* Badges sit on top of the .photoWrap (the outer unconstrained
+   wrapper) so they can poke out of the photo's rounded corners
+   without being clipped by its `overflow: hidden`. */
 .photo-badge {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
   pointer-events: none;
+  line-height: 1;
 }
 
 .photo-badge-topLeft {
-  top: -2px;
-  left: -2px;
+  top: -3px;
+  left: -3px;
 }
 
 .photo-badge-bottomRight {
-  right: -2px;
-  bottom: -2px;
+  bottom: -3px;
+  right: -3px;
 }

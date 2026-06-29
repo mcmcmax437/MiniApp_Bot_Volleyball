@@ -152,6 +152,14 @@
   color: var(--text-tertiary);
   font-size: 12px;
   font-weight: 500;
+  flex-wrap: wrap;
+}
+
+/* When the host row shows both the HOST pill and the skill badge, give
+   the badge a small left margin so the two pills don't visually mash
+   together. */
+.detailPlayer-sub .detailPlayer-tag-host + .skillBadge {
+  margin-left: 2px;
 }
 
 .detailPlayer-tag {

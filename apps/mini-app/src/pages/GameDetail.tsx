@@ -75,6 +75,11 @@ function PlayerRow({
   // when the backend hasn't computed a value yet. `null` hides the badge
   // entirely (player has never picked a level).
   const level = effectiveSkillLevel({ skillLevel, evaluatedSkillLevel });
+  // The "HOST" pill already announces the host's role. Showing the
+  // "Organizer" subtitle next to it is just noise — the pill says the
+  // same thing twice. For host rows we hide the role label and put the
+  // skill badge there instead, so the second line is always meaningful.
+  const showRoleLabel = !isHost;
   return (
     <li className="detailPlayer" data-user-id={userId}>
       <Photo
@@ -82,7 +87,7 @@ function PlayerRow({
         name={fullName}
         size={44}
         variant="rounded"
-        bottomRightBadge={level ? <SkillBadge level={level} size="sm" /> : null}
+        bottomRightBadge={level ? <SkillBadge level={level} size="sm" className="skillBadge-on-photo" /> : null}
       />
       <span className="detailPlayer-body">
         <span className="detailPlayer-name">
@@ -99,7 +104,10 @@ function PlayerRow({
               {t('gameDetail.tagHost')}
             </span>
           )}
-          <span>{roleLabel}</span>
+          {showRoleLabel && <span>{roleLabel}</span>}
+          {level && (
+            <SkillBadge level={level} size="sm" />
+          )}
         </span>
       </span>
       {showMenu && (

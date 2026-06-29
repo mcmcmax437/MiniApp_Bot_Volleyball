@@ -1250,11 +1250,11 @@ body.keyboard-open .app-container {
 
 .skillBadge-on-photo {
   position: absolute;
-  bottom: -2px;
-  right: -2px;
-  z-index: 2;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-  border: 2px solid var(--bg-1);
+  bottom: -3px;
+  right: -3px;
+  z-index: 3;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
+  border: 2px solid var(--surface-1);
 }
 
 /* Profile hero photo wrapper — gives a positioning context for the badge */
