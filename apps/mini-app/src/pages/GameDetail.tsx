@@ -177,7 +177,21 @@ export function GameDetailPage() {
     onSuccess: () => qc.invalidateQueries(['game', id]),
   });
   const finishMut = useMutation(() => api.finishGame(id!), {
-    onSuccess: () => qc.invalidateQueries(['game', id]),
+    onSuccess: () => {
+      // Invalidate both the per-game cache and the home/feed list cache
+      // so the game disappears from "Upcoming games" immediately. We
+      // also drop the ['games'] prefix (which is a wildcard match) so
+      // any versioned or filtered variant of the feed is re-fetched.
+      qc.invalidateQueries(['game', id]);
+      qc.invalidateQueries(['games']);
+      // If the host is also a participant (which they always are —
+      // `create()` adds them as a participant), auto-open the
+      // post-game evaluation modal so they can rate co-players
+      // without having to find a separate button.
+      if (isJoined) {
+        setShowEvaluate(true);
+      }
+    },
   });
 
   const [reportTarget, setReportTarget] = useState<{ id: string; name: string } | null>(null);

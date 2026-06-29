@@ -63,7 +63,9 @@ export function CreateGamePage() {
   // cost is stored as decimal in major units (e.g. 25.00)
   const [totalCostDecimal, setTotalCostDecimal] = useState<string>('');
   const [notes, setNotes] = useState('');
-  const [addressHint, setAddressHint] = useState('');
+  // `addressHint` was an optional secondary field for describing a meeting
+  // point next to the venue address. We dropped it — meeting specifics now
+  // live in `notes` only — so no client-side state is needed here.
   const [isClosed, setIsClosed] = useState(false);
   const [playType, setPlayType] = useState<PlayType>('OUTDOOR');
 
@@ -116,7 +118,6 @@ export function CreateGamePage() {
         isPaid,
         isClosed,
         coverImageUrl: undefined,
-        addressHint: addressHint.trim() || undefined,
         playType,
       }),
     {
@@ -264,19 +265,6 @@ export function CreateGamePage() {
           />
         </div>
 
-        <div className="field">
-          <label className="field-label" htmlFor="addressHint">
-            <Icon name="pin" size={12} className="icon-inline" />
-            {t('create.field.addressHint')}
-          </label>
-          <input
-            id="addressHint"
-            value={addressHint}
-            onChange={(e) => setAddressHint(e.target.value)}
-            placeholder={t('create.field.addressHintPlaceholder')}
-          />
-        </div>
-
         {/* PlayType — where the game will be played. Independent from
             Venue.indoor because the venue might be an indoor sports complex
             that also hosts a beach tournament outside. */}
@@ -308,20 +296,10 @@ export function CreateGamePage() {
           </div>
         </div>
 
-        {/* The cover image used to be a freeform URL input. We replaced it
-            with an automatic selection: the cover is derived from
-            `playType` (BEACH / OUTDOOR / INDOOR) using static assets that
-            ship with the app. The picker above chooses which one. */}
-        <div className="field">
-          <label className="field-label">
-            <Icon name="image-01" size={12} className="icon-inline" />
-            {t('create.field.coverPreview')}
-          </label>
-          <div className="coverPreview" aria-hidden="true">
-            <img src={`/cover-${playType.toLowerCase()}.png`} alt="" />
-          </div>
-          <div className="field-hint">{t('create.field.coverPreviewHint')}</div>
-        </div>
+        {/* The cover image is auto-selected from `playType`
+            (BEACH / OUTDOOR / INDOOR) using static assets that ship with
+            the app. No input or preview is shown — the host doesn't
+            choose or see the cover image during creation. */}
       </section>
 
       {/* When */}
