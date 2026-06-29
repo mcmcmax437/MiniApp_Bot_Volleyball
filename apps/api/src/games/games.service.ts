@@ -149,6 +149,9 @@ export class GamesService {
             lastName: true,
             username: true,
             skillLevel: true,
+            // Weighted (peer-corrected) level — the client badge prefers
+            // this over the self-declared one. See skill-aggregator.ts.
+            evaluatedSkillLevel: true,
             photoUrl: true,
           },
         },
@@ -162,6 +165,7 @@ export class GamesService {
                 username: true,
                 photoUrl: true,
                 skillLevel: true,
+                evaluatedSkillLevel: true,
               },
             },
           },
@@ -253,10 +257,35 @@ export class GamesService {
             lastName: true,
             username: true,
             skillLevel: true,
+            // `evaluatedSkillLevel` is the weighted (peer-corrected) level
+            // that the client badge prefers over the self-declared one.
+            // See apps/api/src/evaluations/skill-aggregator.ts.
+            evaluatedSkillLevel: true,
             photoUrl: true,
           },
         },
-        participants: { select: { userId: true } },
+        // Public profile for each participant so the home feed can render
+        // a row of avatars with skill badges. `user` is the joined User
+        // record — we explicitly select the safe public fields and skip
+        // anything sensitive (phone, telegramId, etc).
+        participants: {
+          select: {
+            userId: true,
+            joinedAt: true,
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                username: true,
+                photoUrl: true,
+                skillLevel: true,
+                evaluatedSkillLevel: true,
+              },
+            },
+          },
+          orderBy: { joinedAt: 'asc' },
+        },
       },
       take: 200,
     });

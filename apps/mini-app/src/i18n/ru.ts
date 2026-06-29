@@ -117,6 +117,8 @@ export const ru: Record<string, string> = {
   'game.free': 'Бесплатная игра',
   'game.host': 'Организатор',
   'game.perPlayerShort': '/ игрок',
+  'game.playersShort': 'игроков',
+  'game.playersMore': 'ещё {count}',
   'game.spotsLeftShort': '{count} свободно',
   'game.playType.indoor': 'В зале',
   'game.playType.outdoor': 'На улице',

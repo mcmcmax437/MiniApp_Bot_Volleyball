@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Icon } from "../Icon";
 import { Photo } from "../Photo";
-import { SKILL_LEVEL_LABELS, SkillLevel, CURRENCY_SYMBOLS } from "../api";
+import { CURRENCY_SYMBOLS } from "../api";
 import type { ApiGame } from "../api";
 import { SkillBadge } from "../SkillBadge";
 import { useI18n } from "../i18n";
@@ -23,8 +23,13 @@ function statusLabel(status: ApiGame["status"], t: (key: string) => string): str
   }
 }
 
-function skillLabel(level: SkillLevel): string {
-  return SKILL_LEVEL_LABELS[level];
+function playTypeIcon(playType: ApiGame["playType"]) {
+  switch (playType) {
+    case "INDOOR": return "building-01";
+    case "BEACH": return "tennis-ball";
+    case "OUTDOOR":
+    default: return "globe";
+  }
 }
 
 function formatGameTime(iso: string): string {
@@ -62,109 +67,126 @@ interface GameCardProps {
 export function GameCard({ game }: GameCardProps) {
   const { t } = useI18n();
   const spotsLeft = game.spotsTotal - game.participantsCount;
-  const fillPercent = Math.min((game.participantsCount / game.spotsTotal) * 100, 100);
-  // Use the weighted (peer-corrected) level for the host's badge so the
-  // card reflects the most up-to-date rating we know about.
-  const hostLevel = effectiveSkillLevel(game.host);
 
   return (
     <Link to={`/games/${game.id}`} className="gameCard-link">
       <article className="card card-hover gameCard">
-        {/* Top row: time + status */}
-        <div className="gameCard-top">
-          <div className="gameCard-time">
-            <Icon name="calendar-01" size={14} />
-            <span>{formatGameTime(game.startAt)}</span>
-            <span className="gameCard-timeUntil">· {timeUntil(game.startAt)}</span>
-          </div>
-          <div className="gameCard-topRight">
-            {game.isClosed && (
-              <span className="closedPill" title={t('game.closed')}>
-                <Icon name="lock" size={10} /> {t('game.closed')}
-              </span>
-            )}
-            <div className={statusToBadgeClass(game.status)}>
-              <span className="badge-dot" />
-              {statusLabel(game.status, t)}
-            </div>
-          </div>
-        </div>
-
-        {/* Cover image — derived from the game's playType so the organizer
-            never has to upload or paste a URL during game creation. */}
-        <div className="coverPreview" style={{ marginBottom: 12 }}>
-          <img src={coverForPlayType(game.playType)} alt="" />
-        </div>
-
-        {/* Host row with real photo */}
-        <div className="gameCard-host">
-          <Photo
-            src={game.host.photoUrl ?? null}
-            name={game.host.firstName}
-            size={36}
-            bottomRightBadge={hostLevel ? <SkillBadge level={hostLevel} size="sm" /> : null}
+        {/* Hero: cover image as background, info overlaid on a dark
+            bottom gradient. Modeled on the Flutter `GameHeroCard`
+            reference — keeps the card compact so the feed scrolls
+            further per screen. */}
+        <div className="gameCard-hero">
+          <img
+            className="gameCard-heroImg"
+            src={coverForPlayType(game.playType)}
+            alt=""
+            loading="lazy"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).classList.add('gameCard-heroImg-fallback');
+            }}
           />
-          <div className="gameCard-hostInfo">
-            <div className="gameCard-title">{game.venue.name}</div>
-            <div className="gameCard-hostName">
-              {t('game.host')}: {game.host.firstName}
-              {hostLevel && <span className="gameCard-hostLevel">· {skillLabel(hostLevel)}</span>}
+          <div className="gameCard-heroOverlay" aria-hidden />
+
+          {/* Top row: status badge (left) + capacity pill (right) */}
+          <div className="gameCard-heroTop">
+            <div className="gameCard-heroStatus">
+              <div className={statusToBadgeClass(game.status)}>
+                <span className="badge-dot" />
+                {statusLabel(game.status, t)}
+              </div>
+              {game.isClosed && (
+                <span className="closedPill" title={t('game.closed')}>
+                  <Icon name="lock" size={10} /> {t('game.closed')}
+                </span>
+              )}
+            </div>
+            <div className="gameCard-heroPill" aria-label={`${game.participantsCount} of ${game.spotsTotal}`}>
+              {game.participantsCount}/{game.spotsTotal}
+            </div>
+          </div>
+
+          {/* Bottom: title + meta */}
+          <div className="gameCard-heroBody">
+            <div className="gameCard-heroTitle">
+              <Icon name={playTypeIcon(game.playType)} size={14} className="gameCard-heroTitleIcon" />
+              <span>{t(`game.playType.${game.playType.toLowerCase()}`)}</span>
+            </div>
+            <div className="gameCard-heroMeta">
+              <span>
+                <Icon name="calendar-01" size={12} />
+                {formatGameTime(game.startAt)}
+              </span>
+              <span>
+                <Icon name="map-pin" size={12} />
+                {game.venue.name}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Location */}
-        <div className="gameCard-location">
-          <Icon name="map-pin" size={14} />
-          <span>
-            {game.venue.address}
-            {game.addressHint ? ` · ${game.addressHint}` : ''}
-          </span>
-        </div>
+        {/* Compact info row beneath the hero: a horizontal strip of
+            participant avatars (host first, then the rest) with the
+            weighted skill badge anchored to each photo, plus the
+            per-player price on the right. */}
+        <div className="gameCard-info">
+          <div className="gameCard-playersRow">
+            {(() => {
+              // The list endpoint ships the full participant array (id-only
+              // join on the query side, expanded on the server). We render
+              // the host first (so the organizer is always visible), then
+              // the other participants in their `joinedAt` order.
+              const rest = game.participants.filter((u) => u.id !== game.host.id);
+              const ordered = [game.host, ...rest];
+              // Cap the visible avatars so the row stays compact on phones.
+              // 5 is the sweet spot — fits inside 14px padding on a 360px
+              // viewport, with a `+N` overflow chip for the rest.
+              const maxAvatars = 5;
+              const visible = ordered.slice(0, maxAvatars);
+              const overflow = ordered.length - visible.length;
+              return (
+                <>
+                  {visible.map((u) => {
+                    const lvl = effectiveSkillLevel(u);
+                    return (
+                      <Photo
+                        key={u.id}
+                        src={u.photoUrl ?? null}
+                        name={u.firstName}
+                        size={28}
+                        bottomRightBadge={lvl ? <SkillBadge level={lvl} size="sm" /> : null}
+                      />
+                    );
+                  })}
+                  {overflow > 0 && (
+                    <span
+                      className="gameCard-playersMore"
+                      title={t('game.playersMore', { count: overflow })}
+                    >
+                      +{overflow}
+                    </span>
+                  )}
+                </>
+              );
+            })()}
+          </div>
 
-        {/* Player count + capacity bar */}
-        <div className="gameCard-capacity">
-          <div className="gameCard-capacityLabel">
-            <Icon name="user-group" size={14} />
-            <span>
-              <strong>{game.participantsCount}</strong>/{game.spotsTotal} players
-            </span>
-            {spotsLeft > 0 && (
-              <span className="gameCard-capacityFree">· {t('game.spotsLeftShort', { count: spotsLeft })}</span>
-            )}
-          </div>
-          <div className="capacity-bar">
-            <div
-              className={`capacity-bar-fill capacity-bar-fill-${game.status.toLowerCase()}`}
-              style={{ width: `${fillPercent}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Meta: tags + price */}
-        <div className="gameCard-meta">
-          <div className="gameCard-tags">
-            <SkillBadge level={game.skillLevel} size="sm" />
-            <span className="tag info">
-              <Icon name={game.playType === 'INDOOR' ? 'building-01' : game.playType === 'BEACH' ? 'tennis-ball' : 'globe'} size={10} className="icon-inline" style={{ marginRight: 2 }} />
-              {t(`game.playType.${game.playType.toLowerCase()}`)}
-            </span>
-            {game.isPaid && (
-              <span className="tag warning">
-                <Icon name="dollar-01" size={10} className="icon-inline" style={{ marginRight: 2 }} />
-                {t('game.paid')}
-              </span>
-            )}
-          </div>
-          {game.totalCost > 0 && (
-            <div className="gameCard-price">
-              <span className="gameCard-priceValue">
-                {CURRENCY_SYMBOLS[game.currency] ?? game.currency}
-                {formatMoney(game.perPlayerCost)}
-              </span>
-              <span className="gameCard-priceLabel"> {t('game.perPlayerShort')}</span>
+          <div className="gameCard-right">
+            <div className="gameCard-hostSub">
+              <strong>{game.participantsCount}</strong>/{game.spotsTotal} {t('game.playersShort')}
+              {spotsLeft > 0 && (
+                <span className="gameCard-capacityFree"> · {t('game.spotsLeftShort', { count: spotsLeft })}</span>
+              )}
             </div>
-          )}
+            {game.totalCost > 0 && (
+              <div className="gameCard-price">
+                <span className="gameCard-priceValue">
+                  {CURRENCY_SYMBOLS[game.currency] ?? game.currency}
+                  {formatMoney(game.perPlayerCost)}
+                </span>
+                <span className="gameCard-priceLabel">{t('game.perPlayerShort')}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {spotsLeft > 0 && spotsLeft <= 3 && game.status === "OPEN" && (

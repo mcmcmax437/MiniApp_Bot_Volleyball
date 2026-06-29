@@ -124,6 +124,8 @@ export const uk: Record<string, string> = {
   'game.free': 'Безкоштовна гра',
   'game.host': 'Організатор',
   'game.perPlayerShort': '/ гравець',
+  'game.playersShort': 'гравців',
+  'game.playersMore': 'ще {count}',
   'game.spotsLeftShort': '{count} вільно',
   'game.playType.indoor': 'У залі',
   'game.playType.outdoor': 'На вулиці',

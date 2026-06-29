@@ -131,6 +131,8 @@ export const en: Record<string, string> = {
   'game.free': 'Free game',
   'game.host': 'Host',
   'game.perPlayerShort': '/ player',
+  'game.playersShort': 'players',
+  'game.playersMore': '{count} more',
   'game.spotsLeftShort': '{count} free',
   'game.playType.indoor': 'Indoor',
   'game.playType.outdoor': 'Outdoor',

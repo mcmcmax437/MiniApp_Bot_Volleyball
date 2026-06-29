@@ -7,45 +7,143 @@
 }
 
 .gameCard {
-  padding: 16px;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  overflow: hidden;
+  isolation: isolate;
 }
 
 /* ============================================================
-   Top row: time + status badge
+   Hero — cover image as background with overlaid text.
+   Keeps the card compact so the home feed scrolls further.
+   Mirrors the `detailHero` pattern used on the GameDetail page.
    ============================================================ */
-.gameCard-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
+.gameCard-hero {
+  position: relative;
+  height: 150px;
+  background: var(--surface-2);
+  isolation: isolate;
 }
 
-.gameCard-time {
+.gameCard-heroImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  z-index: 0;
+}
+
+.gameCard-heroImg-fallback {
+  display: none;
+}
+
+.gameCard-heroOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.18) 0%,
+    rgba(0, 0, 0, 0.05) 35%,
+    rgba(0, 0, 0, 0.78) 100%
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+
+.gameCard-heroTop {
+  position: relative;
+  z-index: 2;
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px 0;
+}
+
+.gameCard-heroStatus {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
+}
+
+.gameCard-heroPill {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 12px;
-  color: var(--text-tertiary);
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+  letter-spacing: 0.02em;
+}
+
+.gameCard-heroBody {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: 12px 14px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gameCard-heroTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.gameCard-heroTitleIcon {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.gameCard-heroMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 12px;
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
-.gameCard-time i {
-  color: var(--brand-300);
+.gameCard-heroMeta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.gameCard-timeUntil {
-  color: var(--text-muted);
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: 0;
+.gameCard-heroMeta i {
+  color: rgba(255, 255, 255, 0.75);
+  flex-shrink: 0;
 }
 
-/* Status badge (dot + label) */
+/* ============================================================
+   Status badge (dot + label) — used inside the hero overlay.
+   ============================================================ */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -57,6 +155,11 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
 }
 
 .badge-dot {
@@ -68,230 +171,124 @@
 }
 
 .badge-open {
-  background: var(--success-soft);
-  color: var(--success);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34d399;
 }
-
 .badge-full {
-  background: var(--warning-soft);
-  color: var(--warning);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
 }
-
 .badge-cancelled {
-  background: var(--danger-soft);
-  color: var(--danger);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
 }
-
 .badge-finished {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-tertiary);
-  border: 1px solid var(--border);
+  color: rgba(255, 255, 255, 0.7);
 }
 
-/* ============================================================
-   Title
-   ============================================================ */
-.gameCard-title {
-  font-size: 19px;
+.closedPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
   font-weight: 700;
-  font-family: var(--font-display);
-  color: var(--text-primary);
-  line-height: 1.25;
-  margin: 0;
-  letter-spacing: -0.015em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
 }
 
 /* ============================================================
-   Host row
+   Compact info row below the hero.
    ============================================================ */
-.gameCard-host {
+.gameCard-info {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 2px;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px 12px;
 }
 
-.gameCard-hostInfo {
+/* Avatar row: host first, then other participants. Each avatar is
+   28px and stacks with a -8px overlap so the row stays compact. */
+.gameCard-playersRow {
+  display: flex;
+  align-items: center;
   flex: 1;
   min-width: 0;
 }
 
-.gameCard-hostName {
-  font-size: 12px;
+.gameCard-playersRow .photo {
+  margin-right: -8px;
+  box-shadow: 0 0 0 2px var(--surface-1);
+  position: relative;
+  z-index: 0;
+}
+
+/* Bring each photo slightly forward so the skill badge corner stays
+   visible when the next avatar overlaps it. */
+.gameCard-playersRow .photo:nth-child(1) { z-index: 5; }
+.gameCard-playersRow .photo:nth-child(2) { z-index: 4; }
+.gameCard-playersRow .photo:nth-child(3) { z-index: 3; }
+.gameCard-playersRow .photo:nth-child(4) { z-index: 2; }
+.gameCard-playersRow .photo:nth-child(5) { z-index: 1; }
+
+.gameCard-playersMore {
+  margin-left: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.gameCard-hostSub {
+  font-size: 11px;
   color: var(--text-tertiary);
   font-weight: 500;
-  margin-top: 2px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  text-align: right;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
-.gameCard-hostLevel {
-  color: var(--brand-300);
-  font-weight: 600;
-}
-
-/* ============================================================
-   Location
-   ============================================================ */
-.gameCard-location {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-secondary);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.gameCard-location i {
-  color: var(--brand-300);
-  flex-shrink: 0;
-}
-
-/* ============================================================
-   Players row: avatars + count
-   ============================================================ */
-.gameCard-players {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 4px;
-}
-
-.avatars {
-  display: flex;
-  align-items: center;
-}
-
-.avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--gradient-brand);
-  border: 2px solid var(--surface-1);
-  margin-right: -8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-inverse);
-  font-weight: 700;
-  font-size: 11px;
-  font-family: var(--font-display);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-}
-
-.avatar:nth-child(2) {
-  background: var(--gradient-cool);
-}
-
-.avatar:nth-child(3) {
-  background: var(--gradient-success);
-}
-
-.avatar:nth-child(4) {
-  background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
-}
-
-.avatars .more {
-  margin-left: 14px;
-  font-size: 12px;
-  color: var(--text-tertiary);
-  font-weight: 600;
-}
-
-.gameCard-playerCount {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  line-height: 1.1;
-}
-
-.gameCard-playerCountNum {
-  font-size: 18px;
-  font-weight: 800;
-  font-family: var(--font-display);
+.gameCard-hostSub strong {
   color: var(--text-primary);
-  letter-spacing: -0.02em;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
-.gameCard-playerCountMax {
-  color: var(--text-muted);
+.gameCard-capacityFree {
+  color: var(--success);
   font-weight: 600;
 }
 
-.gameCard-playerCountLabel {
-  font-size: 10px;
-  color: var(--text-tertiary);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-top: 2px;
-}
-
-/* ============================================================
-   Capacity bar
-   ============================================================ */
-.capacity-bar {
-  height: 4px;
-  background: var(--surface-2);
-  border-radius: var(--radius-pill);
-  overflow: hidden;
-}
-
-.capacity-bar-fill {
-  height: 100%;
-  border-radius: var(--radius-pill);
-  transition: width var(--dur-slow) var(--ease-out);
-}
-
-.capacity-bar-fill-open {
-  background: var(--gradient-brand);
-  box-shadow: 0 0 12px var(--brand-glow);
-}
-
-.capacity-bar-fill-full {
-  background: linear-gradient(90deg, #f59e0b, #fbbf24);
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
-}
-
-.capacity-bar-fill-cancelled {
-  background: linear-gradient(90deg, #ef4444, #f87171);
-  opacity: 0.6;
-}
-
-.capacity-bar-fill-finished {
-  background: var(--text-muted);
-  opacity: 0.5;
-}
-
-/* ============================================================
-   Meta row
-   ============================================================ */
-.gameCard-meta {
+.gameCard-right {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .gameCard-tags {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .gameCard-price {
   text-align: right;
-  line-height: 1.1;
+  line-height: 1.05;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
 }
 
 .gameCard-priceValue {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 800;
   font-family: var(--font-mono);
   color: var(--brand);
@@ -300,9 +297,11 @@
 }
 
 .gameCard-priceLabel {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-tertiary);
-  font-weight: 500;
+  font-weight: 600;
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
 }
 
 /* ============================================================
@@ -312,7 +311,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin-top: 4px;
+  margin: 0 14px 12px;
   padding: 4px 10px;
   background: var(--warning-soft);
   color: var(--warning);

@@ -88,6 +88,18 @@ export interface ApiVenue {
   city: string;
 }
 
+/** Public profile shape embedded in a game's participant list. */
+export interface ApiGameParticipantUser {
+  id: string;
+  firstName: string;
+  lastName: string | null;
+  username: string | null;
+  photoUrl: string | null;
+  skillLevel: SkillLevel | null;
+  /** Weighted (peer-corrected) level, computed by the backend. */
+  evaluatedSkillLevel: SkillLevel | null;
+}
+
 export interface ApiGame {
   id: string;
   venueId: string;
@@ -108,30 +120,28 @@ export interface ApiGame {
   // v4: where the game is being played (indoor court / outdoor court / beach).
   playType: PlayType;
   venue: Pick<ApiVenue, 'id' | 'name' | 'address' | 'lat' | 'lng' | 'indoor' | 'city'>;
-  host: {
-    id: string;
-    firstName: string;
-    lastName: string | null;
-    username: string | null;
-    skillLevel: SkillLevel | null;
-    photoUrl: string | null;
-  };
+  host: ApiGameParticipantUser;
+  /**
+   * Public participant profiles. The list endpoint ships the public fields
+   * only (no phone, no telegramId) so the home feed can render an avatar
+   * row with skill badges next to every photo.
+   */
+  participants: ApiGameParticipantUser[];
   participantsCount: number;
   perPlayerCost: number;
 }
 
-export interface ApiGameDetail extends ApiGame {
+export interface ApiGameDetail extends Omit<ApiGame, 'participants'> {
+  /**
+   * Rich participant rows. The list endpoint only ships the public
+   * `ApiGameParticipantUser` shape; the detail endpoint ships the join
+   * row (`GameParticipant` from Prisma) so callers can access row-level
+   * metadata like `joinedAt` and the `GameParticipant.id`.
+   */
   participants: Array<{
     id: string;
     userId: string;
-    user: {
-      id: string;
-      firstName: string;
-      lastName: string | null;
-      username: string | null;
-      photoUrl: string | null;
-      skillLevel: SkillLevel | null;
-    };
+    user: ApiGameParticipantUser;
     joinedAt: string;
   }>;
   joinRequests?: Array<{ id: string; userId: string; createdAt: string; status: 'PENDING' | 'APPROVED' | 'REJECTED' }>;

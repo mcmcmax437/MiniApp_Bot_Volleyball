@@ -117,6 +117,8 @@ export const pl: Record<string, string> = {
   'game.free': 'Bezpłatny mecz',
   'game.host': 'Organizator',
   'game.perPlayerShort': '/ gracz',
+  'game.playersShort': 'graczy',
+  'game.playersMore': 'więcej: {count}',
   'game.spotsLeftShort': '{count} wolnych',
   'game.playType.indoor': 'W hali',
   'game.playType.outdoor': 'Na zewnątrz',

@@ -34,6 +34,10 @@ interface PlayerRowProps {
   photoUrl: string | null;
   firstName: string;
   lastName: string | null | undefined;
+  /** Self-declared level from the welcome flow. */
+  skillLevel: SkillLevel | null;
+  /** Weighted (peer-corrected) level, computed by the backend. */
+  evaluatedSkillLevel: SkillLevel | null;
   isHost: boolean;
   isYou: boolean;
   roleLabel: string;
@@ -55,6 +59,8 @@ function PlayerRow({
   photoUrl,
   firstName,
   lastName,
+  skillLevel,
+  evaluatedSkillLevel,
   isHost,
   isYou,
   roleLabel,
@@ -65,9 +71,19 @@ function PlayerRow({
   const { t } = useI18n();
   const fullName = lastName ? `${firstName} ${lastName}` : firstName;
   const showMenu = !isYou;
+  // Prefer the peer-corrected (weighted) level. Falls back to self-declared
+  // when the backend hasn't computed a value yet. `null` hides the badge
+  // entirely (player has never picked a level).
+  const level = effectiveSkillLevel({ skillLevel, evaluatedSkillLevel });
   return (
     <li className="detailPlayer" data-user-id={userId}>
-      <Photo src={photoUrl} name={fullName} size={44} variant="rounded" />
+      <Photo
+        src={photoUrl}
+        name={fullName}
+        size={44}
+        variant="rounded"
+        bottomRightBadge={level ? <SkillBadge level={level} size="sm" /> : null}
+      />
       <span className="detailPlayer-body">
         <span className="detailPlayer-name">
           <span className="detailPlayer-nameText">{fullName}</span>
@@ -313,6 +329,8 @@ export function GameDetailPage() {
               photoUrl={g.host.photoUrl}
               firstName={g.host.firstName}
               lastName={g.host.lastName}
+              skillLevel={g.host.skillLevel}
+              evaluatedSkillLevel={g.host.evaluatedSkillLevel}
               isHost
               isYou={myId === g.host.id}
               roleLabel={t('gameDetail.roleOrganizer')}
@@ -331,6 +349,8 @@ export function GameDetailPage() {
                   photoUrl={p.user.photoUrl}
                   firstName={p.user.firstName}
                   lastName={p.user.lastName}
+                  skillLevel={p.user.skillLevel}
+                  evaluatedSkillLevel={p.user.evaluatedSkillLevel}
                   isHost={false}
                   isYou={myId === p.userId}
                   roleLabel={t('gameDetail.rolePlayer')}
