@@ -154,6 +154,7 @@ export function GameDetailPage() {
   const [showEvaluate, setShowEvaluate] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [showPayments, setShowPayments] = useState(false);
+  const [activeTab, setActiveTab] = useState<'players' | 'info'>('players');
 
   // Check for blacklisted players in the game
   const participantIds = useMemo(() => {
@@ -214,51 +215,64 @@ export function GameDetailPage() {
 
   return (
     <>
-      <div className="detailCard">
-        {g.coverImageUrl && (
-          <div className="coverPreview" style={{ marginBottom: 12, aspectRatio: '16/9' }}>
-            <img src={g.coverImageUrl} alt="" />
+      {/* Hero card — venue image with gradient overlay, big venue name,
+          green capacity pill anchored top-right, date + location at the
+          bottom. Matches the `GameHeroCard` Flutter reference. */}
+      <div className="detailHero">
+        {g.coverImageUrl ? (
+          <img className="detailHero-img" src={g.coverImageUrl} alt="" />
+        ) : (
+          <div className="detailHero-img detailHero-img-fallback" aria-hidden>
+            <Icon name="image-01" size={48} />
           </div>
         )}
-        <h3>{g.venue.name}</h3>
-        <div className="detailRow">
-          <span><Icon name="calendar-01" className="icon-inline" /> {formatGameTime(g.startAt)}</span>
-        </div>
-        <div className="detailRow">
-          <span>
-            <Icon name="user-group" className="icon-inline" /> {g.participantsCount}/{g.spotsTotal} players
-          </span>
-          <strong>{formatMoney(g.perPlayerCost, g.currency)} / player</strong>
-        </div>
-        <div className="detailRow">
-          <span>
-            <Icon name="map-pin" className="icon-inline" />
-            {g.venue.address}
-            {g.addressHint ? ` · ${g.addressHint}` : ''}
-          </span>
-        </div>
-        <div className="detailRow">
-          <span style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            <SkillBadge level={g.skillLevel} size="sm" />
-            <span className="tag info">{g.venue.indoor ? 'Indoor' : 'Outdoor'}</span>
-            {g.isPaid && <span className="tag warning">{t('game.paid')}</span>}
-            {g.isClosed && (
-              <span className="tag" style={{ background: 'var(--surface-3)' }}>
-                <Icon name="lock" size={10} /> {t('game.closed')}
-              </span>
-            )}
-            {g.status === 'CANCELLED' && <span className="tag warn">{t('game.cancel')}</span>}
-            {g.status === 'FULL' && <span className="tag warn">{t('game.spotsFull')}</span>}
-            {g.status === 'FINISHED' && <span className="tag">{t('game.finish')}</span>}
-          </span>
-        </div>
-        {g.notes && (
-          <div className="detailRow" style={{ marginTop: 8 }}>
-            <span style={{ color: 'var(--text)' }}>
-              <Icon name="note-01" className="icon-inline" /> {g.notes}
+        <div className="detailHero-overlay" aria-hidden />
+        <div className="detailHero-body">
+          <div className="detailHero-top">
+            <h2 className="detailHero-title">{g.venue.name}</h2>
+            <span className="detailHero-pill">
+              {g.participantsCount}/{g.spotsTotal}
+              {isJoined && (
+                <span className="detailHero-pillJoined"> · {t('gameDetail.joined')}</span>
+              )}
             </span>
           </div>
-        )}
+          <div className="detailHero-meta">
+            <span>
+              <Icon name="calendar-01" size={14} /> {formatGameTime(g.startAt)}
+            </span>
+            <span>
+              <Icon name="map-pin" size={14} /> {g.venue.address}
+              {g.addressHint ? ` · ${g.addressHint}` : ''}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Tab strip — Players / Info */}
+      <div className="detailTabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'players'}
+          className={`detailTab${activeTab === 'players' ? ' isActive' : ''}`}
+          onClick={() => setActiveTab('players')}
+          data-analytics-label="game-tab-players"
+        >
+          <Icon name="user-group" size={16} />
+          <span>{t('gameDetail.tabPlayers')}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'info'}
+          className={`detailTab${activeTab === 'info' ? ' isActive' : ''}`}
+          onClick={() => setActiveTab('info')}
+          data-analytics-label="game-tab-info"
+        >
+          <Icon name="information-circle" size={16} />
+          <span>{t('gameDetail.tabInfo')}</span>
+        </button>
       </div>
 
       {/* Closed-lobby pending-request banner */}
@@ -276,79 +290,129 @@ export function GameDetailPage() {
         </div>
       )}
 
-      {/* Players */}
-      <div className="detailCard detailCard-players">
-        <div className="detailPlayers-header">
-          <h3>{t('gameDetail.players')}</h3>
-          <span className="detailPlayers-count">
-            {g.participantsCount}/{g.spotsTotal}
-          </span>
-        </div>
+      {/* Players tab body */}
+      {activeTab === 'players' && (
+        <div className="detailCard detailCard-players" role="tabpanel">
+          <div className="detailPlayers-header">
+            <h3>{t('gameDetail.confirmedPlayers', { n: g.participantsCount })}</h3>
+            <span className="detailPlayers-count">
+              {g.participantsCount}/{g.spotsTotal}
+            </span>
+          </div>
 
-        {/* Confirmed players */}
-        <ul className="detailPlayerList">
-          <PlayerRow
-            key={`host:${g.host.id}`}
-            userId={g.host.id}
-            photoUrl={g.host.photoUrl}
-            firstName={g.host.firstName}
-            lastName={g.host.lastName}
-            isHost
-            isYou={myId === g.host.id}
-            roleLabel={t('gameDetail.roleOrganizer')}
-            onReport={() => setReportTarget({ id: g.host.id, name: g.host.firstName })}
-            menuOpen={openMenuFor === g.host.id}
-            onToggleMenu={() =>
-              setOpenMenuFor(openMenuFor === g.host.id ? null : g.host.id)
-            }
-          />
-          {g.participants
-            .filter((p) => p.userId !== g.host.id)
-            .map((p) => (
-              <PlayerRow
-                key={p.id}
-                userId={p.userId}
-                photoUrl={p.user.photoUrl}
-                firstName={p.user.firstName}
-                lastName={p.user.lastName}
-                isHost={false}
-                isYou={myId === p.userId}
-                roleLabel={t('gameDetail.rolePlayer')}
-                onReport={() =>
-                  setReportTarget({ id: p.userId, name: p.user.firstName })
-                }
-                menuOpen={openMenuFor === p.userId}
-                onToggleMenu={() =>
-                  setOpenMenuFor(openMenuFor === p.userId ? null : p.userId)
-                }
-              />
-            ))}
-          {g.participants.length <= 1 && (
-            <li className="detailPlayer-empty">{t('gameDetail.noPlayers')}</li>
+          {/* Confirmed players */}
+          <ul className="detailPlayerList">
+            <PlayerRow
+              key={`host:${g.host.id}`}
+              userId={g.host.id}
+              photoUrl={g.host.photoUrl}
+              firstName={g.host.firstName}
+              lastName={g.host.lastName}
+              isHost
+              isYou={myId === g.host.id}
+              roleLabel={t('gameDetail.roleOrganizer')}
+              onReport={() => setReportTarget({ id: g.host.id, name: g.host.firstName })}
+              menuOpen={openMenuFor === g.host.id}
+              onToggleMenu={() =>
+                setOpenMenuFor(openMenuFor === g.host.id ? null : g.host.id)
+              }
+            />
+            {g.participants
+              .filter((p) => p.userId !== g.host.id)
+              .map((p) => (
+                <PlayerRow
+                  key={p.id}
+                  userId={p.userId}
+                  photoUrl={p.user.photoUrl}
+                  firstName={p.user.firstName}
+                  lastName={p.user.lastName}
+                  isHost={false}
+                  isYou={myId === p.userId}
+                  roleLabel={t('gameDetail.rolePlayer')}
+                  onReport={() =>
+                    setReportTarget({ id: p.userId, name: p.user.firstName })
+                  }
+                  menuOpen={openMenuFor === p.userId}
+                  onToggleMenu={() =>
+                    setOpenMenuFor(openMenuFor === p.userId ? null : p.userId)
+                  }
+                />
+              ))}
+            {g.participants.length <= 1 && (
+              <li className="detailPlayer-empty">{t('gameDetail.noPlayers')}</li>
+            )}
+          </ul>
+
+          {/* Spots left as filled placeholder avatars */}
+          {g.spotsTotal - g.participantsCount > 0 && (
+            <>
+              <div className="detailPlayers-subheader">
+                <span>
+                  {t('game.spotsLeft', { n: g.spotsTotal - g.participantsCount })}
+                </span>
+              </div>
+              <div
+                className="detailPlayers-spots"
+                aria-label={t('game.spotsLeft', { n: g.spotsTotal - g.participantsCount })}
+              >
+                {Array.from({ length: g.spotsTotal - g.participantsCount }).map((_, i) => (
+                  <span key={i} className="detailPlayers-spotSlot">
+                    <Icon name="user-account" size={18} />
+                  </span>
+                ))}
+              </div>
+            </>
           )}
-        </ul>
+        </div>
+      )}
 
-        {/* Spots left as filled placeholder avatars */}
-        {g.spotsTotal - g.participantsCount > 0 && (
-          <>
-            <div className="detailPlayers-subheader">
+      {/* Info tab body — venue, time, tags, notes, pricing */}
+      {activeTab === 'info' && (
+        <div className="detailCard detailCard-info" role="tabpanel">
+          <div className="detailInfo-row">
+            <Icon name="calendar-01" className="icon-inline" />
+            <span>
+              <strong>{t('gameDetail.startsAt')}:</strong> {formatGameTime(g.startAt)}
+            </span>
+          </div>
+          <div className="detailInfo-row">
+            <Icon name="map-pin" className="icon-inline" />
+            <span>
+              <strong>{t('gameDetail.address')}:</strong> {g.venue.address}
+              {g.addressHint ? ` · ${g.addressHint}` : ''}
+            </span>
+          </div>
+          {g.isPaid && (
+            <div className="detailInfo-row">
+              <Icon name="dollar-01" className="icon-inline" />
               <span>
-                {t('game.spotsLeft', { n: g.spotsTotal - g.participantsCount })}
+                <strong>{t('gameDetail.pricePerPlayer')}:</strong>{' '}
+                {formatMoney(g.perPlayerCost, g.currency)}
               </span>
             </div>
-            <div
-              className="detailPlayers-spots"
-              aria-label={t('game.spotsLeft', { n: g.spotsTotal - g.participantsCount })}
-            >
-              {Array.from({ length: g.spotsTotal - g.participantsCount }).map((_, i) => (
-                <span key={i} className="detailPlayers-spotSlot">
-                  <Icon name="user-account" size={18} />
-                </span>
-              ))}
+          )}
+          <div className="detailInfo-tags">
+            <SkillBadge level={g.skillLevel} size="sm" />
+            <span className="tag info">
+              {g.venue.indoor ? t('venue.indoor') : t('venue.outdoor')}
+            </span>
+            {g.isPaid && <span className="tag warning">{t('game.paid')}</span>}
+            {g.isClosed && (
+              <span className="tag" style={{ background: 'var(--surface-3)' }}>
+                <Icon name="lock" size={10} /> {t('game.closed')}
+              </span>
+            )}
+            {g.status === 'CANCELLED' && <span className="tag warn">{t('game.cancel')}</span>}
+            {g.status === 'FULL' && <span className="tag warn">{t('game.spotsFull')}</span>}
+            {g.status === 'FINISHED' && <span className="tag">{t('game.finish')}</span>}
+          </div>
+          {g.notes && (
+            <div className="detailInfo-notes">
+              <Icon name="note-01" className="icon-inline" /> {g.notes}
             </div>
-          </>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Action area */}
       {!isClosed && (

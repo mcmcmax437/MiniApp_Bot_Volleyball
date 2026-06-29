@@ -147,6 +147,11 @@ export const uk: Record<string, string> = {
   'gameDetail.tagYou': 'ВИ',
   'gameDetail.reportAction': 'Поскаржитися',
   'gameDetail.actionsFor': 'Дії для {name}',
+  'gameDetail.tabPlayers': 'Гравці',
+  'gameDetail.tabInfo': 'Інфо',
+  'gameDetail.joined': 'У грі',
+  'gameDetail.confirmedPlayers': 'Підтверджені гравці ({n})',
+  'gameDetail.pricePerPlayer': 'З гравця',
 
   'create.title': 'Нова гра',
   'create.subtitle': 'Заповніть деталі та запросіть гравців',

@@ -140,6 +140,11 @@ export const ru: Record<string, string> = {
   'gameDetail.tagYou': 'ВЫ',
   'gameDetail.reportAction': 'Пожаловаться',
   'gameDetail.actionsFor': 'Действия для {name}',
+  'gameDetail.tabPlayers': 'Игроки',
+  'gameDetail.tabInfo': 'Детали',
+  'gameDetail.joined': 'В игре',
+  'gameDetail.confirmedPlayers': 'Подтверждённые игроки ({n})',
+  'gameDetail.pricePerPlayer': 'С игрока',
 
   'create.title': 'Новая игра',
   'create.subtitle': 'Заполните детали и пригласите игроков',

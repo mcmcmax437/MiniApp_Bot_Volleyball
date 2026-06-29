@@ -140,6 +140,11 @@ export const pl: Record<string, string> = {
   'gameDetail.tagYou': 'TY',
   'gameDetail.reportAction': 'Zgłoś',
   'gameDetail.actionsFor': 'Akcje dla {name}',
+  'gameDetail.tabPlayers': 'Gracze',
+  'gameDetail.tabInfo': 'Info',
+  'gameDetail.joined': 'Dołączył',
+  'gameDetail.confirmedPlayers': 'Potwierdzeni gracze ({n})',
+  'gameDetail.pricePerPlayer': 'Za gracza',
 
   'create.title': 'Nowy mecz',
   'create.subtitle': 'Wypełnij szczegóły i zaproś graczy',
