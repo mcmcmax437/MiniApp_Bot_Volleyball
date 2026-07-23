@@ -158,6 +158,10 @@ export class MeController {
         // should not 500 the entire PATCH. Worst case: the badge lags by
         // one render until the next evaluation.
       }
+      // Re-read so the response includes the freshly cached
+      // `evaluatedSkillLevel` (recalibrate writes it in a separate tx).
+      const fresh = await this.prisma.user.findUnique({ where: { id: updated.id } });
+      return this.toPublicUser(fresh ?? updated);
     }
 
     return this.toPublicUser(updated);

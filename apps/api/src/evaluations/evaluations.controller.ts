@@ -37,6 +37,12 @@ class SubmitDto {
 export class EvaluationsController {
   constructor(private readonly evaluations: EvaluationsService) {}
 
+  @Get('evaluations/pending')
+  listPending(@CurrentUser() me: User | null) {
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.evaluations.listPending(me);
+  }
+
   @Get('games/:gameId/evaluations')
   listMine(@CurrentUser() me: User | null, @Param('gameId') gameId: string) {
     if (!me) throw new UnauthorizedException('User not found');

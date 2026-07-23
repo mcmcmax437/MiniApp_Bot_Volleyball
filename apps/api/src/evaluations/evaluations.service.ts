@@ -146,6 +146,46 @@ export class EvaluationsService implements OnApplicationBootstrap {
   }
 
   /**
+   * Finished games the current user played in, where they still owe a
+   * co-player rating (haven't submitted any `GameEvaluation` rows yet)
+   * and there is at least one other participant to rate.
+   *
+   * Used by the mini-app to prompt every participant — not just the host —
+   * on their next app open. The client additionally tracks local dismissals
+   * (Skip / X) so a player who declines is never asked again for that game.
+   */
+  async listPending(me: User) {
+    const games = await this.prisma.game.findMany({
+      where: {
+        status: 'FINISHED',
+        participants: { some: { userId: me.id } },
+      },
+      orderBy: { endAt: 'desc' },
+      take: 30,
+      include: {
+        venue: { select: { name: true } },
+        participants: { select: { userId: true } },
+        evaluations: {
+          where: { evaluatorId: me.id },
+          select: { id: true },
+          take: 1,
+        },
+      },
+    });
+
+    return {
+      games: games
+        .filter((g) => g.participants.length > 1 && g.evaluations.length === 0)
+        .map((g) => ({
+          id: g.id,
+          venueName: g.venue.name,
+          startAt: g.startAt.toISOString(),
+          endAt: g.endAt.toISOString(),
+        })),
+    };
+  }
+
+  /**
    * Public, standalone recompute. Used by callers that don't already hold a
    * transaction (e.g. the user's own level edit). Wraps the inner work in a
    * transaction so partial failures don't corrupt `evaluatedSkillLevel`.

@@ -197,48 +197,16 @@ export function HomePage() {
               </span>
             )}
           </div>
-          {meQ.data?.skillLevel ? (
-            // Show the user's own self-declared level here. Once peer
-            // evaluations exist the server caches a weighted value in
-            // `evaluatedSkillLevel` and `effectiveSkillLevel()` would prefer
-            // it, but we keep `skillLevel` as the displayed source on Home
-            // because the user expects "their" badge to match what they
-            // picked — the peer-corrected delta is shown separately on
-            // Profile where it has more room to explain itself.
-            <button
-              type="button"
-              className="home-hero-skill"
-              onClick={() => navigate('/welcome/change')}
-              aria-label={t('home.tapToChangeLevel')}
-              title={t('home.tapToChangeLevel')}
-              data-analytics-label="home-change-level"
-            >
-              <SkillBadge
-                level={meQ.data.skillLevel}
-                size="xl"
-                withLabel
-              />
-              <Icon name="edit-01" size={12} className="home-hero-skill-edit" />
-            </button>
-          ) : effectiveSkillLevel(meQ.data) ? (
-            // Fallback: peer-corrected value exists even though the user
-            // hasn't picked a self-level. Render it so the photo isn't
-            // unbadged.
-            <button
-              type="button"
-              className="home-hero-skill"
-              onClick={() => navigate('/welcome/change')}
-              aria-label={t('home.tapToChangeLevel')}
-              title={t('home.tapToChangeLevel')}
-              data-analytics-label="home-change-level"
-            >
+          {effectiveSkillLevel(meQ.data) ? (
+            // Display-only. Self-level is set once during first onboarding;
+            // afterwards peer ratings adjust `evaluatedSkillLevel`. No tap-
+            // to-change CTA here — that was confusing and too large.
+            <div className="home-hero-skill" aria-label={t('profile.skill')}>
               <SkillBadge
                 level={effectiveSkillLevel(meQ.data)!}
-                size="xl"
-                withLabel
+                size="sm"
               />
-              <Icon name="edit-01" size={12} className="home-hero-skill-edit" />
-            </button>
+            </div>
           ) : !hasOnboardedLocally() ? (
             <button
               type="button"

@@ -1,13 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import {
   useApi,
   ApiUser,
-  SkillLevel,
-  SKILL_LEVELS,
-  SKILL_LEVEL_LABELS,
-  SKILL_LEVEL_DESCRIPTIONS,
   Language,
   SUPPORTED_LANGUAGES,
 } from "../api";
@@ -52,19 +48,9 @@ function formatOffsetsSummary(offsets: number[]): string {
     .join(" + ");
 }
 
-const SKILL_ICONS: Record<SkillLevel, IconName> = {
-  LEVEL_1: "tennis-ball",
-  LEVEL_2: "play",
-  LEVEL_3: "medal-01",
-  LEVEL_4: "award-01",
-  LEVEL_5: "star",
-  LEVEL_6: "crown",
-};
-
 export function ProfilePage() {
   const api = useApi();
   const qc = useQueryClient();
-  const navigate = useNavigate();
   const { t, lang, setLang } = useI18n();
   const meQ = useQuery<ApiUser | null>(["me"], () => api.me(), {
     refetchOnMount: "always",
@@ -73,7 +59,6 @@ export function ProfilePage() {
   const { photoUrl: tgPhotoUrl } = useTelegram();
 
   const [age, setAge] = useState<number | "">("");
-  const [skill, setSkill] = useState<SkillLevel | "">("");
   const [city, setCity] = useState("");
   // Reminders default to "1h only" (matches the first preset). The section is
   // also collapsed by default — the user only sees a small chip with the
@@ -85,7 +70,6 @@ export function ProfilePage() {
   useEffect(() => {
     if (!meQ.data) return;
     setAge(meQ.data.age ?? "");
-    setSkill(meQ.data.skillLevel ?? "");
     setCity(meQ.data.city);
     setOffsets(meQ.data.reminderOffsets ?? []);
     if (meQ.data.language && SUPPORTED_LANGUAGES.includes(meQ.data.language)) {
@@ -97,7 +81,6 @@ export function ProfilePage() {
     () =>
       api.updateMe({
         age: age === "" ? undefined : Number(age),
-        skillLevel: skill === "" ? undefined : skill,
         city: city || undefined,
         reminderOffsets: offsets,
         language,
@@ -165,7 +148,11 @@ export function ProfilePage() {
             }
             bottomRightBadge={
               effectiveSkillLevel(meQ.data) ? (
-                <SkillBadge level={effectiveSkillLevel(meQ.data)!} size="sm" />
+                <SkillBadge
+                  level={effectiveSkillLevel(meQ.data)!}
+                  size="sm"
+                  className="skillBadge-on-photo"
+                />
               ) : null
             }
           />
@@ -186,22 +173,16 @@ export function ProfilePage() {
             )}
           </div>
           {effectiveSkillLevel(meQ.data) && (
-            <button
-              type="button"
-              className="profileHero-skillBig"
-              onClick={() => navigate('/welcome/change')}
-              aria-label={t('profile.tapToChangeLevel')}
-              title={t('profile.tapToChangeLevel')}
-              data-analytics-label="profile-change-level"
-            >
+            // Display-only — level is set at first onboarding, then adjusted
+            // by peer ratings. No tap-to-change from Profile either.
+            <div className="profileHero-skillBig" aria-label={t('profile.skill')}>
               <SkillBadge level={effectiveSkillLevel(meQ.data)!} size="md" withLabel />
-              <Icon name="edit-01" size={12} className="profileHero-skillBig-edit" />
-            </button>
+            </div>
           )}
-          {meQ.data.evaluatedSkillLevel && (
+          {meQ.data.evaluatedSkillLevel && meQ.data.skillLevel &&
+            meQ.data.evaluatedSkillLevel !== meQ.data.skillLevel && (
             <div className="profileHero-eval">
-              <SkillBadge level={meQ.data.evaluatedSkillLevel} size="sm" />
-              <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 6 }}>
+              <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
                 {t('profile.skillFromEvaluations', { n: 1 })}
               </span>
             </div>
@@ -299,35 +280,8 @@ export function ProfilePage() {
         </div>
       </section>
 
-      {/* === Section: Skill === */}
-      <section className="formSection">
-        <h2 className="formSection-title">
-          <span className="formSection-num"><Icon name="award-01" size={12} /></span>
-          {t('profile.skill')}
-        </h2>
-        <p className="formSection-hint">Tap a level to see its description.</p>
-        <div className="skillGrid">
-          {SKILL_LEVELS.map((s, i) => (
-            <button
-              type="button"
-              key={s}
-              className={`skillCard ${skill === s ? "skillCard-active" : ""}`}
-              onClick={() => setSkill(s)}
-              aria-pressed={skill === s}
-            >
-              <div className="skillCard-num">{i + 1}</div>
-              <Icon name={SKILL_ICONS[s]} size={18} />
-              <span className="skillCard-label">{SKILL_LEVEL_LABELS[s]}</span>
-            </button>
-          ))}
-        </div>
-        {skill && (
-          <div className="skillDescription">
-            <Icon name="information-circle" size={14} />
-            <span>{SKILL_LEVEL_DESCRIPTIONS[skill as SkillLevel]}</span>
-          </div>
-        )}
-      </section>
+      {/* Skill is set once during first onboarding (/welcome) and then
+          adjusted only by peer ratings after games. No picker here. */}
 
       {/* === Section: Language === */}
       <section className="formSection">

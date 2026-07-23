@@ -23,6 +23,7 @@ export interface InviteSearchUser {
   username: string | null;
   photoUrl: string | null;
   skillLevel: SkillLevel | null;
+  evaluatedSkillLevel?: SkillLevel | null;
 }
 
 export const SKILL_LEVELS: SkillLevel[] = [
@@ -701,6 +702,12 @@ export function useApi() {
 
     // ===== Evaluations =====
 
+    listPendingEvaluations: () =>
+      http<{ games: Array<{ id: string; venueName: string; startAt: string; endAt: string }> }>(
+        `/evaluations/pending`,
+        { method: 'GET' },
+        initData,
+      ),
     listMyEvaluations: (gameId: string) =>
       http<Array<{ evaluateeId: string; skillLevel: SkillLevel }>>(
         `/games/${gameId}/evaluations`,

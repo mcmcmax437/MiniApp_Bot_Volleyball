@@ -8,6 +8,7 @@ import { SkillBadge } from '../SkillBadge';
 import { useI18n } from '../i18n';
 import { effectiveSkillLevel } from '../lib/skill';
 import { coverForPlayType } from '../lib/play-type';
+import { isEvalDone, markEvalDone } from '../lib/eval-done';
 import { Modal } from '../Modal';
 import { ReportUserModal } from './ReportUserModal';
 import { EvaluatePlayersModal } from './EvaluatePlayersModal';
@@ -105,9 +106,8 @@ function PlayerRow({
             </span>
           )}
           {showRoleLabel && <span>{roleLabel}</span>}
-          {level && (
-            <SkillBadge level={level} size="sm" />
-          )}
+          {/* Skill lives on the photo badge only — a second pill next to
+              the role label was redundant and hard to read. */}
         </span>
       </span>
       {showMenu && (
@@ -179,18 +179,12 @@ export function GameDetailPage() {
   const finishMut = useMutation(() => api.finishGame(id!), {
     onSuccess: () => {
       // Invalidate both the per-game cache and the home/feed list cache
-      // so the game disappears from "Upcoming games" immediately. We
-      // also drop the ['games'] prefix (which is a wildcard match) so
-      // any versioned or filtered variant of the feed is re-fetched.
+      // so the game disappears from "Upcoming games" immediately.
       qc.invalidateQueries(['game', id]);
       qc.invalidateQueries(['games']);
-      // If the host is also a participant (which they always are —
-      // `create()` adds them as a participant), auto-open the
-      // post-game evaluation modal so they can rate co-players
-      // without having to find a separate button.
-      if (isJoined) {
-        setShowEvaluate(true);
-      }
+      qc.invalidateQueries(['evaluations', 'pending']);
+      // Host is always a participant — open the rating modal immediately.
+      setShowEvaluate(true);
     },
   });
 
@@ -237,6 +231,21 @@ export function GameDetailPage() {
     setPendingJoinBlockedWarn(blockedInThisGame.map((b) => b.name));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [blockedInThisGame.length]);
+
+  // Auto-offer post-game ratings to every participant who opens a finished
+  // game they played in (and haven't dismissed/submitted yet). The host
+  // already gets this from finishMut; this covers everyone else — and the
+  // host if they leave and come back without rating.
+  useEffect(() => {
+    const g = gameQ.data;
+    if (!g || !meQ.data) return;
+    if (g.status !== 'FINISHED') return;
+    const joined = g.participants.some((p) => p.userId === meQ.data!.id);
+    if (!joined) return;
+    if (isEvalDone(g.id)) return;
+    if (g.participants.length < 2) return;
+    setShowEvaluate(true);
+  }, [gameQ.data, meQ.data]);
 
   if (gameQ.isLoading) return <div className="empty">{t('common.loading')}</div>;
   if (gameQ.isError) return <div className="error">{(gameQ.error as Error).message}</div>;
@@ -543,8 +552,10 @@ export function GameDetailPage() {
         </div>
       )}
 
-      {/* Evaluate (only after finished and joined) */}
-      {!isClosed && isJoined && isFinished && (
+      {/* Evaluate — every participant of a finished game, not only the
+          host, and independent of whether the lobby was invite-only
+          (`isClosed`). Hidden once they skip/submit (local markEvalDone). */}
+      {isJoined && isFinished && id && !isEvalDone(id) && (
         <button
           className="btn btn-sm detailActions-primary detailActions-full"
           style={{ marginTop: 10 }}
@@ -598,8 +609,10 @@ export function GameDetailPage() {
         open={showEvaluate}
         gameId={g.id}
         onClose={() => {
+          markEvalDone(g.id);
           setShowEvaluate(false);
           qc.invalidateQueries(['game', id]);
+          qc.invalidateQueries(['evaluations', 'pending']);
         }}
       />
 

@@ -183,7 +183,7 @@ export function GameCard({ game }: GameCardProps) {
                         src={u.photoUrl ?? null}
                         name={u.firstName ?? null}
                         size={28}
-                        bottomRightBadge={lvl ? <SkillBadge level={lvl} size="sm" /> : null}
+                        bottomRightBadge={lvl ? <SkillBadge level={lvl} size="sm" className="skillBadge-on-photo" /> : null}
                       />
                     );
                   })}

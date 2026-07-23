@@ -1,14 +1,4 @@
 import { SkillLevel, SKILL_LEVELS, SKILL_LEVEL_LABELS } from './api';
-import { Icon, IconName } from './Icon';
-
-const SKILL_ICONS: Record<SkillLevel, IconName> = {
-  LEVEL_1: 'tennis-ball',
-  LEVEL_2: 'play',
-  LEVEL_3: 'medal-01',
-  LEVEL_4: 'award-01',
-  LEVEL_5: 'star',
-  LEVEL_6: 'crown',
-};
 
 interface SkillBadgeProps {
   level: SkillLevel | null | undefined;
@@ -28,24 +18,25 @@ function classFor(level: SkillLevel): string {
 }
 
 /**
- * Tiny pill that shows the skill number 1-6 with the matching icon. Used on
- * the profile photo and inline in participant lists. Falls back to a generic
- * pill if `level` is null.
+ * Compact pill that shows skill as `S1`…`S6`. Solid per-level colors keep
+ * the badge readable on photos and dark UI — the old translucent chips
+ * blended into avatars. Optional `withLabel` appends the human name
+ * (Beginner / Advanced / …) for roomier surfaces like Profile.
  */
 export function SkillBadge({ level, size = 'md', withLabel, title, className }: SkillBadgeProps) {
   if (!level || !SKILL_LEVELS.includes(level)) {
     return <span className={`skillBadge skillBadge-empty${className ? ` ${className}` : ''}`}>—</span>;
   }
   const num = SKILL_LEVELS.indexOf(level) + 1;
+  const label = SKILL_LEVEL_LABELS[level];
   return (
     <span
       className={`${classFor(level)} skillBadge-${size}${className ? ` ${className}` : ''}`}
-      title={title ?? `Level ${num}`}
+      title={title ?? `Skill ${num} · ${label}`}
       aria-label={`Skill level ${num}`}
     >
-      <Icon name={SKILL_ICONS[level]} size={size === 'sm' ? 10 : size === 'lg' ? 16 : size === 'xl' ? 20 : 12} />
-      <span className="skillBadge-num">{num}</span>
-      {withLabel && <span className="skillBadge-label">{SKILL_LEVEL_LABELS[level]}</span>}
+      <span className="skillBadge-code">S{num}</span>
+      {withLabel && <span className="skillBadge-label">{label}</span>}
     </span>
   );
 }

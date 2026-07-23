@@ -86,22 +86,23 @@ export class InvitationsController {
     if (excludeIds.length) where.id = { notIn: excludeIds };
 
     // Two strategies:
-    //   - With a search term: case-insensitive contains on first/last/username.
-    //   - Without a term:    show recent users in the host's city as a fallback.
+    //   - With a search term: contains on first/last/username.
+    //   - Without a term: recent players across the whole app (not city-gated).
+    //     City filtering previously hid almost everyone when the host's city
+    //     didn't match other users' stored cities, so the modal looked empty
+    //     until the host typed a name.
     if (term) {
       where.OR = [
         { firstName: { contains: term } },
         { lastName: { contains: term } },
         { username: { contains: term } },
       ];
-    } else if (me.city) {
-      where.city = me.city;
     }
 
     const users = await this.prisma.user.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      take: 30,
+      take: 50,
       select: {
         id: true,
         firstName: true,
@@ -109,6 +110,7 @@ export class InvitationsController {
         username: true,
         photoUrl: true,
         skillLevel: true,
+        evaluatedSkillLevel: true,
       },
     });
 

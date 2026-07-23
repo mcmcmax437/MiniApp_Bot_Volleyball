@@ -428,8 +428,7 @@
 }
 
 /* ============================================================
-   Skill badge wrapper (gives it a touch of breathing room)
-   Now also acts as a tappable button to enter /welcome/change.
+   Skill badge — compact display-only chip under the greeting.
    ============================================================ */
 .home-hero-skill {
   display: inline-flex;
@@ -437,28 +436,7 @@
   gap: 6px;
   margin-top: 2px;
   margin-bottom: 8px;
-  background: transparent;
-  border: 0;
-  padding: 4px 6px;
-  margin-left: -6px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-out);
-}
-.home-hero-skill:hover {
-  background: var(--surface-1);
-}
-.home-hero-skill:active {
-  transform: scale(0.98);
-}
-.home-hero-skill-edit {
-  color: var(--text-tertiary);
-  opacity: 0;
-  transition: opacity var(--dur-fast) var(--ease-out);
-}
-.home-hero-skill:hover .home-hero-skill-edit,
-.home-hero-skill:focus-visible .home-hero-skill-edit {
-  opacity: 1;
+  padding: 0;
 }
 
 /* v3 additions */

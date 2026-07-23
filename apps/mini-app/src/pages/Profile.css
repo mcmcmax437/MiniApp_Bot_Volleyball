@@ -110,36 +110,14 @@
   letter-spacing: 0.01em;
 }
 
-/* Big skill chip right under the name — the most prominent way to show the
-   user's playing level next to the photo, in the form of "🏅 3 LEVEL_3".
-   Now also acts as a tappable button to enter /welcome/change. */
+/* Skill chip under the name — display only (set at onboarding, then
+   peer-adjusted). Not a button. */
 .profileHero-skillBig {
   margin: 4px 0 8px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: transparent;
-  border: 0;
-  padding: 4px 8px 4px 4px;
-  margin-left: -4px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-out);
-}
-.profileHero-skillBig:hover {
-  background: var(--surface-1);
-}
-.profileHero-skillBig:active {
-  transform: scale(0.98);
-}
-.profileHero-skillBig-edit {
-  color: var(--text-tertiary);
-  opacity: 0;
-  transition: opacity var(--dur-fast) var(--ease-out);
-}
-.profileHero-skillBig:hover .profileHero-skillBig-edit,
-.profileHero-skillBig:focus-visible .profileHero-skillBig-edit {
-  opacity: 1;
+  padding: 0;
 }
 
 /* ============================================================
