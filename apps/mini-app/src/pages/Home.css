@@ -151,7 +151,7 @@
   font-family: var(--font-display);
   position: relative;
   overflow: hidden;
-  box-shadow: var(--shadow-md), var(--shadow-glow), var(--shadow-inner);
+  box-shadow: var(--shadow-md), var(--shadow-inner);
   transition: transform var(--dur-instant) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out),
     filter var(--dur-fast) var(--ease-out);
@@ -169,7 +169,7 @@
 .hero-cta:hover {
   transform: translateY(-1px);
   filter: brightness(1.04);
-  box-shadow: var(--shadow-lg), var(--shadow-glow-strong), var(--shadow-inner);
+  box-shadow: var(--shadow-lg), var(--shadow-inner);
 }
 
 .hero-cta:active {

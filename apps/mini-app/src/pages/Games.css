@@ -138,7 +138,7 @@
   background: var(--gradient-brand);
   color: var(--text-inverse);
   border-color: transparent;
-  box-shadow: var(--shadow-md), var(--shadow-glow);
+  box-shadow: var(--shadow-sm);
 }
 
 .chip-active i {

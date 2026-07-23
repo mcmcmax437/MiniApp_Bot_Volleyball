@@ -101,7 +101,7 @@
 .adminTab-active {
   background: var(--gradient-brand);
   color: var(--text-inverse);
-  box-shadow: 0 2px 8px var(--brand-glow);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ============================================================

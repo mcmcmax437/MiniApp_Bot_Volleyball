@@ -9,6 +9,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export {
   SKILL_LEVELS,
@@ -66,8 +67,22 @@ export class AdminUpdateVenueDto {
 }
 
 export class AdminListQuery {
-  @IsOptional() @IsInt() @Min(1) @Max(200) take?: number;
-  @IsOptional() @IsInt() @Min(0) skip?: number;
+  // Query-string values arrive as strings. Without `@Type(() => Number)`,
+  // `@IsInt()` rejects `"100"` and the admin Users/Games/Venues pages
+  // return "take must be an integer number".
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(200)
+  take?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  skip?: number;
+
   @IsOptional() @IsString() q?: string;
 
   // ===== v3 =====

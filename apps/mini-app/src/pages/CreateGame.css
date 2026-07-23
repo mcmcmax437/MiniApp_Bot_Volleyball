@@ -117,22 +117,39 @@
 }
 
 .field-row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 88px;
   gap: 10px;
-  align-items: stretch;
+  align-items: end;
 }
 
 .field-row .field {
-  flex: 1 1 140px;
   min-width: 0;
 }
 
-/* The duration input would otherwise overflow its container on iOS Safari
-   because number inputs render a wide stepper control. Cap it explicitly. */
+/* Duration sits in a fixed column so datetime-local never shoves it off-screen
+   or overlaps it (long locale date strings were the usual culprit). */
 .field-row .field-duration {
-  flex: 0 0 96px;
-  max-width: 110px;
+  min-width: 0;
+}
+
+.field-row .field input[type="datetime-local"],
+.field-row .field-duration input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.field-row .field-duration input {
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.field-row .field-duration input::-webkit-outer-spin-button,
+.field-row .field-duration input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 /* ============================================================
@@ -259,7 +276,7 @@
   background: var(--brand-soft);
   border-color: var(--brand);
   color: var(--brand-300);
-  box-shadow: 0 4px 16px var(--brand-glow);
+  box-shadow: var(--shadow-sm);
 }
 
 .skillCard-active i {
@@ -370,7 +387,7 @@
 .paidBadge-paid { background: var(--brand-soft); color: var(--brand-300); border-color: rgba(255, 165, 0, 0.2); }
 .paidBadge-free { background: var(--surface-2); color: var(--text-secondary); border-color: var(--border); }
 
-/* Venue picker — visible cards on mobile */
+/* Venue picker ? visible cards on mobile */
 .venuePicker { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
 .venuePicker-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--radius-md); background: var(--surface-1); border: 1px solid var(--border); cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); text-align: left; width: 100%; font: inherit; color: inherit; }
 .venuePicker-item:hover { border-color: var(--brand); background: var(--surface-2); }
@@ -423,7 +440,7 @@
   background: var(--gradient-brand);
   border-color: transparent;
   color: var(--text-inverse);
-  box-shadow: var(--shadow-sm), var(--shadow-glow);
+  box-shadow: var(--shadow-sm);
 }
 
 .playTypePicker-option.isActive i {

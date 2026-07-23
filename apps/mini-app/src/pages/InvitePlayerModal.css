@@ -112,7 +112,7 @@
 
 .inviteAdd:hover:not(:disabled) {
   transform: scale(1.05);
-  box-shadow: var(--shadow-md), var(--shadow-glow);
+  box-shadow: var(--shadow-md);
 }
 
 .inviteAdd:active:not(:disabled) {

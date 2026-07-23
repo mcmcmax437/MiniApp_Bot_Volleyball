@@ -190,12 +190,11 @@ export function EvaluatePlayersModal({ open, gameId, onClose }: Props) {
                       If the candidate has no level yet we go straight to the
                       picker so first-timers can still set one. */}
                   {effective && num != null && s !== 'changing' ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div className="evalActions">
                       <button
                         type="button"
-                        className={`btn ${s === 'confirmed' ? '' : 'btn-ghost'} btn-sm`}
+                        className={`btn btn-sm ${s === 'confirmed' ? '' : 'btn-ghost'}`}
                         onClick={() => confirmLooksRight(c.id)}
-                        style={{ flex: 1 }}
                         data-analytics-label="eval-looks-right"
                       >
                         <Icon name="checkmark-square-01" size={14} />

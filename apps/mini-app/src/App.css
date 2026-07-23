@@ -328,7 +328,8 @@ body.keyboard-open .app-container {
   min-height: 48px;
   position: relative;
   overflow: hidden;
-  box-shadow: var(--shadow-md), var(--shadow-glow), var(--shadow-inner);
+  /* Soft shadow only — the old brand glow halo made chips/filters look muddy. */
+  box-shadow: var(--shadow-md), var(--shadow-inner);
   transition: transform var(--dur-instant) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out),
     filter var(--dur-fast) var(--ease-out);
@@ -346,7 +347,7 @@ body.keyboard-open .app-container {
 .btn:hover:not(:disabled) {
   filter: brightness(1.05);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-lg), var(--shadow-glow-strong), var(--shadow-inner);
+  box-shadow: var(--shadow-lg), var(--shadow-inner);
 }
 
 .btn:active:not(:disabled) {
@@ -398,6 +399,40 @@ body.keyboard-open .app-container {
   transform: scale(0.97);
 }
 
+/* Ghost + compact buttons that also carry `.btn` must not stretch full-width
+   or inherit the primary CTA shine / glow — that squashes text in flex rows
+   (e.g. Rate players modal) and paints a yellow square on small controls. */
+.btn.btn-ghost,
+.btn-ghost.btn {
+  width: auto;
+  min-height: 0;
+  background: transparent;
+  color: var(--brand-300);
+  box-shadow: none;
+}
+.btn.btn-ghost::after,
+.btn-ghost.btn::after {
+  display: none;
+}
+.btn.btn-ghost:hover:not(:disabled),
+.btn-ghost.btn:hover:not(:disabled) {
+  background: var(--brand-soft);
+  box-shadow: none;
+  filter: none;
+  transform: none;
+}
+
+.btn.secondary::after {
+  display: none;
+}
+.btn.secondary {
+  box-shadow: var(--shadow-sm);
+}
+.btn.secondary:hover:not(:disabled) {
+  box-shadow: var(--shadow-md);
+  filter: none;
+}
+
 /* Icon-only buttons (square 36x36) should not stretch to full width, should
    not have the brand-colored 48px min-height, and should not have the
    `.btn::after` highlight gradient (which on a square icon button looks like
@@ -435,16 +470,47 @@ body.keyboard-open .app-container {
    .btn is too tall for a 2×2 grid. */
 .btn.btn-sm,
 .btn-sm.btn {
+  width: auto;
   padding: 9px 14px;
   min-height: 36px;
   font-size: 13px;
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+.btn.btn-sm::after,
+.btn-sm.btn::after {
+  display: none;
+}
+.btn.btn-sm:hover:not(:disabled) {
+  box-shadow: var(--shadow-md);
 }
 
 .btn.btn-sm.btn-ghost,
 .btn-sm.btn.btn-ghost {
   padding: 9px 14px;
   min-height: 36px;
+  box-shadow: none;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.modal-actions .btn {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+}
+
+/* Rate-players per-candidate actions — stacked so labels never crush. */
+.evalActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.evalActions .btn {
+  width: 100%;
 }
 
 /* ============================================================
@@ -1062,12 +1128,6 @@ body.keyboard-open .app-container {
   cursor: pointer;
   color: var(--text-secondary);
 }
-.modal-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 16px;
-}
-.modal-actions .btn { flex: 1; }
 
 /* Report / Evaluation options */
 .optionList { display: flex; flex-direction: column; gap: 8px; }
