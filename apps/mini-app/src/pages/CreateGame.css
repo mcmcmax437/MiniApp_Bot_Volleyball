@@ -1,8 +1,23 @@
 .createForm {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 14px;
   padding-bottom: 8px;
+}
+
+.createForm .formSection {
+  gap: 8px;
+}
+
+.createForm .field {
+  margin-bottom: 8px;
+  gap: 4px;
+}
+
+.createForm .field input,
+.createForm .field select,
+.createForm .field textarea {
+  padding: 10px 12px;
 }
 
 /* ============================================================
@@ -11,11 +26,11 @@
 .createHeader {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 18px;
+  gap: 12px;
+  padding: 12px 14px;
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   position: relative;
   overflow: hidden;
 }
@@ -116,21 +131,21 @@
   letter-spacing: 0;
 }
 
+/* Stack Start + Hours on mobile WebViews: native datetime-local often
+   ignores max-width and overlaps a side-by-side Hours field. */
 .field-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 88px;
-  gap: 10px;
-  align-items: end;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .field-row .field {
   min-width: 0;
+  width: 100%;
 }
 
-/* Duration sits in a fixed column so datetime-local never shoves it off-screen
-   or overlaps it (long locale date strings were the usual culprit). */
 .field-row .field-duration {
-  min-width: 0;
+  max-width: 120px;
 }
 
 .field-row .field input[type="datetime-local"],
@@ -411,14 +426,14 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 12px 8px;
+  gap: 4px;
+  padding: 8px 6px;
   background: var(--surface-2);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   color: var(--text-secondary);
   font-family: var(--font-display);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out),

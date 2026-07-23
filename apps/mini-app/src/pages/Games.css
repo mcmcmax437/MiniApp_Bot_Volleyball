@@ -82,10 +82,10 @@
    ============================================================ */
 .skillChips {
   display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
+  gap: 6px;
+  margin-bottom: 12px;
   overflow-x: auto;
-  padding: 4px 2px 12px;
+  padding: 2px 2px 8px;
   scrollbar-width: none;
   scroll-snap-type: x proximity;
 }
@@ -98,18 +98,18 @@
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 14px;
+  gap: 4px;
+  padding: 6px 12px;
   border-radius: var(--radius-pill);
   background: var(--surface-1);
   border: 1px solid var(--border);
   color: var(--text-secondary);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   font-family: inherit;
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
-  min-height: 40px;
+  min-height: 32px;
   scroll-snap-align: start;
 }
 
@@ -117,21 +117,11 @@
   background: var(--surface-2);
   border-color: var(--border-strong);
   color: var(--text-primary);
-  transform: translateY(-1px);
 }
 
 .chip:active {
   transform: scale(0.96);
   transition-duration: var(--dur-instant);
-}
-
-.chip i {
-  color: var(--text-tertiary);
-  transition: color var(--dur-fast) var(--ease-out);
-}
-
-.chip:hover i {
-  color: var(--text-secondary);
 }
 
 .chip-active {
@@ -145,25 +135,24 @@
   color: var(--text-inverse);
 }
 
-.chip-active:hover {
-  filter: brightness(1.05);
-  transform: translateY(-1px);
-  background: var(--gradient-brand);
+.gamesPage .page-header .gamesHeader-tool {
+  color: var(--text-tertiary);
 }
 
-.chip-check {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 2px;
-  animation: chip-pop var(--dur-base) var(--ease-spring);
+.gamesPage .page-header .gamesHeader-tool.isActive,
+.gamesPage .page-header .gamesHeader-clear {
+  color: var(--brand);
 }
 
-@keyframes chip-pop {
-  0% { transform: scale(0); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+.gamesFilters {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
 }
-.gamesFilters { padding: 14px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
 
-.btn-icon { width: 36px; height: 36px; min-height: 36px; padding: 0; flex: 0 0 36px; }
+.gamesFilters .field {
+  margin-bottom: 0;
+}
 

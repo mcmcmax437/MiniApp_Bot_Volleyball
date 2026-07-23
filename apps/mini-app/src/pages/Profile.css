@@ -199,7 +199,21 @@
 .profileCard {
   display: flex;
   flex-direction: column;
-  padding: 16px;
+  padding: 10px 12px;
+  gap: 0;
+}
+
+.profileCard .field {
+  margin-bottom: 8px;
+  gap: 4px;
+}
+
+.profileCard .field:last-child {
+  margin-bottom: 0;
+}
+
+.profileCard .field input {
+  padding: 10px 12px;
 }
 
 .field-label {
