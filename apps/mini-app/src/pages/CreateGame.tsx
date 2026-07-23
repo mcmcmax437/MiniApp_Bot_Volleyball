@@ -5,7 +5,6 @@ import {
   useApi,
   SkillLevel,
   SKILL_LEVELS,
-  SKILL_LEVEL_LABELS,
   Currency,
   SUPPORTED_CURRENCIES,
   CURRENCY_SYMBOLS,
@@ -384,7 +383,7 @@ export function CreateGamePage() {
             ))}
           </div>
           <div className="field-hint" style={{ marginTop: 6 }}>
-            {SKILL_LEVEL_LABELS[skill]}
+            {t(`skill.${skill}`)}
           </div>
         </div>
 

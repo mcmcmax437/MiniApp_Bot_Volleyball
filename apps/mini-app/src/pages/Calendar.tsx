@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from 'react-query';
-import { Link } from 'react-router-dom';
-import { useApi, SkillLevel, SKILL_LEVELS, SKILL_LEVEL_LABELS } from '../api';
+import { Link, useNavigate } from 'react-router-dom';
+import { useApi, SkillLevel, SKILL_LEVELS } from '../api';
 import { useI18n } from '../i18n';
 import { Icon, IconName } from '../Icon';
 
@@ -38,6 +38,7 @@ function dayKey(d: Date): string {
 export function CalendarPage() {
   const api = useApi();
   const { t } = useI18n();
+  const navigate = useNavigate();
 
   // 60-day window centred on today
   const from = new Date();
@@ -78,10 +79,22 @@ export function CalendarPage() {
   return (
     <div className="calendarPage">
       <header className="page-header">
+        <button
+          type="button"
+          className="btn btn-ghost btn-icon"
+          aria-label={t('common.close')}
+          data-analytics-label="calendar-back"
+          onClick={() => {
+            if (window.history.length > 1) navigate(-1);
+            else navigate('/games');
+          }}
+        >
+          <Icon name="arrow-left-01" size={16} />
+        </button>
         <div className="page-header-icon">
           <Icon name="calendar-02" size={20} />
         </div>
-        <div>
+        <div style={{ flex: 1 }}>
           <h1 className="page-header-title">{t('calendar.title')}</h1>
           <p className="page-header-sub">
             {t('calendar.upcoming')}

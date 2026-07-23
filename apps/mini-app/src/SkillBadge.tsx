@@ -1,4 +1,5 @@
-import { SkillLevel, SKILL_LEVELS, SKILL_LEVEL_LABELS } from './api';
+import { SkillLevel, SKILL_LEVELS } from './api';
+import { useI18n } from './i18n';
 
 interface SkillBadgeProps {
   level: SkillLevel | null | undefined;
@@ -18,22 +19,21 @@ function classFor(level: SkillLevel): string {
 }
 
 /**
- * Compact pill that shows skill as `S1`…`S6`. Solid per-level colors keep
- * the badge readable on photos and dark UI — the old translucent chips
- * blended into avatars. Optional `withLabel` appends the human name
- * (Beginner / Advanced / …) for roomier surfaces like Profile.
+ * Compact pill that shows skill as `S1`…`S6`. Optional `withLabel` appends
+ * the localized human name via `skill.LEVEL_N` i18n keys.
  */
 export function SkillBadge({ level, size = 'md', withLabel, title, className }: SkillBadgeProps) {
+  const { t } = useI18n();
   if (!level || !SKILL_LEVELS.includes(level)) {
     return <span className={`skillBadge skillBadge-empty${className ? ` ${className}` : ''}`}>—</span>;
   }
   const num = SKILL_LEVELS.indexOf(level) + 1;
-  const label = SKILL_LEVEL_LABELS[level];
+  const label = t(`skill.${level}`);
   return (
     <span
       className={`${classFor(level)} skillBadge-${size}${className ? ` ${className}` : ''}`}
-      title={title ?? `Skill ${num} · ${label}`}
-      aria-label={`Skill level ${num}`}
+      title={title ?? `${label} · S${num}`}
+      aria-label={label}
     >
       <span className="skillBadge-code">S{num}</span>
       {withLabel && <span className="skillBadge-label">{label}</span>}

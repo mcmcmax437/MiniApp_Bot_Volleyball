@@ -25,6 +25,7 @@ import { InvitationsPage } from './pages/Invitations';
 import { PaymentsPage } from './pages/Payments';
 import { InvitationsBanner } from './components/InvitationsBanner';
 import { PendingEvaluationsPrompt } from './components/PendingEvaluationsPrompt';
+import { MessageNotify } from './components/MessageNotify';
 import { useAnalytics } from './hooks/useAnalytics';
 import './App.css';
 
@@ -323,6 +324,9 @@ export function App() {
       {/* Post-game skill ratings: prompts every participant of a finished
           game on their next app open, not just the host at finish-time. */}
       <PendingEvaluationsPrompt />
+
+      {/* Top-right shake tab when there are pending invitations. */}
+      <MessageNotify />
     </>
   );
 }

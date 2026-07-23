@@ -24,12 +24,6 @@ export function AdminUsersPage() {
       }),
   );
 
-  const updateRole = useMutation(
-    ({ id, role }: { id: string; role: "USER" | "ADMIN" }) =>
-      api.adminUpdateUser(id, { role }),
-    { onSuccess: () => qc.invalidateQueries(["admin", "users"]) },
-  );
-
   const banMut = useMutation(
     ({ id, reason }: { id: string; reason?: string }) => api.adminBanUser(id, reason),
     { onSuccess: () => qc.invalidateQueries(["admin", "users"]) },
@@ -65,7 +59,7 @@ export function AdminUsersPage() {
             className={`chip ${filterBanned === f ? 'chip-active' : ''}`}
             onClick={() => setFilterBanned(f)}
           >
-            {f === 'ALL' ? t('games.filter.any') : f === 'YES' ? 'Banned' : 'Active'}
+            {f === 'ALL' ? t('game.filter.any') : f === 'YES' ? t('admin.filterBanned') : t('admin.filterActive')}
           </button>
         ))}
       </div>
@@ -109,13 +103,13 @@ export function AdminUsersPage() {
                 {u.role === "ADMIN" && (
                   <span className="adminItem-badge adminItem-badge-admin">
                     <Icon name="crown" size={10} />
-                    Admin
+                    {t('admin.roleAdmin')}
                   </span>
                 )}
                 {u.isBanned && (
                   <span className="adminItem-badge adminItem-badge-danger">
                     <Icon name="user-remove-01" size={10} />
-                    Banned
+                    {t('admin.badgeBanned')}
                   </span>
                 )}
               </div>
@@ -136,32 +130,11 @@ export function AdminUsersPage() {
                 type="button"
                 className="adminItem-btn"
                 onClick={() => setOpenUser(u.id)}
-                title="Details"
+                title={t('admin.userDetails')}
                 data-analytics-label="admin-user-details"
               >
                 <Icon name="view" size={14} />
               </button>
-              {u.role === "ADMIN" ? (
-                <button
-                  type="button"
-                  className="adminItem-btn"
-                  onClick={() => updateRole.mutate({ id: u.id, role: "USER" })}
-                  disabled={updateRole.isLoading}
-                  title="Demote to user"
-                >
-                  <Icon name="minus-sign" size={14} />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="adminItem-btn"
-                  onClick={() => updateRole.mutate({ id: u.id, role: "ADMIN" })}
-                  disabled={updateRole.isLoading}
-                  title="Promote to admin"
-                >
-                  <Icon name="crown" size={14} />
-                </button>
-              )}
               {u.isBanned ? (
                 <button
                   type="button"
@@ -190,12 +163,12 @@ export function AdminUsersPage() {
                 type="button"
                 className="adminItem-btn adminItem-btn-danger"
                 onClick={() => {
-                  if (window.confirm(`Delete user ${u.firstName}? This cannot be undone.`)) {
+                  if (window.confirm(t('admin.deleteUserConfirm', { name: u.firstName }))) {
                     del.mutate(u.id);
                   }
                 }}
                 disabled={del.isLoading}
-                title="Delete user"
+                title={t('admin.deleteUser')}
               >
                 <Icon name="delete-01" size={14} />
               </button>
@@ -211,6 +184,7 @@ export function AdminUsersPage() {
 
 function UserDetailsModal({ userId, onClose }: { userId: string | null; onClose: () => void }) {
   const api = useApi();
+  const { t } = useI18n();
   const q = useQuery<AdminUserDetail | null>(
     ['admin', 'user', userId],
     () => api.adminGetUser(userId!),
@@ -223,8 +197,8 @@ function UserDetailsModal({ userId, onClose }: { userId: string | null; onClose:
     <div className="modalBackdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="modal" role="dialog" aria-modal="true">
         <div className="modal-header">
-          <h3 className="modal-title">User details</h3>
-          <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
+          <h3 className="modal-title">{t('admin.userDetails')}</h3>
+          <button type="button" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
             <Icon name="cancel-01" size={14} />
           </button>
         </div>
@@ -242,7 +216,7 @@ function UserDetailsModal({ userId, onClose }: { userId: string | null; onClose:
                 </div>
                 {q.data.skillLevel && (
                   <div style={{ marginTop: 6 }}>
-                    <SkillBadge level={q.data.skillLevel as SkillLevel} size="sm" />
+                    <SkillBadge level={q.data.skillLevel as SkillLevel} size="sm" withLabel />
                   </div>
                 )}
               </div>
@@ -250,53 +224,53 @@ function UserDetailsModal({ userId, onClose }: { userId: string | null; onClose:
 
             <h2 className="formSection-title">
               <span className="formSection-num"><Icon name="chart-bar" size={12} /></span>
-              Activity
+              {t('admin.userActivity')}
             </h2>
             <div className="statsGrid">
               <div className="statCard statCard-cool">
                 <div className="statCard-value">{q.data.stats.gamesAttended}</div>
-                <div className="statCard-label">Visited</div>
+                <div className="statCard-label">{t('admin.stat.visited')}</div>
               </div>
               <div className="statCard statCard-warn">
                 <div className="statCard-value">{q.data.stats.gamesCancelled}</div>
-                <div className="statCard-label">Cancelled</div>
+                <div className="statCard-label">{t('admin.stat.cancelled')}</div>
               </div>
               <div className="statCard statCard-brand">
                 <div className="statCard-value">{q.data.stats.gamesHosted}</div>
-                <div className="statCard-label">Created</div>
+                <div className="statCard-label">{t('admin.stat.created')}</div>
               </div>
               <div className="statCard statCard-success">
                 <div className="statCard-value">{q.data.stats.avgSessionsPerWeek.toFixed(1)}</div>
-                <div className="statCard-label">Sessions / wk</div>
+                <div className="statCard-label">{t('admin.stat.sessionsPerWeek')}</div>
               </div>
             </div>
 
             <div className="costRow">
-              <span>Evaluations given</span>
+              <span>{t('admin.stat.evalGiven')}</span>
               <strong>{q.data.stats.evaluationsGiven}</strong>
             </div>
             <div className="costRow">
-              <span>Evaluations received</span>
+              <span>{t('admin.stat.evalReceived')}</span>
               <strong>{q.data.stats.evaluationsReceived}</strong>
             </div>
             <div className="costRow">
-              <span>Reports against</span>
+              <span>{t('admin.stat.reportsAgainst')}</span>
               <strong>{q.data.stats.reportsAgainst}</strong>
             </div>
             <div className="costRow">
-              <span>Payments made</span>
+              <span>{t('admin.stat.paymentsMade')}</span>
               <strong>{q.data.stats.paymentsMade}</strong>
             </div>
             {q.data.evaluatedSkillLevel && (
               <div className="costRow">
-                <span>Evaluated skill</span>
-                <SkillBadge level={q.data.evaluatedSkillLevel as SkillLevel} size="sm" />
+                <span>{t('admin.stat.evaluatedSkill')}</span>
+                <SkillBadge level={q.data.evaluatedSkillLevel as SkillLevel} size="sm" withLabel />
               </div>
             )}
             {q.data.isBanned && (
               <div className="error" style={{ marginTop: 10 }}>
                 <Icon name="user-remove-01" size={14} />
-                <span>Banned: {q.data.bannedReason ?? '—'}</span>
+                <span>{t('admin.bannedWithReason', { reason: q.data.bannedReason ?? '—' })}</span>
               </div>
             )}
           </>
