@@ -6,6 +6,11 @@ import {
   AdminUpdateVenueDto,
 } from './dto';
 
+/** Prisma returns `telegramId` as BigInt — JSON.stringify throws without this. */
+function publicUser<T extends { telegramId: bigint }>(u: T) {
+  return { ...u, telegramId: u.telegramId.toString() };
+}
+
 @Injectable()
 export class AdminService {
   private readonly logger = new Logger(AdminService.name);
@@ -89,7 +94,12 @@ export class AdminService {
       }),
       this.prisma.user.count({ where }),
     ]);
-    return { items, total, take: params.take, skip: params.skip };
+    return {
+      items: items.map(publicUser),
+      total,
+      take: params.take,
+      skip: params.skip,
+    };
   }
 
   async getUser(id: string) {
@@ -129,8 +139,10 @@ export class AdminService {
 
     const activity = await this.prisma.userActivityStats.findUnique({ where: { userId: id } });
 
+    const { telegramId, ...rest } = user;
     return {
-      ...user,
+      ...rest,
+      telegramId: telegramId.toString(),
       stats: {
         gamesAttended,
         gamesCancelled,
@@ -176,12 +188,13 @@ export class AdminService {
         ...banFields,
       },
     });
+    const after = publicUser(updated);
     await this.log(actorId, dto.isBanned ? (dto.isBanned ? 'user.ban' : 'user.unban') : 'user.update', 'user', id, {
       before,
-      after: updated,
+      after,
       reason: dto.bannedReason,
     });
-    return updated;
+    return after;
   }
 
   async deleteUser(actorId: string, id: string) {
