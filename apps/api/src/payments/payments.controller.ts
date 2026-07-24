@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Post, UnauthorizedException, UseGuards } 
 import { IsBoolean, IsString } from 'class-validator';
 import { PaymentsService } from './payments.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
+import { NotBannedGuard } from '../auth/not-banned.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { User } from '@prisma/client';
 
@@ -10,7 +11,7 @@ class SetPaidDto {
   @IsBoolean() isPaid!: boolean;
 }
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, NotBannedGuard)
 @Controller()
 export class PaymentsController {
   constructor(private readonly payments: PaymentsService) {}

@@ -23,7 +23,6 @@ import { CalendarPage } from './pages/Calendar';
 import { BlacklistPage } from './pages/Blacklist';
 import { InvitationsPage } from './pages/Invitations';
 import { PaymentsPage } from './pages/Payments';
-import { InvitationsBanner } from './components/InvitationsBanner';
 import { PendingEvaluationsPrompt } from './components/PendingEvaluationsPrompt';
 import { MessageNotify } from './components/MessageNotify';
 import { useAnalytics } from './hooks/useAnalytics';
@@ -314,12 +313,6 @@ export function App() {
           </NavLink>
         )}
       </nav>
-
-      {/* Persistent pending-invitations banner. Hidden on the dedicated
-          /invitations page (it IS the inbox) and on /games/:id (the user is
-          already acting on that game). */}
-      {window.location.pathname !== '/invitations' &&
-        !window.location.pathname.startsWith('/games/') && <InvitationsBanner />}
 
       {/* Post-game skill ratings: prompts every participant of a finished
           game on their next app open, not just the host at finish-time. */}

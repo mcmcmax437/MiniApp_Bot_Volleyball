@@ -145,7 +145,21 @@ export interface ApiGameDetail extends Omit<ApiGame, 'participants'> {
     user: ApiGameParticipantUser;
     joinedAt: string;
   }>;
-  joinRequests?: Array<{ id: string; userId: string; createdAt: string; status: 'PENDING' | 'APPROVED' | 'REJECTED' }>;
+  joinRequests?: Array<{
+    id: string;
+    userId: string;
+    createdAt: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    user?: {
+      id: string;
+      firstName: string;
+      lastName: string | null;
+      username: string | null;
+      photoUrl: string | null;
+      skillLevel: SkillLevel | null;
+      evaluatedSkillLevel?: SkillLevel | null;
+    };
+  }>;
   invitations?: Array<{ id: string; userId: string; inviterId: string; createdAt: string; status: 'PENDING' | 'ACCEPTED' | 'DECLINED' }>;
   payments?: Array<{
     id: string;

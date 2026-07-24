@@ -20,11 +20,17 @@ export class InvitationsService {
     if (game.hostId !== me.id) {
       throw new ForbiddenException('Only the host can invite players');
     }
-    if (game.status !== 'OPEN') {
+    if (game.status !== 'OPEN' && game.status !== 'FULL') {
       throw new BadRequestException(`Cannot invite to a ${game.status} game`);
+    }
+    if (game.endAt.getTime() <= Date.now()) {
+      throw new BadRequestException('Game has already ended');
     }
     const invitee = await this.prisma.user.findUnique({ where: { id: inviteeId } });
     if (!invitee) throw new NotFoundException('Invitee not found');
+    if (invitee.isBanned) {
+      throw new BadRequestException('Cannot invite a banned user');
+    }
 
     // Don't double-add: if they're already a participant, just no-op.
     const already = await this.prisma.gameParticipant.findUnique({
@@ -68,7 +74,11 @@ export class InvitationsService {
     return { ok: true };
   }
 
-  /** Invitee responds to an invite. */
+  /**
+   * Invitee responds to an invite. Accept seats the player (same payment /
+   * capacity rules as open join). Failures throw so the invite stays PENDING
+   * and the client can show the real error — never mark ACCEPTED without seating.
+   */
   async respond(me: User, invitationId: string, accept: boolean) {
     const inv = await this.prisma.gameInvitation.findUnique({
       where: { id: invitationId },
@@ -80,34 +90,74 @@ export class InvitationsService {
     }
     if (inv.status !== 'PENDING') return inv;
 
-    await this.prisma.gameInvitation.update({
-      where: { id: invitationId },
-      data: {
-        status: accept ? 'ACCEPTED' : 'DECLINED',
-        respondedAt: new Date(),
-      },
-    });
+    if (!accept) {
+      await this.prisma.gameInvitation.update({
+        where: { id: invitationId },
+        data: {
+          status: 'DECLINED',
+          respondedAt: new Date(),
+        },
+      });
+      return { ok: true };
+    }
 
-    if (accept) {
-      // Add the invitee as a participant if there's room and game is open.
-      if (inv.game.status !== 'OPEN') return { ok: true };
-      const count = await this.prisma.gameParticipant.count({ where: { gameId: inv.gameId } });
-      if (count >= inv.game.spotsTotal) return { ok: true };
+    // Host already invited this person — seat them even on closed lobbies.
+    // Validate capacity / status before flipping the invite to ACCEPTED.
+    if (inv.game.status !== 'OPEN' && inv.game.status !== 'FULL') {
+      throw new BadRequestException(`Game is ${inv.game.status}`);
+    }
+    if (inv.game.endAt.getTime() <= Date.now()) {
+      throw new BadRequestException('Game has already ended');
+    }
 
-      await this.prisma.gameParticipant.upsert({
+    await this.prisma.$transaction(async (tx) => {
+      const count = await tx.gameParticipant.count({ where: { gameId: inv.gameId } });
+      if (count >= inv.game.spotsTotal) {
+        throw new ConflictException('Game is full');
+      }
+
+      await tx.gameParticipant.upsert({
         where: { gameId_userId: { gameId: inv.gameId, userId: me.id } },
         create: { gameId: inv.gameId, userId: me.id },
         update: {},
       });
-      // Re-mark as full if needed
-      const after = await this.prisma.gameParticipant.count({ where: { gameId: inv.gameId } });
+
+      const after = await tx.gameParticipant.count({ where: { gameId: inv.gameId } });
       if (after >= inv.game.spotsTotal) {
-        await this.prisma.game.update({
+        await tx.game.update({
           where: { id: inv.gameId },
           data: { status: 'FULL' },
         });
       }
-    }
+
+      if (inv.game.isPaid) {
+        const amount =
+          after > 0 ? Math.round(inv.game.totalCost / after) : inv.game.totalCost;
+        await tx.gamePayment.upsert({
+          where: { gameId_userId: { gameId: inv.gameId, userId: me.id } },
+          create: {
+            gameId: inv.gameId,
+            userId: me.id,
+            amount,
+            currency: inv.game.currency,
+          },
+          update: { amount },
+        });
+      }
+
+      // Drop any pending join-request the invitee may have filed earlier.
+      await tx.gameJoinRequest.deleteMany({
+        where: { gameId: inv.gameId, userId: me.id, status: 'PENDING' },
+      });
+
+      await tx.gameInvitation.update({
+        where: { id: invitationId },
+        data: {
+          status: 'ACCEPTED',
+          respondedAt: new Date(),
+        },
+      });
+    });
 
     return { ok: true };
   }
@@ -118,13 +168,19 @@ export class InvitationsService {
       where: { inviteeId: me.id, status: 'PENDING' },
       orderBy: { createdAt: 'desc' },
       include: {
-        game: {
-          include: {
-            venue: { select: { id: true, name: true, address: true } },
+        inviter: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+            photoUrl: true,
           },
         },
-        inviter: {
-          select: { id: true, firstName: true, lastName: true, username: true, photoUrl: true },
+        game: {
+          include: {
+            venue: { select: { id: true, name: true, address: true, city: true } },
+          },
         },
       },
     });

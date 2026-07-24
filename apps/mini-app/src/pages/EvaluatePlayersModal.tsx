@@ -75,15 +75,19 @@ export function EvaluatePlayersModal({ open, gameId, onClose }: Props) {
 
   const submitMut = useMutation(
     () => {
-      // Only submit items where the evaluator actively chose a different
-      // level than the user's pre-existing row. "Looks right" is intentionally
-      // a no-op against the server.
+      // Submit every candidate we've reviewed: "Looks right" sends the
+      // effective level so a GameEvaluation row is written (clears pending
+      // on the server). Changed picks send the new level.
       const items = Object.entries(selected)
         .filter(([id, lvl]) => {
           const prev = candQ.data?.candidates.find((c) => c.id === id);
           return !prev?.alreadyRated || prev.ratedAs !== lvl;
         })
         .map(([evaluateeId, skillLevel]) => ({ evaluateeId, skillLevel }));
+      if (items.length === 0) {
+        // Everything already rated — just close; nothing to POST.
+        return Promise.resolve({ count: 0 });
+      }
       return api.submitEvaluations(gameId, items);
     },
     {
@@ -93,11 +97,23 @@ export function EvaluatePlayersModal({ open, gameId, onClose }: Props) {
           setDone(false);
           qc.invalidateQueries(['me']);
           qc.invalidateQueries(['game', gameId]);
+          qc.invalidateQueries(['evaluations', 'pending']);
           onClose();
         }, 1400);
       },
     },
   );
+
+  const allReviewed = useMemo(() => {
+    if (!candQ.data) return false;
+    const candidates = candQ.data.candidates;
+    if (candidates.length === 0) return true;
+    return candidates.every((c) => {
+      if (c.alreadyRated) return true;
+      const s = status[c.id];
+      return s === 'confirmed' || (s === 'changing' && !!selected[c.id]) || !!selected[c.id];
+    });
+  }, [candQ.data, status, selected]);
 
   const hasAnythingToSubmit = useMemo(() => {
     if (!candQ.data) return false;
@@ -107,18 +123,16 @@ export function EvaluatePlayersModal({ open, gameId, onClose }: Props) {
     });
   }, [selected, candQ.data]);
 
+  const canSubmit = allReviewed && (hasAnythingToSubmit || candQ.data?.candidates.every((c) => c.alreadyRated));
+
   const pickLevel = (candidateId: string, lvl: SkillLevel) => {
     setSelected((prev) => ({ ...prev, [candidateId]: lvl }));
     setStatus((prev) => ({ ...prev, [candidateId]: 'changing' }));
   };
 
-  const confirmLooksRight = (candidateId: string) => {
-    // Remove any pending pick so the submit filter sees nothing to send.
-    setSelected((prev) => {
-      const next = { ...prev };
-      delete next[candidateId];
-      return next;
-    });
+  const confirmLooksRight = (candidateId: string, effective: SkillLevel) => {
+    // Persist the effective level so submit writes a confirming evaluation row.
+    setSelected((prev) => ({ ...prev, [candidateId]: effective }));
     setStatus((prev) => ({ ...prev, [candidateId]: 'confirmed' }));
   };
 
@@ -194,7 +208,7 @@ export function EvaluatePlayersModal({ open, gameId, onClose }: Props) {
                       <button
                         type="button"
                         className={`btn btn-sm ${s === 'confirmed' ? '' : 'btn-ghost'}`}
-                        onClick={() => confirmLooksRight(c.id)}
+                        onClick={() => confirmLooksRight(c.id, effective)}
                         data-analytics-label="eval-looks-right"
                       >
                         <Icon name="checkmark-square-01" size={14} />
@@ -255,7 +269,7 @@ export function EvaluatePlayersModal({ open, gameId, onClose }: Props) {
             <button
               className="btn"
               onClick={() => submitMut.mutate()}
-              disabled={!hasAnythingToSubmit || submitMut.isLoading}
+              disabled={!canSubmit || submitMut.isLoading}
               data-analytics-label="eval-submit"
             >
               <Icon name="checkmark-square-01" size={14} />

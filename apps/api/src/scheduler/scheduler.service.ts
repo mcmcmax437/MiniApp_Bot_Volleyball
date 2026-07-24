@@ -16,6 +16,10 @@ export class SchedulerService {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async tick() {
+    // Auto-finish games whose end time has passed so they drop out of
+    // upcoming lists and can no longer be joined.
+    await this.autoFinishEndedGames();
+
     if (!this.sender.isReady()) return; // bot not configured -> nothing to do
 
     const now = Date.now();
@@ -72,6 +76,24 @@ export class SchedulerService {
         const v = it.next().value;
         if (v) this.sentKeys.delete(v);
       }
+    }
+  }
+
+  /** Mark OPEN/FULL games past their endAt as FINISHED. */
+  private async autoFinishEndedGames() {
+    try {
+      const result = await this.prisma.game.updateMany({
+        where: {
+          status: { in: ['OPEN', 'FULL'] },
+          endAt: { lte: new Date() },
+        },
+        data: { status: 'FINISHED' },
+      });
+      if (result.count > 0) {
+        this.logger.log(`Auto-finished ${result.count} ended game(s)`);
+      }
+    } catch (e) {
+      this.logger.warn(`autoFinishEndedGames failed: ${(e as Error).message}`);
     }
   }
 

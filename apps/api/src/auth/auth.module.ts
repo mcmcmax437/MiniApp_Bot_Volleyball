@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt.guard';
+import { NotBannedGuard } from './not-banned.guard';
 import { AvatarModule } from '../avatar/avatar.module';
 
 @Module({
@@ -19,7 +20,7 @@ import { AvatarModule } from '../avatar/avatar.module';
     AvatarModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard],
-  exports: [AuthService, JwtAuthGuard, JwtModule],
+  providers: [AuthService, JwtAuthGuard, NotBannedGuard],
+  exports: [AuthService, JwtAuthGuard, NotBannedGuard, JwtModule],
 })
 export class AuthModule {}

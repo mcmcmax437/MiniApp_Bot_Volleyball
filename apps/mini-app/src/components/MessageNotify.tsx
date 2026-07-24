@@ -39,7 +39,7 @@ export function MessageNotify() {
       data-analytics-label="msg-notify-open"
     >
       <Icon name="message-01" size={18} />
-      {count > 1 && <span className="msgNotify-count">{count > 9 ? '9+' : count}</span>}
+      <span className="msgNotify-count">{count > 9 ? '9+' : count}</span>
     </button>
   );
 }

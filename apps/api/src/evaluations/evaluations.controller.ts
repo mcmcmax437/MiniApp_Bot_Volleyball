@@ -12,6 +12,7 @@ import {
 } from 'class-validator';
 import { EvaluationsService } from './evaluations.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
+import { NotBannedGuard } from '../auth/not-banned.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { SKILL_LEVELS } from '../shared/skill-levels';
 import type { User } from '@prisma/client';
@@ -32,7 +33,7 @@ class SubmitDto {
   items!: EvalItem[];
 }
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, NotBannedGuard)
 @Controller()
 export class EvaluationsController {
   constructor(private readonly evaluations: EvaluationsService) {}

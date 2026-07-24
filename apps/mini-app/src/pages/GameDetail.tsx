@@ -188,6 +188,12 @@ export function GameDetailPage() {
     },
   });
 
+  const decideJoinMut = useMutation(
+    ({ requestId, accept }: { requestId: string; accept: boolean }) =>
+      api.decideJoinRequest(id!, requestId, accept),
+    { onSuccess: () => qc.invalidateQueries(['game', id]) },
+  );
+
   const [reportTarget, setReportTarget] = useState<{ id: string; name: string } | null>(null);
   const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
   const [showEvaluate, setShowEvaluate] = useState(false);
@@ -399,6 +405,63 @@ export function GameDetailPage() {
             )}
           </ul>
 
+          {isHost && g.isClosed && (g.joinRequests?.length ?? 0) > 0 && (
+            <div className="joinRequestList" style={{ marginTop: 16 }}>
+              <div className="detailPlayers-subheader">
+                <span>{t('game.joinRequests', { n: g.joinRequests!.length })}</span>
+              </div>
+              <ul className="detailPlayerList">
+                {g.joinRequests!.map((r) => {
+                  const u = r.user;
+                  const name = u
+                    ? `${u.firstName}${u.lastName ? ` ${u.lastName}` : ''}`
+                    : r.userId;
+                  return (
+                    <li key={r.id} className="detailPlayer" style={{ flexWrap: 'wrap', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+                        <Photo src={u?.photoUrl ?? null} name={name} size={36} />
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 600 }}>{name}</div>
+                          {u?.username && (
+                            <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>@{u.username}</div>
+                          )}
+                        </div>
+                        {(u?.evaluatedSkillLevel || u?.skillLevel) && (
+                          <SkillBadge
+                            level={(u.evaluatedSkillLevel ?? u.skillLevel) as SkillLevel}
+                            size="sm"
+                          />
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          type="button"
+                          className="btn btn-sm"
+                          disabled={decideJoinMut.isLoading}
+                          onClick={() => decideJoinMut.mutate({ requestId: r.id, accept: true })}
+                          data-analytics-label="join-request-approve"
+                        >
+                          <Icon name="checkmark-square-01" size={14} />
+                          {t('game.approveRequest')}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-ghost"
+                          disabled={decideJoinMut.isLoading}
+                          onClick={() => decideJoinMut.mutate({ requestId: r.id, accept: false })}
+                          data-analytics-label="join-request-reject"
+                        >
+                          <Icon name="cancel-01" size={14} />
+                          {t('game.rejectRequest')}
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
           {/* Spots left as filled placeholder avatars */}
           {g.spotsTotal - g.participantsCount > 0 && (
             <>
@@ -492,7 +555,9 @@ export function GameDetailPage() {
               </button>
               <button
                 className="btn btn-sm btn-ghost detailActions-secondary"
-                onClick={() => finishMut.mutate()}
+                onClick={() => {
+                  if (window.confirm(t('game.finishConfirm'))) finishMut.mutate();
+                }}
                 disabled={finishMut.isLoading}
                 data-analytics-label="game-finish"
               >
@@ -501,7 +566,7 @@ export function GameDetailPage() {
               <button
                 className="btn btn-sm btn-ghost detailActions-danger"
                 onClick={() => {
-                  if (window.confirm('Cancel this game?')) cancelMut.mutate();
+                  if (window.confirm(t('game.cancelConfirm'))) cancelMut.mutate();
                 }}
                 disabled={cancelMut.isLoading}
               >
@@ -510,13 +575,6 @@ export function GameDetailPage() {
             </>
           ) : isJoined ? (
             <>
-              <button
-                className="btn btn-sm detailActions-primary"
-                onClick={() => setShowInvite(true)}
-                data-analytics-label="game-invite"
-              >
-                <Icon name="mail-01" size={14} /> {t('game.invitePlayers')}
-              </button>
               <button
                 className="btn btn-sm btn-ghost detailActions-secondary"
                 onClick={() => leaveMut.mutate()}

@@ -2,6 +2,7 @@ import { BadRequestException, Body, Controller, Delete, Get, NotFoundException, 
 import { IsOptional, IsString, MaxLength } from 'class-validator';
 import { BlacklistService } from './blacklist.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
+import { NotBannedGuard } from '../auth/not-banned.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 import type { User } from '@prisma/client';
@@ -12,7 +13,7 @@ class AddBlacklistDto {
   @IsOptional() @IsString() @MaxLength(280) reason?: string;
 }
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, NotBannedGuard)
 @Controller('blacklist')
 export class BlacklistController {
   constructor(
@@ -31,8 +32,14 @@ export class BlacklistController {
     if (!me) throw new UnauthorizedException('User not found');
     let blockedId = dto.blockedId;
     if (!blockedId && dto.telegramId) {
+      let telegramId: bigint;
+      try {
+        telegramId = BigInt(dto.telegramId);
+      } catch {
+        throw new BadRequestException('telegramId must be a numeric string');
+      }
       const u = await this.prisma.user.findUnique({
-        where: { telegramId: BigInt(dto.telegramId) },
+        where: { telegramId },
         select: { id: true },
       });
       if (!u) throw new NotFoundException('User not found');

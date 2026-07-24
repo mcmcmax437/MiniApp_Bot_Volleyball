@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   Param,
   Patch,
@@ -10,11 +9,11 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { GamesService } from './games.service';
 import { CreateGameDto, ListGamesQuery, PLAY_TYPES, PlayType } from './dto';
 import { JwtAuthGuard } from '../auth/jwt.guard';
-import { AdminGuard } from '../auth/admin.guard';
+import { NotBannedGuard } from '../auth/not-banned.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { SKILL_LEVELS } from '../shared/skill-levels';
 import type { User } from '@prisma/client';
@@ -27,8 +26,8 @@ class UpdateGameDto {
   @IsOptional() @IsInt() @Min(2) @Max(1000) spotsTotal?: number;
   @IsOptional() @IsInt() @Min(0) @Max(10_000_000) totalCost?: number;
   @IsOptional() @IsString() currency?: string;
-  @IsOptional() isPaid?: boolean;
-  @IsOptional() isClosed?: boolean;
+  @IsOptional() @IsBoolean() isPaid?: boolean;
+  @IsOptional() @IsBoolean() isClosed?: boolean;
   @IsOptional() @IsString() @MaxLength(500) coverImageUrl?: string | null;
   @IsOptional() @IsString() @MaxLength(280) addressHint?: string | null;
   @IsOptional() @IsIn(PLAY_TYPES as unknown as string[]) playType?: PlayType;
@@ -36,7 +35,11 @@ class UpdateGameDto {
 
 class FinishGameDto {
   // Allow host to mark a game as FINISHED even if not full. v3 requirement.
-  @IsOptional() force?: boolean;
+  @IsOptional() @IsBoolean() force?: boolean;
+}
+
+class DecideJoinRequestDto {
+  @IsBoolean() accept!: boolean;
 }
 
 @Controller('games')
@@ -54,14 +57,14 @@ export class GamesController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, NotBannedGuard)
   create(@CurrentUser() me: User | null, @Body() dto: CreateGameDto) {
     if (!me) throw new UnauthorizedException('User not found');
     return this.games.create(me, dto);
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, NotBannedGuard)
   update(
     @CurrentUser() me: User | null,
     @Param('id') id: string,
@@ -72,21 +75,21 @@ export class GamesController {
   }
 
   @Post(':id/join')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, NotBannedGuard)
   join(@CurrentUser() me: User | null, @Param('id') id: string) {
     if (!me) throw new UnauthorizedException('User not found');
     return this.games.join(me, id);
   }
 
   @Post(':id/leave')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, NotBannedGuard)
   leave(@CurrentUser() me: User | null, @Param('id') id: string) {
     if (!me) throw new UnauthorizedException('User not found');
     return this.games.leave(me, id);
   }
 
   @Post(':id/cancel')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, NotBannedGuard)
   cancel(@CurrentUser() me: User | null, @Param('id') id: string) {
     if (!me) throw new UnauthorizedException('User not found');
     return this.games.cancel(me, id);
@@ -94,7 +97,7 @@ export class GamesController {
 
   // v3: organizer can finalize the game (mark as FINISHED) even when not full.
   @Post(':id/finish')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, NotBannedGuard)
   async finish(
     @CurrentUser() me: User | null,
     @Param('id') id: string,
@@ -102,5 +105,24 @@ export class GamesController {
   ) {
     if (!me) throw new UnauthorizedException('User not found');
     return this.games.finish(me, id);
+  }
+
+  @Get(':id/join-requests')
+  @UseGuards(JwtAuthGuard, NotBannedGuard)
+  listJoinRequests(@CurrentUser() me: User | null, @Param('id') id: string) {
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.games.listJoinRequests(me, id);
+  }
+
+  @Post(':id/join-requests/:requestId')
+  @UseGuards(JwtAuthGuard, NotBannedGuard)
+  decideJoinRequest(
+    @CurrentUser() me: User | null,
+    @Param('id') id: string,
+    @Param('requestId') requestId: string,
+    @Body() dto: DecideJoinRequestDto,
+  ) {
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.games.decideJoinRequest(me, id, requestId, dto.accept);
   }
 }

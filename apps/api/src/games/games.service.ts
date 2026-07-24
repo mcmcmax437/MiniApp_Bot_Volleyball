@@ -55,8 +55,15 @@ export class GamesService {
     if (!(start < end)) throw new BadRequestException('startAt must be before endAt');
     if (start < new Date()) throw new BadRequestException('startAt must be in the future');
 
-    if (dto.spotsTotal > venue.capacity) {
-      throw new BadRequestException(`spotsTotal exceeds venue capacity (${venue.capacity})`);
+    let spotsTotal = dto.spotsTotal;
+    if (spotsTotal > venue.capacity) {
+      // "Unlimited" clients send a high spotsTotal; clamp to venue capacity
+      // instead of hard-failing so create still succeeds.
+      if (spotsTotal >= 1000) {
+        spotsTotal = venue.capacity;
+      } else {
+        throw new BadRequestException(`spotsTotal exceeds venue capacity (${venue.capacity})`);
+      }
     }
 
     const currency = dto.currency ?? 'UAH';
@@ -71,7 +78,7 @@ export class GamesService {
         startAt: start,
         endAt: end,
         skillLevel: dto.skillLevel,
-        spotsTotal: dto.spotsTotal,
+        spotsTotal,
         notes: dto.notes ?? null,
         totalCost: dto.totalCost,
         status: 'OPEN',
@@ -173,7 +180,24 @@ export class GamesService {
         },
         joinRequests: {
           where: { status: 'PENDING' },
-          select: { id: true, userId: true, createdAt: true },
+          select: {
+            id: true,
+            userId: true,
+            createdAt: true,
+            status: true,
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                username: true,
+                photoUrl: true,
+                skillLevel: true,
+                evaluatedSkillLevel: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'asc' },
         },
         invitations: {
           where: { status: 'PENDING' },
@@ -321,6 +345,9 @@ export class GamesService {
       });
       if (!game) throw new NotFoundException('Game not found');
       if (game.status !== 'OPEN') throw new BadRequestException(`Game is ${game.status}`);
+      if (game.endAt.getTime() <= Date.now()) {
+        throw new BadRequestException('Game has already ended');
+      }
 
       const already = game.participants.find((p) => p.userId === me.id);
       if (already) return this.findOne(gameId);
@@ -481,5 +508,120 @@ export class GamesService {
       data: { status: 'FINISHED' },
     });
     return this.findOne(gameId);
+  }
+
+  /** Pending join requests for a closed lobby — host/admin only. */
+  async listJoinRequests(me: User, gameId: string) {
+    const game = await this.prisma.game.findUnique({ where: { id: gameId } });
+    if (!game) throw new NotFoundException('Game not found');
+    if (game.hostId !== me.id && me.role !== 'ADMIN') {
+      throw new ForbiddenException('Only the host can view join requests');
+    }
+    return this.prisma.gameJoinRequest.findMany({
+      where: { gameId, status: 'PENDING' },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+            photoUrl: true,
+            skillLevel: true,
+            evaluatedSkillLevel: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Host approves or rejects a pending join request. Approve seats the player
+   * (and creates a payment row for paid games) the same way open-lobby join does.
+   */
+  async decideJoinRequest(me: User, gameId: string, requestId: string, accept: boolean) {
+    return this.prisma.$transaction(async (tx) => {
+      const game = await tx.game.findUnique({
+        where: { id: gameId },
+        include: { participants: true },
+      });
+      if (!game) throw new NotFoundException('Game not found');
+      if (game.hostId !== me.id && me.role !== 'ADMIN') {
+        throw new ForbiddenException('Only the host can decide join requests');
+      }
+
+      const req = await tx.gameJoinRequest.findUnique({ where: { id: requestId } });
+      if (!req || req.gameId !== gameId) throw new NotFoundException('Join request not found');
+      if (req.status !== 'PENDING') {
+        return { ok: true, status: req.status };
+      }
+
+      if (!accept) {
+        await tx.gameJoinRequest.update({
+          where: { id: requestId },
+          data: {
+            status: 'REJECTED',
+            decidedBy: me.id,
+            decidedAt: new Date(),
+          },
+        });
+        return { ok: true, status: 'REJECTED' };
+      }
+
+      if (game.status !== 'OPEN' && game.status !== 'FULL') {
+        throw new BadRequestException(`Game is ${game.status}`);
+      }
+      if (game.endAt.getTime() <= Date.now()) {
+        throw new BadRequestException('Game has already ended');
+      }
+      if (game.participants.length >= game.spotsTotal) {
+        throw new ConflictException('Game is full');
+      }
+
+      const already = game.participants.some((p) => p.userId === req.userId);
+      if (!already) {
+        await tx.gameParticipant.create({
+          data: { gameId, userId: req.userId },
+        });
+      }
+
+      const updated = await tx.game.findUnique({
+        where: { id: gameId },
+        include: { participants: true },
+      });
+      if (updated && updated.participants.length >= updated.spotsTotal) {
+        await tx.game.update({ where: { id: gameId }, data: { status: 'FULL' } });
+      }
+
+      if (game.isPaid) {
+        const amount = this.perPlayerCost(game.totalCost, updated!.participants.length);
+        await tx.gamePayment.upsert({
+          where: { gameId_userId: { gameId, userId: req.userId } },
+          create: {
+            gameId,
+            userId: req.userId,
+            amount,
+            currency: game.currency,
+          },
+          update: { amount },
+        });
+      }
+
+      await tx.gameJoinRequest.update({
+        where: { id: requestId },
+        data: {
+          status: 'APPROVED',
+          decidedBy: me.id,
+          decidedAt: new Date(),
+        },
+      });
+
+      return { ok: true, status: 'APPROVED' };
+    }).then(async (result) => {
+      // Refresh so the host client sees the new roster.
+      await this.findOne(gameId);
+      return result;
+    });
   }
 }

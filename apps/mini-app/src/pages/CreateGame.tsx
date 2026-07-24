@@ -110,7 +110,9 @@ export function CreateGamePage() {
         startAt: toIsoLocal(startAt),
         endAt: endAtIso,
         skillLevel: skill,
-        spotsTotal: unlimitedSpots ? 1000 : spotsTotal,
+        spotsTotal: unlimitedSpots
+          ? (selectedVenue?.capacity ?? Math.max(spotsTotal, 40))
+          : spotsTotal,
         totalCost: Math.round((Number(finalCostDecimal) || 0) * 100),
         notes: notes || undefined,
         currency,

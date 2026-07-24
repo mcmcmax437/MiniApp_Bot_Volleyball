@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post, UnauthorizedException, UseGuards } from '@
 import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 import { ReportsService, VALID_REASONS } from './reports.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
+import { NotBannedGuard } from '../auth/not-banned.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { User } from '@prisma/client';
 
@@ -12,7 +13,7 @@ class FileReportDto {
   @IsOptional() @IsString() @MaxLength(1000) details?: string;
 }
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, NotBannedGuard)
 @Controller('reports')
 export class ReportsController {
   constructor(private readonly reports: ReportsService) {}

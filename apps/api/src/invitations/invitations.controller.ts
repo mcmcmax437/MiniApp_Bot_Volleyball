@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Query, UnauthorizedExceptio
 import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
 import { InvitationsService } from './invitations.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
+import { NotBannedGuard } from '../auth/not-banned.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 import type { User } from '@prisma/client';
@@ -14,7 +15,7 @@ class RespondDto {
   @IsBoolean() accept!: boolean;
 }
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, NotBannedGuard)
 @Controller()
 export class InvitationsController {
   constructor(

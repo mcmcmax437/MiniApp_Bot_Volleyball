@@ -201,7 +201,32 @@ export class AdminService {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException(`User ${id} not found`);
     await this.prisma.$transaction([
+      // Detach venues they submitted so FK doesn't block the delete.
+      this.prisma.venue.updateMany({ where: { submittedById: id }, data: { submittedById: null } }),
       this.prisma.gameParticipant.deleteMany({ where: { userId: id } }),
+      this.prisma.gameInvitation.deleteMany({
+        where: { OR: [{ inviteeId: id }, { inviterId: id }] },
+      }),
+      this.prisma.gameJoinRequest.deleteMany({
+        where: { OR: [{ userId: id }, { decidedBy: id }] },
+      }),
+      this.prisma.gamePayment.deleteMany({ where: { userId: id } }),
+      this.prisma.gameEvaluation.deleteMany({
+        where: { OR: [{ evaluatorId: id }, { evaluateeId: id }] },
+      }),
+      this.prisma.blacklist.deleteMany({
+        where: { OR: [{ ownerId: id }, { blockedId: id }] },
+      }),
+      this.prisma.report.deleteMany({
+        where: { OR: [{ reporterId: id }, { targetId: id }] },
+      }),
+      this.prisma.report.updateMany({
+        where: { reviewedBy: id },
+        data: { reviewedBy: null },
+      }),
+      this.prisma.analyticsEvent.deleteMany({ where: { userId: id } }),
+      this.prisma.userActivityStats.deleteMany({ where: { userId: id } }),
+      this.prisma.auditLog.deleteMany({ where: { actorId: id } }),
       this.prisma.game.deleteMany({ where: { hostId: id } }),
       this.prisma.user.delete({ where: { id } }),
     ]);

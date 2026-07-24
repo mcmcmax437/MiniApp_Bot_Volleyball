@@ -59,7 +59,7 @@ export function AdminUsersPage() {
             className={`chip ${filterBanned === f ? 'chip-active' : ''}`}
             onClick={() => setFilterBanned(f)}
           >
-            {f === 'ALL' ? t('game.filter.any') : f === 'YES' ? t('admin.filterBanned') : t('admin.filterActive')}
+            {f === 'ALL' ? t('games.filter.any') : f === 'YES' ? t('admin.filterBanned') : t('admin.filterActive')}
           </button>
         ))}
       </div>

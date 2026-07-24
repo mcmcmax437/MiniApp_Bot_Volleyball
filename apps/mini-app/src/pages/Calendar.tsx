@@ -84,10 +84,7 @@ export function CalendarPage() {
           className="btn btn-ghost btn-icon"
           aria-label={t('common.close')}
           data-analytics-label="calendar-back"
-          onClick={() => {
-            if (window.history.length > 1) navigate(-1);
-            else navigate('/games');
-          }}
+          onClick={() => navigate('/games')}
         >
           <Icon name="arrow-left-01" size={16} />
         </button>
@@ -152,7 +149,7 @@ export function CalendarPage() {
                         <span className="calendarGame-info">
                           <span className="calendarGame-venue">{g.venue.name}</span>
                           <span className="calendarGame-meta">
-                            {left > 0 ? `${left} ${t('game.spotsLeft', { n: left })}` : t('game.spotsFull')}
+                            {left > 0 ? t('game.spotsLeft', { n: left }) : t('game.spotsFull')}
                           </span>
                         </span>
                       </Link>

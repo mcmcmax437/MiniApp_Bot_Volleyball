@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
+import { NotBannedGuard } from '../auth/not-banned.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { CreateVenueDto, ListVenuesQuery } from './dto';
 import { ConfigService } from '@nestjs/config';
@@ -39,7 +40,7 @@ export class VenuesController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, NotBannedGuard)
   async submit(@CurrentUser() me: User | null, @Body() dto: CreateVenueDto) {
     const city = dto.city ?? me?.city ?? this.config.get<string>('DEFAULT_CITY') ?? 'Unknown';
     return this.prisma.venue.create({
