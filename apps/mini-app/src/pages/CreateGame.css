@@ -404,11 +404,11 @@
 
 /* Venue picker ? visible cards on mobile */
 .venuePicker { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
-.venuePicker-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--radius-md); background: var(--surface-1); border: 1px solid var(--border); cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); text-align: left; width: 100%; font: inherit; color: inherit; }
+.venuePicker-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--radius-md); background: var(--surface-1); border: 1px solid var(--border); cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); text-align: left; width: 100%; min-width: 0; overflow: hidden; font: inherit; color: inherit; }
 .venuePicker-item:hover { border-color: var(--brand); background: var(--surface-2); }
 .venuePicker-item.isActive { border-color: var(--brand); background: var(--brand-soft); }
 .venuePicker-icon { flex: 0 0 36px; width: 36px; height: 36px; border-radius: 10px; background: var(--surface-2); display: inline-flex; align-items: center; justify-content: center; color: var(--brand-300); }
-.venuePicker-info { flex: 1; min-width: 0; }
+.venuePicker-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
 
 /* ============================================================
    PlayType picker ? three-option segmented control for choosing
@@ -461,8 +461,8 @@
 .playTypePicker-option.isActive i {
   color: var(--text-inverse);
 }
-.venuePicker-name { font-weight: 600; font-size: 14px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.venuePicker-meta { font-size: 12px; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.venuePicker-name { display: block; font-weight: 600; font-size: 14px; color: var(--text-primary); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.venuePicker-meta { display: block; font-size: 12px; color: var(--text-tertiary); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .venuePicker-price { flex: 0 0 auto; font-size: 12px; color: var(--brand-300); font-weight: 600; }
 .venuePicker-empty { padding: 12px; border-radius: var(--radius-md); background: var(--surface-2); color: var(--text-tertiary); font-size: 13px; text-align: center; }
 
