@@ -202,13 +202,11 @@ export function CreateGamePage() {
                   <span className="venuePicker-icon">
                     <Icon name={v.indoor ? 'building-01' : 'maps'} size={16} />
                   </span>
-                  <span className="venuePicker-info">
-                    <span className="venuePicker-name">{v.name}</span>
-                    <span className="venuePicker-meta">
-                      {v.address}
-                    </span>
-                  </span>
-                  <span className="venuePicker-price">
+                  <div className="venuePicker-info">
+                    <div className="venuePicker-name">{v.name}</div>
+                    <div className="venuePicker-meta">{v.address}</div>
+                  </div>
+                  <span className="venuePicker-price" aria-hidden={!active}>
                     {active ? <Icon name="checkmark-square-01" size={14} /> : null}
                   </span>
                 </button>
