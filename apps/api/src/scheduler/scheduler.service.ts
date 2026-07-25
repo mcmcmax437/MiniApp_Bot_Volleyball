@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { TelegramSender } from '../bot/telegram-sender';
+import { cancelledMessage, reminderMessage } from '../bot/notify-messages';
 
 @Injectable()
 export class SchedulerService {
@@ -38,6 +39,8 @@ export class SchedulerService {
       take: 200,
     });
 
+    const openBtn = this.sender.openAppButton('Open game');
+
     for (const g of games) {
       const start = g.startAt.getTime();
       const minutesUntil = (start - now) / 60_000;
@@ -55,16 +58,18 @@ export class SchedulerService {
           if (this.sentKeys.has(key)) continue;
           this.sentKeys.add(key);
 
-          const minutesText = offset >= 60 ? `${Math.round(offset / 60)}h` : `${offset}m`;
-          const text = [
-            `⏰ Volleyball reminder (${minutesText} before):`,
-            ``,
-            `📍 ${g.venue.name}`,
-            `📅 ${g.startAt.toISOString().replace('T', ' ').slice(0, 16)}`,
-            `Players: ${g.participants.length}/${g.spotsTotal}`,
-          ].join('\n');
+          const text = reminderMessage({
+            venueName: g.venue.name,
+            startAt: g.startAt,
+            minutesUntil: offset,
+            players: g.participants.length,
+            spotsTotal: g.spotsTotal,
+            locale: p.user.language ?? 'en',
+          });
 
-          await this.sender.sendToTelegramId(p.user.telegramId, text);
+          await this.sender.sendToTelegramId(p.user.telegramId, text, {
+            replyMarkup: openBtn,
+          });
         }
       }
     }
@@ -105,13 +110,16 @@ export class SchedulerService {
       include: { venue: true, participants: { include: { user: true } } },
     });
     if (!game) return;
-    const text =
-      `❌ Game cancelled\n\n📍 ${game.venue.name}\n📅 ${game.startAt
-        .toISOString()
-        .replace('T', ' ')
-        .slice(0, 16)}`;
+    const openBtn = this.sender.openAppButton('Open app');
     for (const p of game.participants) {
-      await this.sender.sendToTelegramId(p.user.telegramId, text);
+      const text = cancelledMessage({
+        venueName: game.venue.name,
+        startAt: game.startAt,
+        locale: p.user.language ?? 'en',
+      });
+      await this.sender.sendToTelegramId(p.user.telegramId, text, {
+        replyMarkup: openBtn,
+      });
     }
   }
 

@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TelegramSender } from '../bot/telegram-sender';
+import { inviteMessage } from '../bot/notify-messages';
 import { InvitationsRealtimeService } from './invitations-realtime.service';
 import type { User } from '@prisma/client';
 
@@ -17,7 +18,10 @@ export class InvitationsService {
     if (inviteeId === me.id) {
       throw new BadRequestException('Cannot invite yourself');
     }
-    const game = await this.prisma.game.findUnique({ where: { id: gameId } });
+    const game = await this.prisma.game.findUnique({
+      where: { id: gameId },
+      include: { venue: { select: { name: true } } },
+    });
     if (!game) throw new NotFoundException('Game not found');
     if (game.hostId !== me.id) {
       throw new ForbiddenException('Only the host can invite players');
@@ -59,11 +63,19 @@ export class InvitationsService {
       gameId,
     });
 
-    // Best-effort Telegram DM
+    // Best-effort Telegram DM (rich HTML + Open App button).
+    const inviterName = me.lastName ? `${me.firstName} ${me.lastName}` : me.firstName;
+    const locale = invitee.language ?? 'en';
     this.bot
       .sendToTelegramId(
         invitee.telegramId,
-        `🎾 ${me.firstName} invited you to a volleyball game on ${new Date(game.startAt).toLocaleString()}. Open the bot to respond.`,
+        inviteMessage({
+          inviterName,
+          venueName: game.venue.name,
+          startAt: game.startAt,
+          locale,
+        }),
+        { replyMarkup: this.bot.openAppButton('Open invite') },
       )
       .catch(() => undefined);
 

@@ -1,6 +1,12 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Bot, Context } from 'grammy';
+import { Bot, Context, InlineKeyboard } from 'grammy';
+import { welcomeMessage } from './notify-messages';
+
+export type SendOptions = {
+  /** Optional inline keyboard (e.g. Open App). */
+  replyMarkup?: InlineKeyboard;
+};
 
 @Injectable()
 export class TelegramSender implements OnModuleInit, OnModuleDestroy {
@@ -20,21 +26,16 @@ export class TelegramSender implements OnModuleInit, OnModuleDestroy {
     this.bot = new Bot<Context>(this.token);
 
     this.bot.command('start', async (ctx) => {
-      const webappUrl = this.config.get<string>('WEBAPP_URL');
+      const webappUrl = this.config.get<string>('WEBAPP_URL')?.trim();
       const firstName = ctx.from?.first_name ?? 'friend';
-      const text = webappUrl
-        ? `Hi ${firstName}! Tap the button to open the Volleyball scheduler.`
-        : `Hi ${firstName}! The Volleyball Mini App isn't configured yet — set WEBAPP_URL.`;
+      const text = welcomeMessage({ firstName, hasWebApp: !!webappUrl });
       if (webappUrl) {
         await ctx.reply(text, {
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: 'Open Volleyball App', url: webappUrl }],
-            ],
-          },
+          parse_mode: 'HTML',
+          reply_markup: this.openAppButton('Open VolleyBot'),
         });
       } else {
-        await ctx.reply(text);
+        await ctx.reply(text, { parse_mode: 'HTML' });
       }
     });
 
@@ -47,14 +48,28 @@ export class TelegramSender implements OnModuleInit, OnModuleDestroy {
     if (this.bot) await this.bot.stop();
   }
 
+  /** Shared “Open App” button used on invite / reminder / cancel messages. */
+  openAppButton(label = 'Open app'): InlineKeyboard | undefined {
+    const webappUrl = this.config.get<string>('WEBAPP_URL')?.trim();
+    if (!webappUrl) return undefined;
+    return new InlineKeyboard().url(label, webappUrl);
+  }
+
   /**
    * Best-effort: send a message to a Telegram user by their telegramId.
    * Returns true on success, false on any failure (e.g. user blocked bot).
    */
-  async sendToTelegramId(telegramId: string | bigint, text: string): Promise<boolean> {
+  async sendToTelegramId(
+    telegramId: string | bigint,
+    text: string,
+    opts: SendOptions = {},
+  ): Promise<boolean> {
     if (!this.bot) return false;
     try {
-      await this.bot.api.sendMessage(telegramId.toString(), text, { parse_mode: 'HTML' });
+      await this.bot.api.sendMessage(telegramId.toString(), text, {
+        parse_mode: 'HTML',
+        reply_markup: opts.replyMarkup,
+      });
       return true;
     } catch (err) {
       this.logger.warn(`sendToTelegramId(${telegramId}) failed: ${(err as Error).message}`);

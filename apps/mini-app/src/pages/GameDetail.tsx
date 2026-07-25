@@ -546,13 +546,15 @@ export function GameDetailPage() {
               >
                 <Icon name="mail-01" size={14} /> {t('game.invitePlayers')}
               </button>
-              <button
-                className="btn btn-sm btn-ghost detailActions-secondary"
-                onClick={() => setShowPayments(true)}
-                data-analytics-label="game-payments"
-              >
-                <Icon name="wallet-01" size={14} /> {t('game.managePayments')}
-              </button>
+              {g.isPaid && (
+                <button
+                  className="btn btn-sm btn-ghost detailActions-secondary"
+                  onClick={() => setShowPayments(true)}
+                  data-analytics-label="game-payments"
+                >
+                  <Icon name="wallet-01" size={14} /> {t('game.managePayments')}
+                </button>
+              )}
               <button
                 className="btn btn-sm btn-ghost detailActions-secondary"
                 onClick={() => {
