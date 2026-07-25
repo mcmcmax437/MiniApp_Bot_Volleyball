@@ -24,7 +24,7 @@ export class PaymentsService {
         orderBy: { paidAt: 'desc' },
         include: {
           user: {
-            select: { id: true, firstName: true, lastName: true, username: true, photoUrl: true },
+            select: { id: true, firstName: true, lastName: true, username: true, photoUrl: true, role: true },
           },
         },
       }),
@@ -32,7 +32,7 @@ export class PaymentsService {
         where: { gameId },
         include: {
           user: {
-            select: { id: true, firstName: true, lastName: true, username: true, photoUrl: true },
+            select: { id: true, firstName: true, lastName: true, username: true, photoUrl: true, role: true },
           },
         },
         orderBy: { joinedAt: 'asc' },

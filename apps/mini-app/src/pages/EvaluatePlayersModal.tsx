@@ -4,6 +4,7 @@ import { useApi, SkillLevel, SKILL_LEVELS, EvaluationCandidate } from '../api';
 import { useI18n } from '../i18n';
 import { Icon, IconName } from '../Icon';
 import { Photo } from '../Photo';
+import { AdminCrownBadge, isAdminUser } from '../AdminCrownBadge';
 import { effectiveSkillLevel } from '../lib/skill';
 import { Modal } from '../Modal';
 
@@ -190,7 +191,16 @@ export function EvaluatePlayersModal({ open, gameId, onClose }: Props) {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Photo src={c.photoUrl} name={c.firstName} size={36} />
+                    <Photo
+                      src={c.photoUrl}
+                      name={c.firstName}
+                      size={36}
+                      topLeftBadge={
+                        isAdminUser(c) ? (
+                          <AdminCrownBadge title={t('profile.status.admin')} size="sm" />
+                        ) : null
+                      }
+                    />
                     <span style={{ fontWeight: 600 }}>
                       {c.firstName}{c.lastName ? ` ${c.lastName}` : ''}
                     </span>

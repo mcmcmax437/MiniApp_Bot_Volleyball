@@ -24,6 +24,7 @@ export interface InviteSearchUser {
   photoUrl: string | null;
   skillLevel: SkillLevel | null;
   evaluatedSkillLevel?: SkillLevel | null;
+  role?: UserRole;
 }
 
 export const SKILL_LEVELS: SkillLevel[] = [
@@ -99,6 +100,8 @@ export interface ApiGameParticipantUser {
   skillLevel: SkillLevel | null;
   /** Weighted (peer-corrected) level, computed by the backend. */
   evaluatedSkillLevel: SkillLevel | null;
+  /** Present on game/invite payloads so clients can show the admin crown. */
+  role?: UserRole;
 }
 
 export interface ApiGame {
@@ -156,6 +159,7 @@ export interface ApiGameDetail extends Omit<ApiGame, 'participants'> {
       lastName: string | null;
       username: string | null;
       photoUrl: string | null;
+      role?: UserRole;
       skillLevel: SkillLevel | null;
       evaluatedSkillLevel?: SkillLevel | null;
     };
@@ -356,7 +360,14 @@ export interface GameInvitationDto {
     spotsTotal: number;
     venue: { id: string; name: string; address: string };
   };
-  inviter: { id: string; firstName: string; lastName: string | null; username: string | null; photoUrl: string | null };
+  inviter: {
+    id: string;
+    firstName: string;
+    lastName: string | null;
+    username: string | null;
+    photoUrl: string | null;
+    role?: UserRole;
+  };
 }
 
 export interface GamePaymentDetail {
@@ -365,7 +376,14 @@ export interface GamePaymentDetail {
   perPlayer: number;
   participants: Array<{
     userId: string;
-    user: { id: string; firstName: string; lastName: string | null; username: string | null; photoUrl: string | null };
+    user: {
+      id: string;
+      firstName: string;
+      lastName: string | null;
+      username: string | null;
+      photoUrl: string | null;
+      role?: UserRole;
+    };
     joinedAt: string;
     amount: number;
     isPaid: boolean;
@@ -380,6 +398,7 @@ export interface EvaluationCandidate {
   lastName: string | null;
   username: string | null;
   photoUrl: string | null;
+  role?: UserRole;
   skillLevel: SkillLevel | null;
   evaluatedSkillLevel: SkillLevel | null;
   alreadyRated: boolean;

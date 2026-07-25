@@ -4,6 +4,7 @@ import { Photo } from "../Photo";
 import { CURRENCY_SYMBOLS } from "../api";
 import type { ApiGame, ApiGameParticipantUser } from "../api";
 import { SkillBadge } from "../SkillBadge";
+import { AdminCrownBadge, isAdminUser } from "../AdminCrownBadge";
 import { useI18n } from "../i18n";
 import { effectiveSkillLevel } from "../lib/skill";
 import { coverForPlayType } from "../lib/play-type";
@@ -183,6 +184,11 @@ export function GameCard({ game }: GameCardProps) {
                         src={u.photoUrl ?? null}
                         name={u.firstName ?? null}
                         size={28}
+                        topLeftBadge={
+                          isAdminUser(u) ? (
+                            <AdminCrownBadge title={t('profile.status.admin')} size="sm" />
+                          ) : null
+                        }
                         bottomRightBadge={lvl ? <SkillBadge level={lvl} size="sm" className="skillBadge-on-photo" /> : null}
                       />
                     );

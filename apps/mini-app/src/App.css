@@ -1369,3 +1369,9 @@ button.btn[type="submit"],
   color: #fff;
   border-color: rgba(255, 255, 255, 0.2);
 }
+
+.profilePhotoStatus-sm {
+  width: 14px;
+  height: 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}

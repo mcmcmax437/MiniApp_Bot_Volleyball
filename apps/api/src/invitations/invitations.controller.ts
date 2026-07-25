@@ -126,6 +126,7 @@ export class InvitationsController {
         lastName: true,
         username: true,
         photoUrl: true,
+        role: true,
         skillLevel: true,
         evaluatedSkillLevel: true,
       },

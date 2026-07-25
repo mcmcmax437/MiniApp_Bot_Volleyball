@@ -11,6 +11,7 @@ import { useTelegram } from "../tg";
 import { Icon, IconName } from "../Icon";
 import { Photo } from "../Photo";
 import { SkillBadge } from "../SkillBadge";
+import { AdminCrownBadge } from "../AdminCrownBadge";
 import { useI18n, LANG_LABELS, LANG_FLAGS } from "../i18n";
 import { reverseGeocode } from "../geo";
 import { effectiveSkillLevel } from "../lib/skill";
@@ -165,11 +166,7 @@ export function ProfilePage() {
             name={fullName}
             size={84}
             topLeftBadge={
-              isAdmin ? (
-                <span className="profilePhotoStatus profilePhotoStatus-admin" title={t('profile.status.admin')}>
-                  <Icon name="crown" size={10} />
-                </span>
-              ) : null
+              isAdmin ? <AdminCrownBadge title={t('profile.status.admin')} /> : null
             }
           />
         </div>

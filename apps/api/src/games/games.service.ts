@@ -163,6 +163,7 @@ export class GamesService {
             // this over the self-declared one. See skill-aggregator.ts.
             evaluatedSkillLevel: true,
             photoUrl: true,
+            role: true,
           },
         },
         participants: {
@@ -174,6 +175,7 @@ export class GamesService {
                 lastName: true,
                 username: true,
                 photoUrl: true,
+                role: true,
                 skillLevel: true,
                 evaluatedSkillLevel: true,
               },
@@ -195,6 +197,7 @@ export class GamesService {
                 lastName: true,
                 username: true,
                 photoUrl: true,
+                role: true,
                 skillLevel: true,
                 evaluatedSkillLevel: true,
               },
@@ -301,6 +304,7 @@ export class GamesService {
             // See apps/api/src/evaluations/skill-aggregator.ts.
             evaluatedSkillLevel: true,
             photoUrl: true,
+            role: true,
           },
         },
         // Public profile for each participant so the home feed can render
@@ -318,6 +322,7 @@ export class GamesService {
                 lastName: true,
                 username: true,
                 photoUrl: true,
+                role: true,
                 skillLevel: true,
                 evaluatedSkillLevel: true,
               },
@@ -554,6 +559,7 @@ export class GamesService {
             lastName: true,
             username: true,
             photoUrl: true,
+            role: true,
             skillLevel: true,
             evaluatedSkillLevel: true,
           },

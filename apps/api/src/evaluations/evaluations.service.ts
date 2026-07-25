@@ -251,6 +251,7 @@ export class EvaluationsService implements OnApplicationBootstrap {
                 lastName: true,
                 username: true,
                 photoUrl: true,
+                role: true,
                 skillLevel: true,
                 evaluatedSkillLevel: true,
               },

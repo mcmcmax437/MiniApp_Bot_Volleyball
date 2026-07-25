@@ -6,6 +6,7 @@ import { Icon } from '../Icon';
 import { Modal } from '../Modal';
 import { Photo } from '../Photo';
 import { SkillBadge } from '../SkillBadge';
+import { AdminCrownBadge, isAdminUser } from '../AdminCrownBadge';
 import { effectiveSkillLevel } from '../lib/skill';
 import './InvitePlayerModal.css';
 
@@ -112,7 +113,20 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
               inviteMut.isLoading && inviteMut.variables === u.id;
             return (
               <div className="inviteRow" key={u.id} role="listitem">
-                <Photo src={u.photoUrl} name={u.firstName} size={36} variant="rounded" />
+                <Photo
+                  src={u.photoUrl}
+                  name={u.firstName}
+                  size={36}
+                  variant="rounded"
+                  topLeftBadge={
+                    isAdminUser(u) ? (
+                      <AdminCrownBadge title={t('profile.status.admin')} size="sm" />
+                    ) : null
+                  }
+                  bottomRightBadge={
+                    lvl ? <SkillBadge level={lvl} size="sm" className="skillBadge-on-photo" /> : null
+                  }
+                />
                 <div className="inviteRow-body">
                   <span className="inviteRow-name">
                     {u.firstName}
@@ -120,7 +134,6 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
                   </span>
                   <span className="inviteRow-sub">
                     {u.username ? <span>@{u.username}</span> : null}
-                    {lvl ? <SkillBadge level={lvl} size="sm" /> : null}
                   </span>
                 </div>
                 <button

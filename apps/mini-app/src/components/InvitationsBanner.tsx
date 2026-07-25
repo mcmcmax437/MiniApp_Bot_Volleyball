@@ -5,6 +5,7 @@ import { useApi } from '../api';
 import { useI18n } from '../i18n';
 import { Icon } from '../Icon';
 import { Photo } from '../Photo';
+import { AdminCrownBadge, isAdminUser } from '../AdminCrownBadge';
 import './InvitationsBanner.css';
 
 /**
@@ -99,7 +100,17 @@ export function InvitationsBanner() {
         aria-label={t('invite.openGame')}
         data-analytics-label="invite-banner-open"
       >
-        <Photo src={inv.inviter.photoUrl} name={inviterName} size={40} variant="rounded" />
+        <Photo
+          src={inv.inviter.photoUrl}
+          name={inviterName}
+          size={40}
+          variant="rounded"
+          topLeftBadge={
+            isAdminUser(inv.inviter) ? (
+              <AdminCrownBadge title={t('profile.status.admin')} size="sm" />
+            ) : null
+          }
+        />
         <span className="inviteBanner-badge" aria-hidden="true">
           <Icon name="mail-01" size={12} />
         </span>

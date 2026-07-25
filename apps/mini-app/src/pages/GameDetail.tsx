@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useApi, SKILL_LEVEL_LABELS, SkillLevel, CURRENCY_SYMBOLS } from '../api';
+import { useApi, SKILL_LEVEL_LABELS, SkillLevel, CURRENCY_SYMBOLS, UserRole } from '../api';
 import { Icon } from '../Icon';
 import { Photo } from '../Photo';
 import { SkillBadge } from '../SkillBadge';
+import { AdminCrownBadge, isAdminUser } from '../AdminCrownBadge';
 import { useI18n } from '../i18n';
 import { effectiveSkillLevel } from '../lib/skill';
 import { coverForPlayType } from '../lib/play-type';
@@ -39,6 +40,7 @@ interface PlayerRowProps {
   skillLevel: SkillLevel | null;
   /** Weighted (peer-corrected) level, computed by the backend. */
   evaluatedSkillLevel: SkillLevel | null;
+  role?: UserRole | null;
   isHost: boolean;
   isYou: boolean;
   roleLabel: string;
@@ -62,6 +64,7 @@ function PlayerRow({
   lastName,
   skillLevel,
   evaluatedSkillLevel,
+  role,
   isHost,
   isYou,
   roleLabel,
@@ -81,6 +84,7 @@ function PlayerRow({
   // same thing twice. For host rows we hide the role label and put the
   // skill badge there instead, so the second line is always meaningful.
   const showRoleLabel = !isHost;
+  const showAdmin = isAdminUser({ role });
   return (
     <li className="detailPlayer" data-user-id={userId}>
       <Photo
@@ -88,6 +92,7 @@ function PlayerRow({
         name={fullName}
         size={44}
         variant="rounded"
+        topLeftBadge={showAdmin ? <AdminCrownBadge title={t('profile.status.admin')} /> : null}
         bottomRightBadge={level ? <SkillBadge level={level} size="sm" className="skillBadge-on-photo" /> : null}
       />
       <span className="detailPlayer-body">
@@ -368,6 +373,7 @@ export function GameDetailPage() {
               lastName={g.host.lastName}
               skillLevel={g.host.skillLevel}
               evaluatedSkillLevel={g.host.evaluatedSkillLevel}
+              role={g.host.role}
               isHost
               isYou={myId === g.host.id}
               roleLabel={t('gameDetail.roleOrganizer')}
@@ -388,6 +394,7 @@ export function GameDetailPage() {
                   lastName={p.user.lastName}
                   skillLevel={p.user.skillLevel}
                   evaluatedSkillLevel={p.user.evaluatedSkillLevel}
+                  role={p.user.role}
                   isHost={false}
                   isYou={myId === p.userId}
                   roleLabel={t('gameDetail.rolePlayer')}
@@ -419,19 +426,31 @@ export function GameDetailPage() {
                   return (
                     <li key={r.id} className="detailPlayer" style={{ flexWrap: 'wrap', gap: 8 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
-                        <Photo src={u?.photoUrl ?? null} name={name} size={36} />
+                        <Photo
+                          src={u?.photoUrl ?? null}
+                          name={name}
+                          size={36}
+                          topLeftBadge={
+                            isAdminUser(u) ? (
+                              <AdminCrownBadge title={t('profile.status.admin')} size="sm" />
+                            ) : null
+                          }
+                          bottomRightBadge={
+                            (u?.evaluatedSkillLevel || u?.skillLevel) ? (
+                              <SkillBadge
+                                level={(u.evaluatedSkillLevel ?? u.skillLevel) as SkillLevel}
+                                size="sm"
+                                className="skillBadge-on-photo"
+                              />
+                            ) : null
+                          }
+                        />
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontWeight: 600 }}>{name}</div>
                           {u?.username && (
                             <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>@{u.username}</div>
                           )}
                         </div>
-                        {(u?.evaluatedSkillLevel || u?.skillLevel) && (
-                          <SkillBadge
-                            level={(u.evaluatedSkillLevel ?? u.skillLevel) as SkillLevel}
-                            size="sm"
-                          />
-                        )}
                       </div>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button
@@ -739,7 +758,17 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
                 key={p.userId}
                 className={`paymentsList-row${p.isPaid ? ' isPaid' : ' isUnpaid'}`}
               >
-                <Photo src={p.user.photoUrl} name={p.user.firstName} size={32} variant="rounded" />
+                <Photo
+                  src={p.user.photoUrl}
+                  name={p.user.firstName}
+                  size={32}
+                  variant="rounded"
+                  topLeftBadge={
+                    isAdminUser(p.user) ? (
+                      <AdminCrownBadge title={t('profile.status.admin')} size="sm" />
+                    ) : null
+                  }
+                />
                 <span className="paymentsList-name">
                   {p.user.firstName}
                   {p.user.lastName ? ` ${p.user.lastName}` : ''}

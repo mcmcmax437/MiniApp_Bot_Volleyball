@@ -195,6 +195,7 @@ export class InvitationsService {
             lastName: true,
             username: true,
             photoUrl: true,
+            role: true,
           },
         },
         game: {
