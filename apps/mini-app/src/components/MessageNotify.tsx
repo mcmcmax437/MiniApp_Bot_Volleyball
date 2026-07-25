@@ -19,9 +19,9 @@ export function MessageNotify() {
     ['invitations', 'mine', 'notify'],
     () => api.listMyInvitations(),
     {
-      refetchInterval: 60_000,
+      refetchInterval: 5_000,
       refetchOnWindowFocus: true,
-      staleTime: 30_000,
+      staleTime: 0,
     },
   );
 

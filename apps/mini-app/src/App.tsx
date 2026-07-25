@@ -26,6 +26,7 @@ import { PaymentsPage } from './pages/Payments';
 import { PendingEvaluationsPrompt } from './components/PendingEvaluationsPrompt';
 import { MessageNotify } from './components/MessageNotify';
 import { useAnalytics } from './hooks/useAnalytics';
+import { useInvitationRealtime } from './hooks/useInvitationRealtime';
 import './App.css';
 
 function LoadingScreen() {
@@ -139,6 +140,10 @@ export function App() {
     refetchOnMount: 'always',
     staleTime: 0,
   });
+
+  // Live invite push (SSE). Falls back to MessageNotify's short poll if the
+  // stream drops. Only connect once we have an authenticated, non-banned user.
+  useInvitationRealtime(!!meQ.data && !meQ.data.isBanned);
 
   const loginMut = useMutation(() => api.login(initData), {
     onSuccess: () => qc.invalidateQueries(['me']),

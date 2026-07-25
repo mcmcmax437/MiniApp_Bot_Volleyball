@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TelegramSender } from '../bot/telegram-sender';
+import { InvitationsRealtimeService } from './invitations-realtime.service';
 import type { User } from '@prisma/client';
 
 @Injectable()
@@ -8,6 +9,7 @@ export class InvitationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly bot: TelegramSender,
+    private readonly realtime: InvitationsRealtimeService,
   ) {}
 
   /** Host invites a player to their game. */
@@ -49,6 +51,12 @@ export class InvitationsService {
         status: 'PENDING',
       },
       update: { status: 'PENDING' },
+    });
+
+    // Push to any open Mini App SSE stream for this invitee (near-instant icon).
+    this.realtime.publishInvite(inviteeId, {
+      invitationId: invitation.id,
+      gameId,
     });
 
     // Best-effort Telegram DM

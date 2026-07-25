@@ -1,11 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, Param, Post, Query, Sse, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+import { Observable } from 'rxjs';
 import { InvitationsService } from './invitations.service';
+import { InvitationsRealtimeService } from './invitations-realtime.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { NotBannedGuard } from '../auth/not-banned.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 import type { User } from '@prisma/client';
+import type { MessageEvent } from '@nestjs/common';
 
 class InviteDto {
   @IsString() inviteeId!: string;
@@ -20,8 +23,21 @@ class RespondDto {
 export class InvitationsController {
   constructor(
     private readonly inv: InvitationsService,
+    private readonly realtime: InvitationsRealtimeService,
     private readonly prisma: PrismaService,
   ) {}
+
+  /**
+   * Live invite push for an open Mini App. Cookie JWT authenticates the
+   * EventSource (same-origin + credentials). Heartbeats keep proxies alive.
+   */
+  @Sse('invitations/stream')
+  @Header('Cache-Control', 'no-cache, no-transform')
+  @Header('X-Accel-Buffering', 'no')
+  stream(@CurrentUser() me: User | null): Observable<MessageEvent> {
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.realtime.subscribe(me.id);
+  }
 
   @Post('games/:gameId/invitations')
   invite(
