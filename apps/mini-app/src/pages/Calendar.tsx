@@ -47,11 +47,20 @@ export function CalendarPage() {
   const to = new Date(from);
   to.setDate(to.getDate() + 60);
 
-  const gamesQ = useQuery(['games', 'calendar', from.toISOString(), to.toISOString()], () =>
-    api.listGames({
-      from: from.toISOString(),
-      to: to.toISOString(),
-    }),
+  const meQ = useQuery(['me'], () => api.me());
+  const cityQ = useQuery(['default-city'], () => api.defaultCity());
+  const filterCity = meQ.data?.city || cityQ.data?.city || undefined;
+
+  // Same city scope as Home / Games. Invites stay cross-city elsewhere.
+  const gamesQ = useQuery(
+    ['games', 'calendar', filterCity, from.toISOString(), to.toISOString()],
+    () =>
+      api.listGames({
+        city: filterCity,
+        from: from.toISOString(),
+        to: to.toISOString(),
+      }),
+    { enabled: !!filterCity },
   );
 
   const days: DayBucket[] = useMemo(() => {

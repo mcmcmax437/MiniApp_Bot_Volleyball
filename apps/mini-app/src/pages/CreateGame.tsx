@@ -207,63 +207,46 @@ export function CreateGamePage() {
             <Icon name="building-01" size={12} className="icon-inline" />
             {t('create.field.savedPlaces')}
           </label>
-          {/* Native <select> elements render inconsistently across iOS Safari
-              and Android WebView and are easy to miss on small phones. We
-              render a tappable card list instead, with the same accessibility
-              surface (radiogroup / aria-checked). */}
-          <div
-            className="venuePicker"
-            role="radiogroup"
-            aria-label={t('create.field.savedPlaces')}
-          >
-            {(venuesQ.data ?? []).length === 0 && (
-              <div className="venuePicker-empty">{t('create.field.noSavedPlaces')}</div>
-            )}
-            {venuesQ.data?.map((v) => {
-              const active = v.id === venueId;
-              return (
-                <button
-                  type="button"
-                  key={v.id}
-                  role="radio"
-                  aria-checked={active}
-                  className={`venuePicker-item ${active ? 'isActive' : ''}`}
-                  onClick={() => {
-                    setVenueId(v.id);
-                    setVenueName(v.name);
-                    setVenueAddress(v.address);
-                  }}
-                  data-analytics-label={`create-venue-${v.id}`}
-                >
-                  <span className="venuePicker-icon">
-                    <Icon name={v.indoor ? 'building-01' : 'maps'} size={16} />
-                  </span>
-                  <div className="venuePicker-info">
-                    <div className="venuePicker-name">{v.name}</div>
-                    <div className="venuePicker-meta">{v.address}</div>
-                  </div>
-                  <span className="venuePicker-price" aria-hidden={!active}>
-                    {active ? <Icon name="checkmark-square-01" size={14} /> : null}
-                  </span>
-                </button>
-              );
-            })}
+          <div className="venueSelectWrap">
+            <select
+              id="venue"
+              className="venueSelect"
+              value={venueId}
+              onChange={(e) => {
+                const id = e.target.value;
+                setVenueId(id);
+                const v = (venuesQ.data ?? []).find((x) => x.id === id);
+                if (v) {
+                  setVenueName(v.name);
+                  setVenueAddress(v.address);
+                }
+              }}
+              data-analytics-label="create-venue-select"
+              aria-label={t('create.field.savedPlaces')}
+            >
+              <option value="">
+                {(venuesQ.data ?? []).length === 0
+                  ? t('create.field.noSavedPlaces')
+                  : t('create.field.savedPlacesPlaceholder')}
+              </option>
+              {(venuesQ.data ?? []).map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name} — {v.address}
+                </option>
+              ))}
+            </select>
+            <span className="venueSelect-chevron" aria-hidden="true">
+              <Icon name="arrow-down-01" size={14} />
+            </span>
           </div>
           {selectedVenue && (
-            <div className="venueSelected" style={{ display: 'none' }} aria-hidden="true">
-              <div className="venueSelected-icon">
-                <Icon name={selectedVenue.indoor ? 'building-01' : 'maps'} size={16} />
-              </div>
-              <div className="venueSelected-info">
-                <div className="venueSelected-name">{selectedVenue.name}</div>
-                <div className="venueSelected-meta">
-                  <span className="tag info">{selectedVenue.indoor ? 'Indoor' : 'Outdoor'}</span>
-                  <span className="tag">Up to {selectedVenue.capacity} players</span>
-                  <span className="venueSelected-price">
-                    {CURRENCY_SYMBOLS[currency]}{(selectedVenue.hourlyPrice / 100).toFixed(2)} / hr
-                  </span>
-                </div>
-              </div>
+            <div className="venueSelectedHint">
+              <Icon name={selectedVenue.indoor ? 'building-01' : 'maps'} size={12} />
+              <span>
+                {selectedVenue.indoor ? 'Indoor' : 'Outdoor'} · up to {selectedVenue.capacity} ·{' '}
+                {CURRENCY_SYMBOLS[currency]}
+                {(selectedVenue.hourlyPrice / 100).toFixed(2)}/hr
+              </span>
             </div>
           )}
         </div>

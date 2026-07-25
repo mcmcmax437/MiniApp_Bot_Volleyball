@@ -263,6 +263,16 @@ export class GamesService {
       where.isClosed = false;
     }
 
+    // City scope must be in the SQL WHERE (not post-filtered after take:200),
+    // otherwise other cities fill the page and local games disappear.
+    if (opts.city) {
+      const aliases = expandCityFilter(
+        opts.city,
+        this.config.get<string>('DEFAULT_CITY'),
+      ).map((c) => c.trim());
+      where.venue = { city: { in: aliases } };
+    }
+
     // Pre-fetch to allow JS-side filtering on participants count
     const games = await this.prisma.game.findMany({
       where,
@@ -319,6 +329,7 @@ export class GamesService {
       take: 200,
     });
 
+    // Extra fold pass for diacritic / casing variants not listed as aliases.
     let filtered = games;
     if (opts.city) {
       const aliases = new Set(

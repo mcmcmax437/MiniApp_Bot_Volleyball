@@ -186,6 +186,7 @@ export const uk: Record<string, string> = {
   'create.section.notes': 'Нотатки',
   'create.field.venue': 'Майданчик',
   'create.field.savedPlaces': 'Збережені місця',
+  'create.field.savedPlacesPlaceholder': 'Оберіть збережене місце…',
   'create.field.noSavedPlaces': 'Збережених місць ще немає. Адреса збережеться після створення гри.',
   'create.field.placeName': 'Назва місця',
   'create.field.placeNamePlaceholder': 'напр. майданчик у парку або шкільна зала',

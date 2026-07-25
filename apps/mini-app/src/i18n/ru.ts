@@ -179,6 +179,7 @@ export const ru: Record<string, string> = {
   'create.section.notes': 'Заметки',
   'create.field.venue': 'Площадка',
   'create.field.savedPlaces': 'Сохранённые места',
+  'create.field.savedPlacesPlaceholder': 'Выберите сохранённое место…',
   'create.field.noSavedPlaces': 'Сохранённых мест пока нет. Адрес сохранится после создания игры.',
   'create.field.placeName': 'Название места',
   'create.field.placeNamePlaceholder': 'например, площадка в парке или школьный зал',

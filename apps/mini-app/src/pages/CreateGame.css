@@ -411,113 +411,54 @@
 .paidBadge-paid { background: var(--brand-soft); color: var(--brand-300); border-color: rgba(255, 165, 0, 0.2); }
 .paidBadge-free { background: var(--surface-2); color: var(--text-secondary); border-color: var(--border); }
 
-/* Venue picker — cards must clip long names/addresses inside the form width */
-.venuePicker {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* Saved places — dropdown */
+.venueSelectWrap {
+  position: relative;
+  width: 100%;
   margin-top: 6px;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
 }
 
-.venuePicker-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: var(--radius-md);
+.venueSelect {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
   background: var(--surface-1);
-  border: 1px solid var(--border);
-  cursor: pointer;
-  transition: border-color var(--dur-fast) var(--ease-out),
-    background var(--dur-fast) var(--ease-out);
-  text-align: left;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  overflow: hidden;
-  box-sizing: border-box;
-  font: inherit;
-  color: inherit;
-}
-
-.venuePicker-item:hover {
-  border-color: var(--brand);
-  background: var(--surface-2);
-}
-
-.venuePicker-item.isActive {
-  border-color: var(--brand);
-  background: var(--brand-soft);
-}
-
-.venuePicker-icon {
-  flex: 0 0 36px;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--surface-2);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--brand-300);
-}
-
-/* flex: 1 1 0 + min-width:0 is required for ellipsis inside a button flex row */
-.venuePicker-info {
-  flex: 1 1 0;
-  min-width: 0;
-  max-width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  overflow: hidden;
-}
-
-.venuePicker-name,
-.venuePicker-meta {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.venuePicker-name {
-  font-weight: 600;
-  font-size: 14px;
   color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 40px 12px 14px;
+  font-size: 16px;
+  font-family: inherit;
+  font-weight: 500;
   line-height: 1.3;
+  cursor: pointer;
+  min-height: 48px;
 }
 
-.venuePicker-meta {
-  font-size: 12px;
+.venueSelect:focus {
+  border-color: var(--border-strong);
+  outline: none;
+  background: var(--surface-2);
+}
+
+.venueSelect-chevron {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--text-tertiary);
-  line-height: 1.3;
+  pointer-events: none;
+  display: inline-flex;
 }
 
-.venuePicker-price {
-  flex: 0 0 18px;
-  width: 18px;
+.venueSelectedHint {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
   font-size: 12px;
-  color: var(--brand-300);
-  font-weight: 600;
-}
-
-.venuePicker-empty {
-  padding: 12px;
-  border-radius: var(--radius-md);
-  background: var(--surface-2);
   color: var(--text-tertiary);
-  font-size: 13px;
-  text-align: center;
+  font-weight: 500;
 }
 
 /* ============================================================

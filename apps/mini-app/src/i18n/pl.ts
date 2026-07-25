@@ -179,6 +179,7 @@ export const pl: Record<string, string> = {
   'create.section.notes': 'Notatki',
   'create.field.venue': 'Obiekt',
   'create.field.savedPlaces': 'Zapisane miejsca',
+  'create.field.savedPlacesPlaceholder': 'Wybierz zapisane miejsce…',
   'create.field.noSavedPlaces': 'Nie ma jeszcze zapisanych miejsc. Adres zapisze się po utworzeniu meczu.',
   'create.field.placeName': 'Nazwa miejsca',
   'create.field.placeNamePlaceholder': 'np. Boisko w parku lub sala szkolna',

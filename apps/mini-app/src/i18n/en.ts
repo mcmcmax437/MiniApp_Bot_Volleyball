@@ -195,6 +195,7 @@ export const en: Record<string, string> = {
   'create.section.notes': 'Notes',
   'create.field.venue': 'Venue',
   'create.field.savedPlaces': 'Saved places',
+  'create.field.savedPlacesPlaceholder': 'Choose a saved place…',
   'create.field.noSavedPlaces': 'No saved places yet. Your address will be saved after you create the game.',
   'create.field.placeName': 'Place name',
   'create.field.placeNamePlaceholder': 'e.g. Park court or School gym',
