@@ -197,39 +197,40 @@ export function HomePage() {
               </span>
             )}
           </div>
-          {effectiveSkillLevel(meQ.data) ? (
-            // Display-only. Self-level is set once during first onboarding;
-            // afterwards peer ratings adjust `evaluatedSkillLevel`. No tap-
-            // to-change CTA here — that was confusing and too large.
-            <div className="home-hero-skill" aria-label={t('profile.skill')}>
-              <SkillBadge
-                level={effectiveSkillLevel(meQ.data)!}
-                size="sm"
-              />
-            </div>
-          ) : !hasOnboardedLocally() ? (
-            <button
-              type="button"
-              className="home-hero-skillPick"
-              onClick={goWelcome}
-              data-analytics-label="home-skill-pick"
-            >
-              <Icon name="award-01" size={12} />
-              <span>{t('home.pickYourLevel')}</span>
-            </button>
-          ) : null}
-          <p className="home-hero-sub">
-            {openGames.length > 0
-              ? t('home.openGamesInCity', { count: openGames.length })
-              : t('home.noGamesSub')}
-          </p>
+          <div className="home-hero-meta">
+            {effectiveSkillLevel(meQ.data) ? (
+              // Display-only. Self-level is set once during first onboarding;
+              // afterwards peer ratings adjust `evaluatedSkillLevel`.
+              <div className="home-hero-skill" aria-label={t('profile.skill')}>
+                <SkillBadge
+                  level={effectiveSkillLevel(meQ.data)!}
+                  size="sm"
+                />
+              </div>
+            ) : !hasOnboardedLocally() ? (
+              <button
+                type="button"
+                className="home-hero-skillPick"
+                onClick={goWelcome}
+                data-analytics-label="home-skill-pick"
+              >
+                <Icon name="award-01" size={11} />
+                <span>{t('home.pickYourLevel')}</span>
+              </button>
+            ) : null}
+            <p className="home-hero-sub">
+              {openGames.length > 0
+                ? t('home.openGamesInCity', { count: openGames.length })
+                : t('home.noGamesSub')}
+            </p>
+          </div>
         </div>
         <div className="home-hero-photoWrap">
           {meQ.data?.photoUrl || photoUrl ? (
             <Photo
               src={meQ.data?.photoUrl ?? photoUrl}
               name={firstName}
-              size={80}
+              size={56}
             />
           ) : (
             <div className="home-hero-mascot" aria-hidden="true">
