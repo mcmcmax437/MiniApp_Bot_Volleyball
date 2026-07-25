@@ -170,4 +170,9 @@ export class ListGamesQuery {
   @IsOptional()
   @IsIn(PLAY_TYPES as unknown as string[])
   playType?: PlayType;
+
+  /** Narrow to a single status; default remains OPEN + FULL. */
+  @IsOptional()
+  @IsIn(['OPEN', 'FULL'])
+  status?: 'OPEN' | 'FULL';
 }

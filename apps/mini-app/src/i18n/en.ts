@@ -117,6 +117,16 @@ export const en: Record<string, string> = {
   'games.filter.search': 'Search notes',
   'games.filter.apply': 'Apply',
   'games.filter.clear': 'Clear',
+  'games.filter.quick.all': 'All',
+  'games.filter.quick.open': 'Open',
+  'games.filter.quick.today': 'Today',
+  'games.filter.quick.free': 'Free',
+  'games.filter.quick.indoor': 'Indoor',
+  'profile.editProfile': 'Edit profile',
+  'profile.doneEditing': 'Done',
+  'profile.activity': 'Activity',
+  'profile.gamesHosted': 'Games hosted',
+  'profile.gamesJoined': 'Games joined',
   'games.empty': 'No games match your filters.',
 
   // ===== Game card =====
@@ -289,7 +299,7 @@ export const en: Record<string, string> = {
   'lang.uk': 'Українська',
   'lang.pl': 'Polski',
   'lang.en': 'English',
-  'lang.ru': 'Русский',
+  'lang.ru': 'Москальска',
 
   // ===== Auth / banned =====
   'auth.banned.title': 'You have been banned',

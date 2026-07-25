@@ -5,6 +5,7 @@ import { NotBannedGuard } from '../auth/not-banned.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { CreateVenueDto, ListVenuesQuery } from './dto';
 import { ConfigService } from '@nestjs/config';
+import { canonicalizeCity, expandCityFilter } from '../shared/city';
 import type { User } from '@prisma/client';
 
 @Controller('venues')
@@ -17,7 +18,10 @@ export class VenuesController {
   @Get()
   list(@Query() q: ListVenuesQuery) {
     const where: any = { status: 'PUBLISHED' };
-    if (q.city) where.city = q.city;
+    if (q.city) {
+      const defaultCity = this.config.get<string>('DEFAULT_CITY');
+      where.city = { in: expandCityFilter(q.city, defaultCity) };
+    }
     if (q.minLat !== undefined && q.maxLat !== undefined) {
       where.lat = { gte: q.minLat, lte: q.maxLat };
     }
@@ -42,7 +46,11 @@ export class VenuesController {
   @Post()
   @UseGuards(JwtAuthGuard, NotBannedGuard)
   async submit(@CurrentUser() me: User | null, @Body() dto: CreateVenueDto) {
-    const city = dto.city ?? me?.city ?? this.config.get<string>('DEFAULT_CITY') ?? 'Unknown';
+    const defaultCity = this.config.get<string>('DEFAULT_CITY') ?? 'Unknown';
+    const city = canonicalizeCity(
+      dto.city ?? me?.city ?? defaultCity,
+      defaultCity,
+    );
     return this.prisma.venue.create({
       data: {
         name: dto.name,

@@ -8,8 +8,12 @@ export function VenuesPage() {
   const api = useApi();
   const qc = useQueryClient();
   const cityQ = useQuery(['default-city'], () => api.defaultCity());
-  const venuesQ = useQuery(['venues', cityQ.data?.city], () =>
-    api.listVenues({ city: cityQ.data?.city ?? undefined }),
+  const meQ = useQuery(['me'], () => api.me());
+  const filterCity = meQ.data?.city || cityQ.data?.city || undefined;
+  const venuesQ = useQuery(
+    ['venues', filterCity],
+    () => api.listVenues({ city: filterCity }),
+    { enabled: !!filterCity },
   );
 
   const [showForm, setShowForm] = useState(false);

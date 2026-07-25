@@ -24,7 +24,7 @@ export const LANG_LABELS: Record<Language, string> = {
   uk: 'Українська',
   pl: 'Polski',
   en: 'English',
-  ru: 'Русский',
+  ru: 'Москальска',
 };
 
 export const LANG_FLAGS: Record<Language, string> = {

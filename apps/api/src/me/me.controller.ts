@@ -16,6 +16,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { SKILL_LEVELS } from '../shared/skill-levels';
+import { canonicalizeCity } from '../shared/city';
 import { EvaluationsService } from '../evaluations/evaluations.service';
 import type { User } from '@prisma/client';
 
@@ -137,12 +138,18 @@ export class MeController {
     const skillLevelChanged =
       dto.skillLevel !== undefined && dto.skillLevel !== me.skillLevel;
 
+    const defaultCity = this.config.get<string>('DEFAULT_CITY') ?? undefined;
+    const city =
+      dto.city !== undefined
+        ? canonicalizeCity(dto.city, defaultCity)
+        : undefined;
+
     const updated = await this.prisma.user.update({
       where: { id: me.id },
       data: {
         age: dto.age ?? undefined,
         skillLevel: dto.skillLevel === undefined ? undefined : dto.skillLevel,
-        city: dto.city ?? undefined,
+        city,
         reminderOffsets: dto.reminderOffsets ?? undefined,
         language: dto.language ?? undefined,
         lat: dto.lat ?? undefined,

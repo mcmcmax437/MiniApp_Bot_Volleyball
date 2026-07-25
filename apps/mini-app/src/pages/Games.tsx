@@ -1,29 +1,28 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "react-query";
 import { Link } from "react-router-dom";
-import {
-  useApi,
-  SkillLevel,
-  SKILL_LEVELS,
-} from "../api";
+import { useApi, type PlayType } from "../api";
 import { useI18n } from "../i18n";
 import { GameCard } from "./GameCard";
 import { Icon } from "../Icon";
 import "./Games.css";
 
-type SkillFilter = "ALL" | SkillLevel;
+type QuickFilter = "ALL" | "OPEN" | "TODAY" | "FREE" | "INDOOR";
 
-const FILTER_OPTIONS: SkillFilter[] = ["ALL", ...SKILL_LEVELS];
+const QUICK_FILTERS: QuickFilter[] = ["ALL", "OPEN", "TODAY", "FREE", "INDOOR"];
 
-function skillChipLabel(s: SkillFilter): string {
-  if (s === "ALL") return "All";
-  return `S${SKILL_LEVELS.indexOf(s) + 1}`;
+function todayRange(): { from: string; to: string } {
+  const from = new Date();
+  from.setHours(0, 0, 0, 0);
+  const to = new Date(from);
+  to.setHours(23, 59, 59, 999);
+  return { from: from.toISOString(), to: to.toISOString() };
 }
 
 export function GamesPage() {
   const api = useApi();
   const { t } = useI18n();
-  const [skill, setSkill] = useState<SkillFilter>("ALL");
+  const [quick, setQuick] = useState<QuickFilter>("ALL");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
   const [spotsMin, setSpotsMin] = useState<string>("");
@@ -31,33 +30,50 @@ export function GamesPage() {
   const [showFilters, setShowFilters] = useState(false);
 
   const cityQ = useQuery(["default-city"], () => api.defaultCity());
+  const meQ = useQuery(["me"], () => api.me());
+  const filterCity = meQ.data?.city || cityQ.data?.city || undefined;
 
-  const listArgs = {
-    city: cityQ.data?.city ?? undefined,
-    skillLevel: skill !== "ALL" ? skill : undefined,
-    from: dateFrom ? new Date(dateFrom).toISOString() : undefined,
-    to: dateTo ? new Date(dateTo + "T23:59:59").toISOString() : undefined,
-    minSpots: spotsMin ? Number(spotsMin) : undefined,
-    q: search.trim() || undefined,
-    hasSpots: true,
-  };
+  const listArgs = useMemo(() => {
+    const today = quick === "TODAY" ? todayRange() : null;
+    return {
+      city: filterCity,
+      from: today?.from ?? (dateFrom ? new Date(dateFrom).toISOString() : undefined),
+      to: today?.to ?? (dateTo ? new Date(dateTo + "T23:59:59").toISOString() : undefined),
+      minSpots: spotsMin ? Number(spotsMin) : undefined,
+      search: search.trim() || undefined,
+      status: quick === "OPEN" ? ("OPEN" as const) : undefined,
+      isPaid: quick === "FREE" ? false : undefined,
+      playType: quick === "INDOOR" ? ("INDOOR" as PlayType) : undefined,
+      hasSpots: quick === "OPEN" || quick === "FREE" ? true : undefined,
+    };
+  }, [filterCity, quick, dateFrom, dateTo, spotsMin, search]);
 
   const gamesQ = useQuery(
     ["games", "list", JSON.stringify(listArgs)],
     () => api.listGames(listArgs),
-    { enabled: !!cityQ.data },
+    { enabled: !!cityQ.data || !!meQ.data?.city },
   );
 
   const count = gamesQ.data?.length ?? 0;
   const filtersActive =
-    skill !== "ALL" || !!dateFrom || !!dateTo || !!spotsMin || !!search.trim();
+    quick !== "ALL" || !!dateFrom || !!dateTo || !!spotsMin || !!search.trim();
 
   const clearAll = () => {
-    setSkill("ALL");
+    setQuick("ALL");
     setDateFrom("");
     setDateTo("");
     setSpotsMin("");
     setSearch("");
+  };
+
+  const quickLabel = (f: QuickFilter) => {
+    switch (f) {
+      case "ALL": return t("games.filter.quick.all");
+      case "OPEN": return t("games.filter.quick.open");
+      case "TODAY": return t("games.filter.quick.today");
+      case "FREE": return t("games.filter.quick.free");
+      case "INDOOR": return t("games.filter.quick.indoor");
+    }
   };
 
   return (
@@ -69,7 +85,7 @@ export function GamesPage() {
         <div style={{ flex: 1 }}>
           <h1 className="page-header-title">{t("games.title")}</h1>
           <p className="page-header-sub">
-            {cityQ.data?.city ?? "your city"} · {count} game{count === 1 ? "" : "s"}
+            {filterCity ?? "your city"} · {count} game{count === 1 ? "" : "s"}
           </p>
         </div>
         {filtersActive && (
@@ -106,22 +122,19 @@ export function GamesPage() {
         </Link>
       </header>
 
-      {/* One skill row: All + S1…S6. Re-tap an active level to clear. */}
-      <div className="skillChips" role="tablist" aria-label={t("games.filter.skill")}>
-        {FILTER_OPTIONS.map((s) => {
-          const isActive = skill === s;
+      <div className="skillChips" role="tablist" aria-label={t("games.filter.apply")}>
+        {QUICK_FILTERS.map((f) => {
+          const isActive = quick === f;
           return (
             <button
-              key={s}
+              key={f}
               type="button"
               role="tab"
               aria-selected={isActive}
               className={`chip ${isActive ? "chip-active" : ""}`}
-              onClick={() =>
-                setSkill((prev) => (prev === s && s !== "ALL" ? "ALL" : s))
-              }
+              onClick={() => setQuick((prev) => (prev === f && f !== "ALL" ? "ALL" : f))}
             >
-              <span>{skillChipLabel(s)}</span>
+              <span>{quickLabel(f)}</span>
             </button>
           );
         })}
@@ -141,7 +154,10 @@ export function GamesPage() {
             <input
               type="date"
               value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
+              onChange={(e) => {
+                setDateFrom(e.target.value);
+                if (quick === "TODAY") setQuick("ALL");
+              }}
             />
           </div>
           <div className="field">
@@ -149,7 +165,10 @@ export function GamesPage() {
             <input
               type="date"
               value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
+              onChange={(e) => {
+                setDateTo(e.target.value);
+                if (quick === "TODAY") setQuick("ALL");
+              }}
             />
           </div>
           <div className="field">

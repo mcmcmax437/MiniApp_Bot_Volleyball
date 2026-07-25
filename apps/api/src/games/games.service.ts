@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SchedulerService } from '../scheduler/scheduler.service';
 import { CreateGameDto, ListGamesQuery } from './dto';
 import { SKILL_BUCKETS, SKILL_LEVELS } from '../shared/skill-levels';
+import { canonicalizeCity, expandCityFilter, foldCity } from '../shared/city';
 import type { User } from '@prisma/client';
 
 const SUPPORTED_CURRENCIES = new Set(['UAH', 'PLN', 'EUR', 'USD']);
@@ -110,10 +111,12 @@ export class GamesService {
       throw new BadRequestException('venueAddress is required');
     }
 
-    const city = me.city || this.config.get<string>('DEFAULT_CITY') || 'Unknown';
+    const defaultCity = this.config.get<string>('DEFAULT_CITY') || 'Unknown';
+    const city = canonicalizeCity(me.city || defaultCity, defaultCity);
+    const cityAliases = expandCityFilter(city, defaultCity);
     const existing = await this.prisma.venue.findFirst({
       where: {
-        city,
+        city: { in: cityAliases },
         address: normalizedAddress,
       },
       orderBy: { createdAt: 'desc' },
@@ -229,7 +232,9 @@ export class GamesService {
   }
 
   async list(opts: ListGamesQuery) {
-    const where: any = { status: { in: ['OPEN', 'FULL'] } };
+    const where: any = {
+      status: opts.status ? opts.status : { in: ['OPEN', 'FULL'] },
+    };
 
     if (opts.from || opts.to) {
       where.startAt = {};
@@ -314,7 +319,17 @@ export class GamesService {
       take: 200,
     });
 
-    let filtered = opts.city ? games.filter((g) => g.venue.city === opts.city) : games;
+    let filtered = games;
+    if (opts.city) {
+      const aliases = new Set(
+        expandCityFilter(opts.city, this.config.get<string>('DEFAULT_CITY')).map((c) => c.trim()),
+      );
+      const folded = new Set([...aliases].map((c) => foldCity(c)));
+      filtered = games.filter((g) => {
+        const vc = g.venue.city?.trim() ?? '';
+        return aliases.has(vc) || folded.has(foldCity(vc));
+      });
+    }
 
     if (typeof opts.hasSpots === 'boolean') {
       filtered = filtered.filter((g) =>

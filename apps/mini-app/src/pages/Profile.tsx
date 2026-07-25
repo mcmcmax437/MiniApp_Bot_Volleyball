@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import {
@@ -66,6 +66,7 @@ export function ProfilePage() {
   const [offsets, setOffsets] = useState<number[]>([60]);
   const [remindersOpen, setRemindersOpen] = useState(false);
   const [language, setLanguageState] = useState<Language>(lang);
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     if (!meQ.data) return;
@@ -76,6 +77,29 @@ export function ProfilePage() {
       setLanguageState(meQ.data.language);
     }
   }, [meQ.data]);
+
+  const activityRange = useMemo(() => {
+    const from = new Date();
+    from.setFullYear(from.getFullYear() - 2);
+    const to = new Date();
+    to.setFullYear(to.getFullYear() + 1);
+    return { from: from.toISOString(), to: to.toISOString() };
+  }, []);
+
+  const hostedQ = useQuery(
+    ["games", "hosted", meQ.data?.id],
+    () =>
+      api.listGames({
+        hostId: meQ.data!.id,
+        from: activityRange.from,
+        to: activityRange.to,
+        includeClosed: true,
+      }),
+    { enabled: !!meQ.data?.id },
+  );
+  const blacklistQ = useQuery(["blacklist"], () => api.listBlacklist(), {
+    enabled: !!meQ.data?.id,
+  });
 
   const save = useMutation(
     () =>
@@ -89,6 +113,7 @@ export function ProfilePage() {
       onSuccess: (updated) => {
         qc.setQueryData(["me"], updated);
         qc.invalidateQueries(["me"]);
+        setEditing(false);
       },
     },
   );
@@ -194,7 +219,57 @@ export function ProfilePage() {
         </Link>
       </div>
 
-      {/* === Section: About you === */}
+      <div className="profileEditRow">
+        <button
+          type="button"
+          className="btn"
+          onClick={() => setEditing((v) => !v)}
+          data-analytics-label="profile-toggle-edit"
+        >
+          {editing ? t('profile.doneEditing') : t('profile.editProfile')}
+        </button>
+      </div>
+
+      {!editing && (
+        <>
+          <div className="card profileSummary">
+            <div className="profileSummary-row">
+              <span>{t('profile.language')}</span>
+              <strong>{LANG_LABELS[language]}</strong>
+            </div>
+            <div className="profileSummary-row">
+              <span>Reminders</span>
+              <strong>{formatOffsetsSummary(offsets)}</strong>
+            </div>
+            <div className="profileSummary-row">
+              <span>{t('profile.city')}</span>
+              <strong>{city || '—'}</strong>
+            </div>
+            <div className="profileSummary-row">
+              <span>{t('profile.age')}</span>
+              <strong>{age === '' ? '—' : age}</strong>
+            </div>
+          </div>
+
+          <section className="formSection">
+            <h2 className="formSection-title">{t('profile.activity')}</h2>
+            <div className="card profileSummary">
+              <div className="profileSummary-row">
+                <span>{t('profile.gamesHosted')}</span>
+                <strong>{hostedQ.data?.length ?? '—'}</strong>
+              </div>
+              <div className="profileSummary-row">
+                <span>{t('profile.blacklist')}</span>
+                <strong>{blacklistQ.data?.length ?? '—'}</strong>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
+
+      {editing && (
+      <>
+      {/* === Section: About you (edit mode) === */}
       <section className="formSection">
         <h2 className="formSection-title">
           <span className="formSection-num"><Icon name="user-account" size={12} /></span>
@@ -243,9 +318,6 @@ export function ProfilePage() {
                     lat: pos.lat,
                     lng: pos.lng,
                   };
-                  // Try to resolve the city name from the coordinates so the
-                  // city field updates — otherwise the user just sees the old
-                  // default (e.g. "Kyiv") next to their real location.
                   const resolved = await reverseGeocode(pos.lat, pos.lng);
                   if (resolved) {
                     patch.city = resolved;
@@ -264,9 +336,6 @@ export function ProfilePage() {
           </div>
         </div>
       </section>
-
-      {/* Skill is set once during first onboarding (/welcome) and then
-          adjusted only by peer ratings after games. No picker here. */}
 
       {/* === Section: Language === */}
       <section className="formSection">
@@ -376,6 +445,8 @@ export function ProfilePage() {
         <Icon name="checkmark-square-01" size={18} />
         {save.isLoading ? t('common.loading') : t('profile.save')}
       </button>
+      </>
+      )}
 
       <button
         type="button"

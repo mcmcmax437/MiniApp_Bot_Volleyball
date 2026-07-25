@@ -54,12 +54,12 @@
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-weight: 700;
-  color: var(--brand-300);
-  font-size: 13px;
+  color: var(--text-secondary);
+  font-size: 12px;
   padding: 3px 10px;
-  border-radius: 999px;
-  background: var(--brand-soft);
-  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
 }
 
 .detailPlayers-subheader {
@@ -275,14 +275,16 @@
 }
 
 .detailActions-primary {
-  /* the existing .btn is fine here, but make sure it stretches to height */
   height: 100%;
+  background: var(--brand) !important;
+  color: var(--text-inverse) !important;
+  box-shadow: none !important;
 }
 
 .detailActions-secondary {
   height: 100%;
-  border: 1px solid var(--border-subtle) !important;
-  background: var(--surface-1) !important;
+  border: 1px solid var(--border-strong) !important;
+  background: transparent !important;
   color: var(--text-primary) !important;
   box-shadow: none !important;
 }
@@ -371,9 +373,9 @@
 .detailHero-title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 26px;
-  font-weight: 800;
-  line-height: 1.1;
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1.15;
   letter-spacing: -0.02em;
   color: #fff;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
@@ -390,16 +392,15 @@
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text-inverse);
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-size: 14px;
-  font-weight: 800;
-  padding: 6px 12px;
-  border-radius: 14px;
-  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  box-shadow: none;
   letter-spacing: 0.02em;
 }
 
@@ -445,11 +446,11 @@
   background: transparent;
   border: none;
   padding: 9px 12px;
-  border-radius: calc(var(--radius-md) - 4px);
+  border-radius: var(--radius-sm);
   color: var(--text-tertiary);
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 700;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out),
     color var(--dur-fast) var(--ease-out);
@@ -460,9 +461,9 @@
 }
 
 .detailTab.isActive {
-  background: var(--gradient-brand);
+  background: var(--brand);
   color: var(--text-inverse);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
 .detailTab.isActive i {

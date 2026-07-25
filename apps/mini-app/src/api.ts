@@ -486,6 +486,9 @@ export function useApi() {
         hasSpots?: boolean;
         isPaid?: boolean;
         isClosed?: boolean;
+        includeClosed?: boolean;
+        hostId?: string;
+        status?: 'OPEN' | 'FULL';
         search?: string;
         playType?: PlayType;
       } = {},
@@ -497,9 +500,12 @@ export function useApi() {
       if (q.from) params.set('from', q.from);
       if (q.to) params.set('to', q.to);
       if (q.minSpots != null) params.set('minSpots', String(q.minSpots));
-      if (q.hasSpots) params.set('hasSpots', 'true');
-      if (q.isPaid) params.set('isPaid', 'true');
-      if (q.isClosed) params.set('isClosed', 'true');
+      if (typeof q.hasSpots === 'boolean') params.set('hasSpots', q.hasSpots ? 'true' : 'false');
+      if (typeof q.isPaid === 'boolean') params.set('isPaid', q.isPaid ? 'true' : 'false');
+      if (typeof q.isClosed === 'boolean') params.set('isClosed', q.isClosed ? 'true' : 'false');
+      if (q.includeClosed) params.set('includeClosed', 'true');
+      if (q.hostId) params.set('hostId', q.hostId);
+      if (q.status) params.set('status', q.status);
       if (q.search) params.set('q', q.search);
       if (q.playType) params.set('playType', q.playType);
       const qs = params.toString();

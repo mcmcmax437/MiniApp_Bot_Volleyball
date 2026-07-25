@@ -42,10 +42,45 @@ export function CreateGamePage() {
   const qc = useQueryClient();
   const { t } = useI18n();
 
-  useQuery(['me'], () => api.me());
+  const meQ = useQuery(['me'], () => api.me());
   const cityQ = useQuery(['default-city'], () => api.defaultCity());
-  const venuesQ = useQuery(['venues', cityQ.data?.city], () =>
-    api.listVenues({ city: cityQ.data?.city ?? undefined }),
+  const filterCity = meQ.data?.city || cityQ.data?.city || undefined;
+  // City catalog + venues from games this user hosted (covers city-alias
+  // mismatches and places used before the picker knew about them).
+  const venuesQ = useQuery(
+    ['venues', filterCity, meQ.data?.id, 'with-hosted'],
+    async () => {
+      const catalog = await api.listVenues({ city: filterCity });
+      if (!meQ.data?.id) return catalog;
+      const from = new Date();
+      from.setFullYear(from.getFullYear() - 2);
+      const hosted = await api.listGames({
+        hostId: meQ.data.id,
+        from: from.toISOString(),
+        to: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        includeClosed: true,
+      });
+      const byId = new Map(catalog.map((v) => [v.id, v]));
+      for (const g of hosted) {
+        const v = g.venue;
+        if (v?.id && !byId.has(v.id)) {
+          byId.set(v.id, {
+            id: v.id,
+            name: v.name,
+            address: v.address,
+            city: v.city ?? filterCity ?? '',
+            lat: v.lat,
+            lng: v.lng,
+            indoor: v.indoor,
+            surface: null,
+            hourlyPrice: 0,
+            capacity: g.spotsTotal,
+          });
+        }
+      }
+      return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+    },
+    { enabled: !!filterCity },
   );
 
   const [venueId, setVenueId] = useState('');
@@ -124,6 +159,7 @@ export function CreateGamePage() {
     {
       onSuccess: (g) => {
         qc.invalidateQueries(['games']); // also matches the versioned keys
+        qc.invalidateQueries(['venues']);
         navigate(`/games/${g.id}`);
       },
     },
