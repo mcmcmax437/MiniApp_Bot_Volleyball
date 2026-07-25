@@ -1,21 +1,21 @@
 /* ============================================================
-   VolleyBot — Design System v2
-   Foundation: Modern dark mobile (Linear/Notion/Cash App patterns)
-   Style: Sport yellow accent + soft glassmorphism
+   VolleyBot — Design System v3 (Premium Sports)
+   Neutral charcoal, cool-white CTAs, Newsreader titles + Inter UI.
+   Soft elevation. No glow / brand gradients. SkillBadge muted scale only.
    ============================================================ */
 
 :root {
   /* === Background scale (deepest → most elevated) === */
-  --bg-0: #050810;
-  --bg-1: #0a0f1c;
-  --bg-2: #111827;
-  --bg-3: #1a2236;
+  --bg-0: #0e0e0e;
+  --bg-1: #121212;
+  --bg-2: #161616;
+  --bg-3: #1c1c1c;
 
   /* === Surface (cards) === */
-  --surface-1: #131a2c;
-  --surface-2: #1c2540;
-  --surface-3: #283154;
-  --surface-hover: #1f2a48;
+  --surface-1: #161616;
+  --surface-2: #1c1c1c;
+  --surface-3: #242424;
+  --surface-hover: #222222;
 
   /* === Borders === */
   --border-subtle: rgba(255, 255, 255, 0.05);
@@ -23,70 +23,69 @@
   --border-strong: rgba(255, 255, 255, 0.14);
 
   /* === Text === */
-  --text-primary: #ffffff;
-  --text-secondary: #c2c9d6;
-  --text-tertiary: #8b94a8;
-  --text-muted: #5d6679;
-  --text-inverse: #0a0f1c;
+  --text-primary: #f5f5f5;
+  --text-secondary: #b3b3b3;
+  --text-tertiary: #7a7a7a;
+  --text-muted: #5c5c5c;
+  --text-inverse: #0e0e0e;
 
-  /* === Brand: sport yellow === */
-  --brand-50: #fff8e6;
-  --brand-100: #ffeec0;
-  --brand-200: #ffdf85;
-  --brand-300: #ffd04a;
-  --brand-400: #ffc52a;
-  --brand: #ffb627;       /* primary accent */
-  --brand-600: #e89e0e;
-  --brand-700: #c4820a;
-  --brand-soft: rgba(255, 182, 39, 0.14);
-  --brand-glow: rgba(255, 182, 39, 0.4);
-  --brand-soft-glow: rgba(255, 182, 39, 0.08);
+  /* === Brand remapped to cool white (mono UI). Legacy --brand-* kept. === */
+  --brand-50: #fafafa;
+  --brand-100: #f0f0f0;
+  --brand-200: #e5e5e5;
+  --brand-300: #e8e8e8;
+  --brand-400: #f5f5f5;
+  --brand: #ffffff;
+  --brand-600: #d4d4d4;
+  --brand-700: #a3a3a3;
+  --brand-soft: rgba(255, 255, 255, 0.08);
+  --brand-glow: transparent;
+  --brand-soft-glow: transparent;
 
-  /* === Sport gradient (multi-stop for richness) === */
-  --gradient-brand: linear-gradient(135deg, #fb923c 0%, #ffb627 50%, #fde047 100%);
-  --gradient-brand-subtle: linear-gradient(135deg, rgba(251, 146, 60, 0.15), rgba(253, 224, 71, 0.05));
-  --gradient-cool: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
-  --gradient-success: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-  --gradient-bg-orb: radial-gradient(circle at 20% 0%, rgba(255, 182, 39, 0.12) 0%, transparent 50%),
-                     radial-gradient(circle at 80% 100%, rgba(99, 102, 241, 0.08) 0%, transparent 50%);
+  /* Gradients → flat (kills leftover yellow CTAs without hunting every file) */
+  --gradient-brand: #ffffff;
+  --gradient-brand-subtle: rgba(255, 255, 255, 0.04);
+  --gradient-cool: #2a2a2a;
+  --gradient-success: #5a9a7a;
+  --gradient-bg-orb: none;
 
-  /* === Semantic === */
-  --success: #10b981;
-  --success-soft: rgba(16, 185, 129, 0.15);
-  --warning: #f59e0b;
-  --warning-soft: rgba(245, 158, 11, 0.15);
-  --danger: #ef4444;
-  --danger-soft: rgba(239, 68, 68, 0.15);
-  --info: #3b82f6;
-  --info-soft: rgba(59, 130, 246, 0.15);
+  /* === Semantic (muted) === */
+  --success: #5a9a7a;
+  --success-soft: rgba(90, 154, 122, 0.15);
+  --warning: #9a7b4a;
+  --warning-soft: rgba(154, 123, 74, 0.15);
+  --danger: #c45c5c;
+  --danger-soft: rgba(196, 92, 92, 0.15);
+  --info: #7a8a9a;
+  --info-soft: rgba(122, 138, 154, 0.15);
 
-  /* === Radii === */
+  /* === Radii: tight controls, medium cards === */
   --radius-xs: 6px;
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 24px;
+  --radius-sm: 8px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-xl: 14px;
   --radius-pill: 999px;
 
-  /* === Shadows === */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.35);
-  --shadow-glow: 0 4px 24px rgba(255, 182, 39, 0.3);
-  --shadow-glow-strong: 0 8px 32px rgba(255, 182, 39, 0.45);
+  /* === Shadows (soft elevation, no glow) === */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 2px 12px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.4);
+  --shadow-glow: none;
+  --shadow-glow-strong: none;
   --shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 
-  /* === Motion === */
+  /* === Motion (quiet craft) === */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --dur-instant: 100ms;
-  --dur-fast: 180ms;
-  --dur-base: 240ms;
-  --dur-slow: 400ms;
+  --dur-fast: 160ms;
+  --dur-base: 220ms;
+  --dur-slow: 320ms;
 
   /* === Typography === */
-  --font-display: "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-display: "Newsreader", Georgia, "Times New Roman", serif;
   --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
@@ -114,8 +113,6 @@ body,
 
 body {
   background: var(--bg-0);
-  background-image: var(--gradient-bg-orb);
-  background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-body);
   font-size: 15px;
@@ -129,8 +126,8 @@ body {
 
 h1, h2, h3, h4, h5 {
   font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: -0.025em;
+  font-weight: 500;
+  letter-spacing: -0.02em;
   margin: 0;
   color: var(--text-primary);
 }
@@ -139,8 +136,8 @@ p { margin: 0; }
 button { font-family: inherit; }
 
 ::selection {
-  background: var(--brand);
-  color: var(--text-inverse);
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
 }
 
 /* Scrollbars */
@@ -278,8 +275,8 @@ body.keyboard-open .app-container {
 
 .tag.accent {
   background: var(--brand-soft);
-  color: var(--brand-300);
-  border-color: rgba(255, 182, 39, 0.25);
+  color: var(--text-secondary);
+  border-color: var(--border-strong);
 }
 
 .tag.success {
@@ -314,45 +311,37 @@ body.keyboard-open .app-container {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: var(--gradient-brand);
+  background: var(--brand);
   color: var(--text-inverse);
   border: none;
-  border-radius: var(--radius-md);
-  padding: 14px 20px;
-  font-weight: 700;
-  font-size: 15px;
-  font-family: var(--font-display);
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  font-weight: 600;
+  font-size: 13px;
+  font-family: var(--font-body);
   letter-spacing: -0.01em;
   cursor: pointer;
-  width: 100%;
-  min-height: 48px;
+  width: auto;
+  min-height: 40px;
   position: relative;
   overflow: hidden;
-  /* Soft shadow only — the old brand glow halo made chips/filters look muddy. */
-  box-shadow: var(--shadow-md), var(--shadow-inner);
+  box-shadow: var(--shadow-sm);
   transition: transform var(--dur-instant) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out),
-    filter var(--dur-fast) var(--ease-out);
+    background var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
 }
 
 .btn::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, transparent 50%);
-  pointer-events: none;
+  display: none;
 }
 
 .btn:hover:not(:disabled) {
-  filter: brightness(1.05);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-lg), var(--shadow-inner);
+  background: var(--brand-200);
+  transform: none;
 }
 
 .btn:active:not(:disabled) {
-  transform: scale(0.98) translateY(0);
-  filter: brightness(0.95);
+  transform: scale(0.98);
   transition-duration: var(--dur-instant);
 }
 
@@ -362,30 +351,43 @@ body.keyboard-open .app-container {
   box-shadow: none;
 }
 
+.btn.btn-block {
+  width: 100%;
+}
+
+/* Dense tool forms: primary submit stretches; Home/Profile CTAs stay compact. */
+button.btn[type="submit"],
+.modal-actions .btn,
+.evalActions .btn,
+.detailActions-full {
+  width: 100%;
+}
+
 .btn.secondary {
-  background: var(--surface-2);
+  background: transparent;
   color: var(--text-primary);
-  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-strong);
+  box-shadow: none;
 }
 
 .btn.secondary:hover:not(:disabled) {
-  background: var(--surface-hover);
-  box-shadow: var(--shadow-md);
+  background: var(--surface-2);
+  box-shadow: none;
 }
 
 .btn.danger {
-  background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
-  color: white;
-  box-shadow: var(--shadow-md), 0 4px 24px rgba(239, 68, 68, 0.3);
+  background: var(--danger);
+  color: #fff;
+  box-shadow: none;
 }
 
 .btn-ghost {
   background: transparent;
-  color: var(--brand-300);
-  border: none;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
   padding: 8px 12px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   border-radius: var(--radius-sm);
   transition: background var(--dur-fast) var(--ease-out);
@@ -407,7 +409,8 @@ body.keyboard-open .app-container {
   width: auto;
   min-height: 0;
   background: transparent;
-  color: var(--brand-300);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
   box-shadow: none;
 }
 .btn.btn-ghost::after,
@@ -445,10 +448,19 @@ body.keyboard-open .app-container {
   flex: 0 0 36px;
   width: 36px;
   height: 36px;
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  box-shadow: none;
 }
 
 .btn-icon::after {
   display: none;
+}
+
+.btn.btn-icon:hover:not(:disabled) {
+  background: var(--surface-3);
+  color: var(--text-primary);
 }
 
 /* Small dot in the corner of an icon button (e.g. "filters are active" badge
@@ -589,14 +601,12 @@ body.keyboard-open .app-container {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(10, 15, 28, 0.78);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  background: #121212;
   border-top: 1px solid var(--border);
   display: flex;
-  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  padding: 8px 8px calc(10px + env(safe-area-inset-bottom));
   z-index: 50;
-  gap: 4px;
+  gap: 2px;
   /* The OS sometimes tries to scroll the page (and the fixed nav with it)
      when the keyboard opens. Pin the nav to the visual viewport via the
      visualViewport API fallback handled in JS — the CSS rule below makes
@@ -629,29 +639,28 @@ body.keyboard-open .app-container {
 }
 
 .bottom-nav a.active {
-  color: var(--brand);
-  background: var(--brand-soft);
+  color: var(--text-primary);
+  background: transparent;
 }
 
-/* Icon container that gets a tinted circle background when active */
+/* Icon container — no yellow pill; active = white icon/label only */
 .bottom-nav a .nav-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-pill);
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background var(--dur-base) var(--ease-out),
-    transform var(--dur-base) var(--ease-spring);
+  transition: opacity var(--dur-fast) var(--ease-out);
 }
 
 .bottom-nav a.active .nav-icon {
-  background: rgba(255, 182, 39, 0.18);
-  transform: scale(1.08);
+  background: transparent;
+  transform: none;
 }
 
 .bottom-nav a:active .nav-icon {
-  transform: scale(0.92);
+  transform: scale(0.96);
 }
 
 /* ============================================================
@@ -726,10 +735,9 @@ body.keyboard-open .app-container {
   padding: 18px;
   position: relative;
   overflow: hidden;
-  transition: transform var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out),
+  transition: border-color var(--dur-fast) var(--ease-out),
     background var(--dur-fast) var(--ease-out);
-  box-shadow: var(--shadow-inner);
+  box-shadow: var(--shadow-md);
 }
 
 .card::before {
@@ -864,13 +872,13 @@ body.keyboard-open .app-container {
 .skillBadge-code { font-variant-numeric: tabular-nums; font-weight: 800; }
 .skillBadge-label { font-weight: 600; letter-spacing: 0; margin-left: 2px; opacity: 0.95; }
 
-/* Solid chips — readable on photos and dark cards (was too translucent). */
-.skillBadge-level_1 { background: #64748b; color: #f8fafc; border-color: rgba(255,255,255,0.2); }
-.skillBadge-level_2 { background: #2563eb; color: #eff6ff; border-color: rgba(255,255,255,0.22); }
-.skillBadge-level_3 { background: #059669; color: #ecfdf5; border-color: rgba(255,255,255,0.22); }
-.skillBadge-level_4 { background: #d97706; color: #fffbeb; border-color: rgba(255,255,255,0.25); }
-.skillBadge-level_5 { background: #ea580c; color: #fff7ed; border-color: rgba(255,255,255,0.25); }
-.skillBadge-level_6 { background: var(--gradient-brand); color: #1a1207; border-color: transparent; }
+/* Muted 6-tone scale — only SkillBadge uses color in the mono UI. */
+.skillBadge-level_1 { background: #6b7280; color: #f8fafc; border-color: rgba(255,255,255,0.12); }
+.skillBadge-level_2 { background: #5b7c99; color: #f0f4f8; border-color: rgba(255,255,255,0.12); }
+.skillBadge-level_3 { background: #5a8f78; color: #f0f8f4; border-color: rgba(255,255,255,0.12); }
+.skillBadge-level_4 { background: #9a7b4a; color: #faf6f0; border-color: rgba(255,255,255,0.12); }
+.skillBadge-level_5 { background: #9a6a52; color: #faf4f0; border-color: rgba(255,255,255,0.12); }
+.skillBadge-level_6 { background: #8a7a9a; color: #f6f4fa; border-color: rgba(255,255,255,0.12); }
 .skillBadge-empty { color: var(--text-muted); }
 
 /* Page header — used on every page except Home (which has its own hero) */
@@ -884,18 +892,18 @@ body.keyboard-open .app-container {
 .page-header-icon {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--gradient-brand-subtle);
-  color: var(--brand);
-  border: 1px solid var(--border-subtle);
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
   flex-shrink: 0;
 }
 .page-header-title {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 500;
   margin: 0;
   font-family: var(--font-display);
   letter-spacing: -0.01em;
@@ -929,10 +937,10 @@ body.keyboard-open .app-container {
   letter-spacing: 0.04em;
 }
 .calendarDay-pill.isToday {
-  background: var(--gradient-brand);
-  color: #1a1207;
+  background: var(--brand);
+  color: var(--text-inverse);
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   font-size: 10px;
   text-transform: none;
   letter-spacing: 0;

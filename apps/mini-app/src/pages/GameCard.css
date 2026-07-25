@@ -74,8 +74,8 @@
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text-inverse);
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-size: 12px;

@@ -52,7 +52,7 @@
   background: var(--brand);
   width: 24px;
   border-radius: 4px;
-  box-shadow: 0 0 8px var(--brand-glow);
+  box-shadow: none;
 }
 
 .welcome-step {
@@ -224,7 +224,7 @@
 .welcome-level-active {
   background: var(--brand-soft);
   border-color: var(--brand);
-  box-shadow: 0 4px 16px var(--brand-glow);
+  box-shadow: var(--shadow-md);
 }
 
 .welcome-levelRow {

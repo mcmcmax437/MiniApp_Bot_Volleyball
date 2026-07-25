@@ -11,41 +11,19 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
-  padding: 12px 14px;
+  margin-bottom: 20px;
+  padding: 16px 18px;
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-md);
 }
 
-.home-hero::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.14) 50%,
-    transparent 100%
-  );
-}
-
+.home-hero::before,
 .home-hero::after {
-  content: "";
-  position: absolute;
-  top: -28px;
-  right: -28px;
-  width: 120px;
-  height: 120px;
-  background: var(--gradient-brand-subtle);
-  filter: blur(28px);
-  pointer-events: none;
-  z-index: 0;
+  display: none;
 }
 
 .home-hero-text {
@@ -63,12 +41,13 @@
   align-items: center;
   gap: 4px;
   align-self: flex-start;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--brand-300);
-  background: var(--brand-soft);
-  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  padding: 3px 8px;
   border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
   margin-bottom: 0;
   letter-spacing: 0.02em;
   max-width: 100%;
@@ -81,19 +60,13 @@
 }
 
 .home-hero-title {
-  font-size: 18px;
-  line-height: 1.2;
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1.15;
+  font-weight: 500;
   margin: 0;
   color: var(--text-primary);
-}
-
-.home-hero-title .wave {
-  display: inline-block;
-  font-size: 15px;
-  transform-origin: 70% 70%;
-  animation: wave 2.4s var(--ease-out) infinite;
-  margin-left: 3px;
+  letter-spacing: -0.02em;
 }
 
 .home-hero-sub {
@@ -105,138 +78,20 @@
 }
 
 /* ============================================================
-   Mascot (robot)
+   Compact create CTA (white button + hint)
    ============================================================ */
-.home-hero-mascot {
-  position: relative;
-  width: 56px;
-  height: 56px;
-  flex-shrink: 0;
-  z-index: 1;
-}
-
-.mascot-glow {
-  position: absolute;
-  inset: -6px;
-  background: var(--gradient-brand);
-  filter: blur(14px);
-  opacity: 0.35;
-  border-radius: 50%;
-  z-index: 0;
-  animation: float 4s ease-in-out infinite;
-}
-
-.mascot-orbit {
-  position: absolute;
-  inset: -3px;
-  border: 1.5px dashed rgba(255, 182, 39, 0.25);
-  border-radius: 50%;
-  z-index: 1;
-  animation: orbit 18s linear infinite;
-}
-
-.mascot-img {
-  position: relative;
-  z-index: 2;
-  width: 56px;
-  height: 56px;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.45));
-  animation: float 3.6s ease-in-out infinite;
-}
-
-/* ============================================================
-   Hero CTA card (the big "Create Game")
-   ============================================================ */
-.hero-cta {
-  width: 100%;
+.home-cta-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  background: var(--gradient-brand);
-  color: var(--text-inverse);
-  border: none;
-  border-radius: var(--radius-lg);
-  padding: 16px 18px;
-  margin-bottom: 16px;
-  cursor: pointer;
-  font-family: var(--font-display);
-  position: relative;
-  overflow: hidden;
-  box-shadow: var(--shadow-md), var(--shadow-inner);
-  transition: transform var(--dur-instant) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out),
-    filter var(--dur-fast) var(--ease-out);
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
-.hero-cta::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, transparent 50%);
-  pointer-events: none;
-}
-
-.hero-cta:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.04);
-  box-shadow: var(--shadow-lg), var(--shadow-inner);
-}
-
-.hero-cta:active {
-  transform: scale(0.98);
-  filter: brightness(0.95);
-  transition-duration: var(--dur-instant);
-}
-
-.hero-cta-content {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  position: relative;
-  z-index: 1;
-}
-
-.hero-cta-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: rgba(10, 15, 28, 0.2);
-  color: var(--text-inverse);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.hero-cta-title {
-  font-size: 16px;
-  font-weight: 700;
-  text-align: left;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
-}
-
-.hero-cta-sub {
+.home-cta-hint {
   font-size: 12px;
+  color: var(--text-tertiary);
   font-weight: 500;
-  text-align: left;
-  opacity: 0.75;
-  margin-top: 2px;
-}
-
-.hero-cta-arrow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(10, 15, 28, 0.15);
-  color: var(--text-inverse);
-  position: relative;
-  z-index: 1;
-  flex-shrink: 0;
 }
 
 /* ============================================================
@@ -250,7 +105,7 @@
   border-radius: var(--radius-lg);
   padding: 16px 8px;
   margin-bottom: 24px;
-  box-shadow: var(--shadow-inner);
+  box-shadow: var(--shadow-md);
 }
 
 .stat {
@@ -262,8 +117,8 @@
 
 .stat-value {
   font-size: 22px;
-  font-weight: 800;
-  font-family: var(--font-display);
+  font-weight: 600;
+  font-family: var(--font-body);
   color: var(--text-primary);
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
@@ -295,14 +150,7 @@
 }
 
 .home-hero-avatar::before {
-  content: "";
-  position: absolute;
-  inset: -8px;
-  background: var(--gradient-brand);
-  filter: blur(20px);
-  opacity: 0.4;
-  border-radius: 50%;
-  z-index: -1;
+  display: none;
 }
 
 /* ============================================================
@@ -314,37 +162,31 @@
   gap: 12px;
   padding: 14px 16px;
   width: 100%;
-  background: var(--brand-soft);
-  border: 1.5px solid var(--brand);
+  background: var(--surface-1);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-lg);
   text-align: left;
   font-family: inherit;
   color: var(--text-primary);
   cursor: pointer;
-  box-shadow: 0 4px 16px var(--brand-glow);
-  animation: onboard-pulse 2.4s ease-in-out infinite;
-  transition: transform var(--dur-fast) var(--ease-out);
+  box-shadow: var(--shadow-md);
+  transition: background var(--dur-fast) var(--ease-out);
   margin-bottom: 16px;
 }
 
 .home-onboardBanner:hover {
-  transform: translateY(-1px);
+  background: var(--surface-2);
 }
 
 .home-onboardBanner:active {
   transform: scale(0.99);
 }
 
-@keyframes onboard-pulse {
-  0%, 100% { box-shadow: 0 4px 16px var(--brand-glow); }
-  50% { box-shadow: 0 6px 24px var(--brand-glow); }
-}
-
 .home-onboardBanner-icon {
   width: 36px;
   height: 36px;
   border-radius: var(--radius-sm);
-  background: var(--gradient-brand);
+  background: var(--brand);
   color: var(--text-inverse);
   display: flex;
   align-items: center;
@@ -359,7 +201,7 @@
 
 .home-onboardBanner-title {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 500;
   font-family: var(--font-display);
   color: var(--text-primary);
   margin-bottom: 2px;
@@ -400,12 +242,13 @@
   padding: 2px 7px;
   font-size: 9px;
   font-weight: 700;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   letter-spacing: 0.02em;
-  border-radius: var(--radius-pill);
-  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
-  color: #fff;
-  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
+  box-shadow: none;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -473,18 +316,9 @@
 }
 
 .home-hero-photoWrap::before {
-  content: "";
-  position: absolute;
-  inset: -5px;
-  background: var(--gradient-brand);
-  filter: blur(12px);
-  opacity: 0.35;
-  border-radius: 50%;
-  z-index: -1;
+  display: none;
 }
 
 .home-hero-locateBtn { background: transparent; border: 1px solid var(--border-subtle); color: var(--text-secondary); width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; flex-shrink: 0; }
-.home-hero-locateBtn:hover { background: var(--surface-2); color: var(--brand); }
-.hero-cta-secondary { background: var(--surface-1); }
-.hero-cta-secondary .hero-cta-icon { background: var(--gradient-cool); }
+.home-hero-locateBtn:hover { background: var(--surface-2); color: var(--text-primary); }
 

@@ -10,14 +10,13 @@
   border-radius: 14px;
   border: 1px solid var(--border);
   background: var(--surface-1);
-  color: var(--brand);
+  color: var(--text-primary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   box-shadow: var(--shadow-md);
-  animation: msgNotify-shake 0.7s var(--ease-out) 0s 3,
-    msgNotify-pulse 2.4s ease-in-out 2.2s infinite;
+  animation: msgNotify-shake 0.7s var(--ease-out) 0s 2;
 }
 
 .msgNotify:active {

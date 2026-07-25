@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VolleyBot — Premium Sports v3 Reference</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-0: #0e0e0e;
+      --bg-1: #121212;
+      --surface: #161616;
+      --surface-2: #1c1c1c;
+      --border: rgba(255,255,255,0.08);
+      --border-strong: rgba(255,255,255,0.14);
+      --text: #f5f5f5;
+      --text-2: #b3b3b3;
+      --text-3: #7a7a7a;
+      --white: #ffffff;
+      --ink: #0e0e0e;
+      --danger: #c45c5c;
+      --success: #5a9a7a;
+      --radius-ctrl: 8px;
+      --radius-card: 14px;
+      --shadow-card: 0 2px 12px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.2);
+      --font-display: "Newsreader", Georgia, serif;
+      --font-body: "Inter", system-ui, sans-serif;
+      /* muted skill scale only */
+      --s1: #6b7280; --s2: #5b7c99; --s3: #5a8f78; --s4: #9a7b4a; --s5: #9a6a52; --s6: #8a7a9a;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: var(--font-body);
+      background: #080808;
+      color: var(--text);
+      padding: 28px 20px 60px;
+    }
+
+    .deck { max-width: 1280px; margin: 0 auto; }
+    .deck-head { margin-bottom: 28px; max-width: 720px; }
+    .deck-kicker {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text-3); margin: 0 0 8px;
+    }
+    .deck-title {
+      font-family: var(--font-display); font-size: 36px; font-weight: 500;
+      margin: 0 0 10px; letter-spacing: -0.02em; line-height: 1.15;
+    }
+    .deck-sub { margin: 0; color: var(--text-2); font-size: 14px; line-height: 1.5; }
+    .deck-legend {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px;
+    }
+    .chip {
+      font-size: 11px; font-weight: 500; color: var(--text-2);
+      border: 1px solid var(--border-strong); padding: 5px 10px;
+      border-radius: 999px; background: var(--surface);
+    }
+
+    .tabs {
+      display: flex; flex-wrap: wrap; gap: 6px; margin: 28px 0 20px;
+    }
+    .tabs button {
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      padding: 8px 14px; border-radius: var(--radius-ctrl);
+      border: 1px solid var(--border); background: transparent;
+      color: var(--text-2); cursor: pointer;
+    }
+    .tabs button[aria-selected="true"] {
+      background: var(--white); color: var(--ink); border-color: var(--white);
+    }
+
+    .stage {
+      display: flex; justify-content: center; gap: 28px; flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
+    .phone {
+      width: 390px; height: 844px; background: var(--bg-0);
+      border-radius: 36px; border: 1px solid #2a2a2a;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.55);
+      overflow: hidden; position: relative; display: none;
+      flex-direction: column;
+    }
+    .phone.is-on { display: flex; }
+    .phone-notch {
+      height: 28px; display: flex; align-items: flex-end; justify-content: center;
+      padding-bottom: 4px; color: var(--text-3); font-size: 11px; font-weight: 600;
+      flex-shrink: 0;
+    }
+    .phone-scroll {
+      flex: 1; overflow: auto; padding: 8px 16px 88px;
+      scrollbar-width: none;
+    }
+    .phone-scroll::-webkit-scrollbar { display: none; }
+
+    /* Nav */
+    .nav {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      background: #121212; border-top: 1px solid var(--border);
+      display: flex; padding: 8px 8px 18px; z-index: 5;
+    }
+    .nav a {
+      flex: 1; text-align: center; text-decoration: none;
+      color: var(--text-3); font-size: 10px; font-weight: 600;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      padding: 6px 2px;
+    }
+    .nav a.active { color: var(--white); }
+    .nav svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+
+    h1.serif {
+      font-family: var(--font-display); font-weight: 500;
+      font-size: 28px; line-height: 1.15; margin: 0; letter-spacing: -0.02em;
+    }
+    h2.serif {
+      font-family: var(--font-display); font-weight: 500;
+      font-size: 22px; margin: 0; letter-spacing: -0.01em;
+    }
+    .section-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--text-3); margin: 22px 0 10px;
+      display: flex; justify-content: space-between; align-items: baseline;
+    }
+    .section-label a { color: var(--text-2); text-decoration: none; font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 500; }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-card); box-shadow: var(--shadow-card);
+    }
+
+    .btn-white {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      background: var(--white); color: var(--ink); border: none;
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      padding: 10px 16px; border-radius: var(--radius-ctrl); cursor: pointer;
+    }
+    .btn-ghost {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      background: transparent; color: var(--text); border: 1px solid var(--border-strong);
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      padding: 10px 16px; border-radius: var(--radius-ctrl); cursor: pointer;
+    }
+    .btn-block { width: 100%; }
+
+    .skill {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 28px; height: 20px; padding: 0 6px; border-radius: 6px;
+      font-size: 10px; font-weight: 700; color: #f8fafc;
+    }
+    .skill.s1 { background: var(--s1); } .skill.s2 { background: var(--s2); }
+    .skill.s3 { background: var(--s3); } .skill.s4 { background: var(--s4); }
+    .skill.s5 { background: var(--s5); } .skill.s6 { background: var(--s6); }
+
+    .avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: #2a2a2a; color: var(--text-2);
+      display: grid; place-items: center; font-weight: 600; font-size: 18px;
+      overflow: hidden; flex-shrink: 0;
+    }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar.sm { width: 28px; height: 28px; font-size: 10px; }
+    .avatar.md { width: 40px; height: 40px; font-size: 14px; }
+
+    /* —— HOME —— */
+    .home-hero.card { padding: 14px 16px; display: flex; gap: 14px; align-items: center; }
+    .home-hero-text { flex: 1; min-width: 0; }
+    .city-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 500; color: var(--text-2);
+      border: 1px solid var(--border); padding: 3px 8px; border-radius: 999px;
+      margin-bottom: 8px;
+    }
+    .home-meta { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .home-meta p { margin: 0; font-size: 12px; color: var(--text-3); }
+    .home-cta-row { display: flex; gap: 8px; margin: 16px 0 4px; align-items: center; }
+    .home-cta-row .hint { font-size: 12px; color: var(--text-3); }
+    .stats {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px;
+    }
+    .stat.card { padding: 12px 10px; text-align: left; }
+    .stat b { display: block; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+    .stat span { font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-3); }
+
+    /* —— GAME CARD (structure kept) —— */
+    .gameCard { overflow: hidden; margin-bottom: 12px; display: block; text-decoration: none; color: inherit; }
+    .gameCard-hero {
+      position: relative; height: 148px;
+      background: #1a1a1a center/cover no-repeat;
+    }
+    .gameCard-hero::after {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0.25) 100%);
+    }
+    .gameCard-heroTop, .gameCard-heroBody { position: relative; z-index: 1; }
+    .gameCard-heroTop {
+      display: flex; justify-content: space-between; padding: 10px 12px;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.04em; padding: 4px 8px; border-radius: 999px;
+      background: rgba(0,0,0,0.55); color: var(--text); border: 1px solid var(--border-strong);
+    }
+    .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+    .cap-pill {
+      font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 999px;
+      background: rgba(255,255,255,0.92); color: var(--ink);
+    }
+    .gameCard-heroBody { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px; z-index: 1; }
+    .gameCard-heroTitle { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .gameCard-heroMeta { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: rgba(255,255,255,0.78); }
+    .gameCard-info {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 12px; gap: 10px;
+    }
+    .players { display: flex; align-items: center; }
+    .players .avatar { margin-right: -6px; border: 2px solid var(--surface); position: relative; }
+    .players .skill {
+      position: absolute; right: -4px; bottom: -4px; min-width: 18px; height: 14px;
+      font-size: 8px; border: 1px solid var(--surface);
+    }
+    .gameCard-right { text-align: right; font-size: 11px; color: var(--text-3); }
+    .gameCard-right strong { color: var(--text); font-weight: 600; }
+    .price { color: var(--text); font-weight: 700; font-size: 13px; }
+
+    /* —— GAMES —— */
+    .filters { display: flex; gap: 6px; overflow: auto; margin-bottom: 14px; padding-bottom: 2px; }
+    .filter {
+      flex-shrink: 0; font-size: 12px; font-weight: 600; padding: 7px 12px;
+      border-radius: var(--radius-ctrl); border: 1px solid var(--border);
+      background: transparent; color: var(--text-2); font-family: inherit;
+    }
+    .filter.on { background: var(--white); color: var(--ink); border-color: var(--white); }
+
+    /* —— DETAIL —— */
+    .detail-hero {
+      height: 200px; margin: -8px -16px 16px; position: relative;
+      background: #222 center/cover no-repeat;
+    }
+    .detail-hero::after {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(to top, var(--bg-0) 0%, transparent 55%);
+    }
+    .detail-hero-body { position: absolute; left: 16px; right: 16px; bottom: 12px; z-index: 1; }
+    .detail-actions { display: flex; gap: 8px; margin: 14px 0; flex-wrap: wrap; }
+    .row-player {
+      display: flex; align-items: center; gap: 10px; padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .row-player:last-child { border-bottom: 0; }
+    .row-player .name { flex: 1; font-size: 14px; font-weight: 500; }
+    .row-player .meta { font-size: 11px; color: var(--text-3); }
+
+    /* —— CREATE —— */
+    .field { margin-bottom: 12px; }
+    .field label {
+      display: block; font-size: 11px; font-weight: 600; color: var(--text-3);
+      margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .field input, .field select, .field textarea {
+      width: 100%; background: var(--surface-2); border: 1px solid var(--border);
+      color: var(--text); border-radius: var(--radius-ctrl); padding: 10px 12px;
+      font-family: inherit; font-size: 14px;
+    }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip-opt {
+      font-size: 12px; font-weight: 600; padding: 7px 11px; border-radius: var(--radius-ctrl);
+      border: 1px solid var(--border); background: transparent; color: var(--text-2);
+      font-family: inherit;
+    }
+    .chip-opt.on { background: var(--white); color: var(--ink); border-color: var(--white); }
+    .create-foot {
+      display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px;
+      padding-top: 14px; border-top: 1px solid var(--border);
+    }
+
+    /* —— PROFILE —— */
+    .profile-head {
+      display: flex; flex-direction: column; align-items: flex-start; gap: 12px;
+      padding: 8px 0 8px;
+    }
+    .profile-photo { width: 88px; height: 88px; border-radius: 50%; background: #2a2a2a; overflow: hidden; }
+    .profile-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-list.card { padding: 4px 14px; margin-top: 14px; }
+    .profile-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 0; border-bottom: 1px solid var(--border); font-size: 14px;
+    }
+    .profile-row:last-child { border-bottom: 0; }
+    .profile-row span { color: var(--text-3); font-size: 13px; }
+    .profile-row strong { font-weight: 500; }
+
+    .note {
+      margin-top: 28px; max-width: 720px; font-size: 12px; color: var(--text-3); line-height: 1.5;
+    }
+    .note code { color: var(--text-2); }
+  </style>
+</head>
+<body>
+  <div class="deck">
+    <header class="deck-head">
+      <p class="deck-kicker">Visual reference · not production</p>
+      <h1 class="deck-title">VolleyBot — Premium Sports v3</h1>
+      <p class="deck-sub">
+        Restrained charcoal, cool-white compact CTAs, Newsreader titles + Inter UI,
+        soft elevation, no glow / gradients / robot. Game card structure preserved; restyled only.
+      </p>
+      <div class="deck-legend">
+        <span class="chip">#0E0E0E / #161616</span>
+        <span class="chip">Newsreader + Inter Variable</span>
+        <span class="chip">SkillBadge muted scale only</span>
+        <span class="chip">Quiet motion (not shown)</span>
+      </div>
+    </header>
+
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" aria-selected="true" data-screen="home">Home</button>
+      <button type="button" role="tab" aria-selected="false" data-screen="games">Games</button>
+      <button type="button" role="tab" aria-selected="false" data-screen="detail">Game Detail</button>
+      <button type="button" role="tab" aria-selected="false" data-screen="create">Create</button>
+      <button type="button" role="tab" aria-selected="false" data-screen="profile">Profile</button>
+    </div>
+
+    <div class="stage">
+      <!-- HOME -->
+      <div class="phone is-on" id="screen-home" data-phone>
+        <div class="phone-notch">9:41</div>
+        <div class="phone-scroll">
+          <div class="home-hero card">
+            <div class="home-hero-text">
+              <div class="city-pill">Poznań</div>
+              <h1 class="serif">Hello, Maksym</h1>
+              <div class="home-meta">
+                <span class="skill s3">S3</span>
+                <p>1 open game in your city</p>
+              </div>
+            </div>
+            <div class="avatar" style="width:56px;height:56px;border-radius:50%;background:#2f2f2f;display:grid;place-items:center;font-size:16px;font-weight:600;color:#b3b3b3;">MT</div>
+          </div>
+
+          <div class="home-cta-row">
+            <button class="btn-white" type="button">Create a game</button>
+            <span class="hint">Invite in seconds</span>
+          </div>
+
+          <div class="stats">
+            <div class="stat card"><b>3</b><span>Open</span></div>
+            <div class="stat card"><b>12</b><span>Free spots</span></div>
+            <div class="stat card"><b>28</b><span>All games</span></div>
+          </div>
+
+          <div class="section-label">
+            <span>Upcoming</span>
+            <a href="#">See all</a>
+          </div>
+
+          <article class="card gameCard">
+            <div class="gameCard-hero" style="background-image:url('https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=800&q=80');">
+              <div class="gameCard-heroTop">
+                <span class="badge"><span class="badge-dot"></span>Open</span>
+                <span class="cap-pill">6/12</span>
+              </div>
+              <div class="gameCard-heroBody">
+                <div class="gameCard-heroTitle">Outdoor</div>
+                <div class="gameCard-heroMeta">
+                  <span>Sun, 26 Jul · 17:00</span>
+                  <span>Bojarska court</span>
+                </div>
+              </div>
+            </div>
+            <div class="gameCard-info">
+              <div class="players">
+                <div class="avatar sm" style="position:relative;background:#3a3a3a;">O<span class="skill s4" style="position:absolute;right:-4px;bottom:-4px;">S4</span></div>
+                <div class="avatar sm" style="background:#333;">M</div>
+                <div class="avatar sm" style="background:#2a2a2a;">A</div>
+              </div>
+              <div class="gameCard-right">
+                <div><strong>6</strong>/12 players · 6 left</div>
+                <div class="price">zł 25.00 <span style="font-weight:500;color:var(--text-3);font-size:10px;">/ player</span></div>
+              </div>
+            </div>
+          </article>
+        </div>
+        <nav class="nav" aria-label="Main">
+          <a class="active" href="#"><svg viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"/></svg>Home</a>
+          <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>Games</a>
+          <a href="#"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Create</a>
+          <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 19a7 7 0 0 1 14 0"/></svg>Profile</a>
+        </nav>
+      </div>
+
+      <!-- GAMES -->
+      <div class="phone" id="screen-games" data-phone>
+        <div class="phone-notch">9:41</div>
+        <div class="phone-scroll">
+          <h1 class="serif" style="font-size:26px;margin-bottom:12px;">Games</h1>
+          <div class="filters">
+            <button class="filter on" type="button">All</button>
+            <button class="filter" type="button">Open</button>
+            <button class="filter" type="button">Today</button>
+            <button class="filter" type="button">Free</button>
+            <button class="filter" type="button">Indoor</button>
+          </div>
+
+          <article class="card gameCard">
+            <div class="gameCard-hero" style="background-image:url('https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=800&q=80');">
+              <div class="gameCard-heroTop">
+                <span class="badge"><span class="badge-dot"></span>Open</span>
+                <span class="cap-pill">6/12</span>
+              </div>
+              <div class="gameCard-heroBody">
+                <div class="gameCard-heroTitle">Outdoor</div>
+                <div class="gameCard-heroMeta">
+                  <span>Sun, 26 Jul · 17:00</span>
+                  <span>Bojarska court</span>
+                </div>
+              </div>
+            </div>
+            <div class="gameCard-info">
+              <div class="players">
+                <div class="avatar sm" style="background:#3a3a3a;">O</div>
+                <div class="avatar sm" style="background:#333;">M</div>
+              </div>
+              <div class="gameCard-right">
+                <div><strong>6</strong>/12 players</div>
+                <div class="price">zł 25.00</div>
+              </div>
+            </div>
+          </article>
+
+          <article class="card gameCard">
+            <div class="gameCard-hero" style="background-image:url('https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80');">
+              <div class="gameCard-heroTop">
+                <span class="badge"><span class="badge-dot" style="background:#9a7b4a;"></span>Full</span>
+                <span class="cap-pill">10/10</span>
+              </div>
+              <div class="gameCard-heroBody">
+                <div class="gameCard-heroTitle">Indoor</div>
+                <div class="gameCard-heroMeta">
+                  <span>Mon, 27 Jul · 19:30</span>
+                  <span>City Hall gym</span>
+                </div>
+              </div>
+            </div>
+            <div class="gameCard-info">
+              <div class="players">
+                <div class="avatar sm" style="background:#3a3a3a;">K</div>
+                <div class="avatar sm" style="background:#333;">+</div>
+              </div>
+              <div class="gameCard-right">
+                <div><strong>10</strong>/10 players</div>
+                <div class="price">Free</div>
+              </div>
+            </div>
+          </article>
+        </div>
+        <nav class="nav">
+          <a href="#"><svg viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"/></svg>Home</a>
+          <a class="active" href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>Games</a>
+          <a href="#"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Create</a>
+          <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 19a7 7 0 0 1 14 0"/></svg>Profile</a>
+        </nav>
+      </div>
+
+      <!-- DETAIL -->
+      <div class="phone" id="screen-detail" data-phone>
+        <div class="phone-notch">9:41</div>
+        <div class="phone-scroll">
+          <div class="detail-hero" style="background-image:url('https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=900&q=80');">
+            <div class="detail-hero-body">
+              <span class="badge" style="margin-bottom:8px;"><span class="badge-dot"></span>Open</span>
+              <h1 class="serif" style="font-size:28px;">Outdoor game</h1>
+              <p style="margin:6px 0 0;font-size:13px;color:var(--text-2);">Sun, 26 Jul · 17:00 · Bojarska court</p>
+            </div>
+          </div>
+
+          <div class="detail-actions">
+            <button class="btn-white" type="button">Join game</button>
+            <button class="btn-ghost" type="button">Invite</button>
+            <button class="btn-ghost" type="button">Share</button>
+          </div>
+
+          <div class="card" style="padding:14px 16px;margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;">
+              <span style="color:var(--text-3);">Spots</span>
+              <strong>6 / 12</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;">
+              <span style="color:var(--text-3);">Per player</span>
+              <strong>zł 25.00</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+              <span style="color:var(--text-3);">Skill</span>
+              <span class="skill s3">S3</span>
+            </div>
+          </div>
+
+          <div class="section-label"><span>Players</span></div>
+          <div class="card" style="padding:4px 14px;">
+            <div class="row-player">
+              <div class="avatar md" style="background:#3a3a3a;">O</div>
+              <div style="flex:1;">
+                <div class="name">Oleksandr <span style="color:var(--text-3);font-size:11px;font-weight:600;">HOST</span></div>
+                <div class="meta">Organizer</div>
+              </div>
+              <span class="skill s4">S4</span>
+            </div>
+            <div class="row-player">
+              <div class="avatar md" style="background:#333;">M</div>
+              <div style="flex:1;">
+                <div class="name">Maksym</div>
+                <div class="meta">Joined</div>
+              </div>
+              <span class="skill s3">S3</span>
+            </div>
+            <div class="row-player">
+              <div class="avatar md" style="background:#2a2a2a;">A</div>
+              <div style="flex:1;">
+                <div class="name">Anna</div>
+                <div class="meta">Joined</div>
+              </div>
+              <span class="skill s2">S2</span>
+            </div>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="#"><svg viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"/></svg>Home</a>
+          <a class="active" href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>Games</a>
+          <a href="#"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Create</a>
+          <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 19a7 7 0 0 1 14 0"/></svg>Profile</a>
+        </nav>
+      </div>
+
+      <!-- CREATE -->
+      <div class="phone" id="screen-create" data-phone>
+        <div class="phone-notch">9:41</div>
+        <div class="phone-scroll">
+          <h1 class="serif" style="font-size:26px;margin-bottom:4px;">Create a game</h1>
+          <p style="margin:0 0 16px;font-size:13px;color:var(--text-3);">Dense tools · same fields, quieter chrome</p>
+
+          <div class="field">
+            <label>Venue</label>
+            <select><option>Bojarska court</option><option>City Hall gym</option></select>
+          </div>
+          <div class="field">
+            <label>Start</label>
+            <input type="text" value="2026-07-26 17:00" readonly />
+          </div>
+          <div class="field">
+            <label>Play type</label>
+            <div class="chip-row">
+              <button class="chip-opt on" type="button">Outdoor</button>
+              <button class="chip-opt" type="button">Indoor</button>
+              <button class="chip-opt" type="button">Beach</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Skill level</label>
+            <div class="chip-row">
+              <button class="chip-opt" type="button">S1</button>
+              <button class="chip-opt" type="button">S2</button>
+              <button class="chip-opt on" type="button">S3</button>
+              <button class="chip-opt" type="button">S4</button>
+              <button class="chip-opt" type="button">S5</button>
+              <button class="chip-opt" type="button">S6</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Spots</label>
+            <input type="text" value="12" readonly />
+          </div>
+          <div class="field">
+            <label>Total cost</label>
+            <input type="text" value="300.00 PLN" readonly />
+          </div>
+          <div class="field">
+            <label>Notes</label>
+            <textarea rows="2" readonly>Bring a ball if you have one.</textarea>
+          </div>
+
+          <div class="create-foot">
+            <button class="btn-ghost" type="button">Cancel</button>
+            <button class="btn-white" type="button">Publish game</button>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="#"><svg viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"/></svg>Home</a>
+          <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>Games</a>
+          <a class="active" href="#"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Create</a>
+          <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 19a7 7 0 0 1 14 0"/></svg>Profile</a>
+        </nav>
+      </div>
+
+      <!-- PROFILE -->
+      <div class="phone" id="screen-profile" data-phone>
+        <div class="phone-notch">9:41</div>
+        <div class="phone-scroll">
+          <div class="profile-head">
+            <div class="profile-photo" style="display:grid;place-items:center;font-size:28px;font-weight:600;color:#b3b3b3;">MT</div>
+            <div>
+              <h1 class="serif">Maksym Tereshkovych</h1>
+              <div class="home-meta" style="margin-top:8px;">
+                <span class="skill s3">S3</span>
+                <p style="margin:0;font-size:12px;color:var(--text-3);">Poznań · Admin</p>
+              </div>
+            </div>
+            <button class="btn-white" type="button">Edit profile</button>
+          </div>
+
+          <div class="profile-list card">
+            <div class="profile-row"><span>Language</span><strong>English</strong></div>
+            <div class="profile-row"><span>Reminders</span><strong>1h only</strong></div>
+            <div class="profile-row"><span>City</span><strong>Poznań</strong></div>
+            <div class="profile-row"><span>Age</span><strong>28</strong></div>
+          </div>
+
+          <div class="section-label"><span>Activity</span></div>
+          <div class="profile-list card">
+            <div class="profile-row"><span>Games hosted</span><strong>14</strong></div>
+            <div class="profile-row"><span>Games joined</span><strong>31</strong></div>
+            <div class="profile-row"><span>Blacklist</span><strong>2</strong></div>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="#"><svg viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"/></svg>Home</a>
+          <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>Games</a>
+          <a href="#"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Create</a>
+          <a class="active" href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 19a7 7 0 0 1 14 0"/></svg>Profile</a>
+        </nav>
+      </div>
+    </div>
+
+    <p class="note">
+      Open this file in a browser: <code>docs/visual-ref/premium-sports-v3.html</code>.
+      Approve / request changes on the look. No app code until you say the reference is the target.
+    </p>
+  </div>
+
+  <script>
+    const tabs = document.querySelectorAll('.tabs button');
+    const phones = document.querySelectorAll('[data-phone]');
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const id = tab.dataset.screen;
+        tabs.forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
+        phones.forEach((p) => p.classList.toggle('is-on', p.id === 'screen-' + id));
+      });
+    });
+  </script>
+</body>
+</html>

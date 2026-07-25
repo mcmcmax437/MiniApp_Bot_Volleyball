@@ -183,7 +183,6 @@ export function HomePage() {
           <div className="home-hero-titleRow">
             <h1 className="home-hero-title">
               {t('home.hello', { name: firstName })}
-              <span className="wave" aria-hidden="true">👋</span>
             </h1>
             {meQ.data?.isSuperAdmin && (
               <span
@@ -226,19 +225,11 @@ export function HomePage() {
           </div>
         </div>
         <div className="home-hero-photoWrap">
-          {meQ.data?.photoUrl || photoUrl ? (
-            <Photo
-              src={meQ.data?.photoUrl ?? photoUrl}
-              name={firstName}
-              size={56}
-            />
-          ) : (
-            <div className="home-hero-mascot" aria-hidden="true">
-              <div className="mascot-glow" />
-              <div className="mascot-orbit" />
-              <img className="mascot-img" src="/robot.png" alt="" />
-            </div>
-          )}
+          <Photo
+            src={meQ.data?.photoUrl ?? photoUrl ?? null}
+            name={firstName}
+            size={56}
+          />
         </div>
       </header>
 
@@ -255,20 +246,13 @@ export function HomePage() {
         </button>
       )}
 
-      <button className="hero-cta" onClick={goCreate}>
-        <div className="hero-cta-content">
-          <div className="hero-cta-icon">
-            <Icon name="plus-sign" size={22} />
-          </div>
-          <div>
-            <div className="hero-cta-title">{t('home.createGame')}</div>
-            <div className="hero-cta-sub">{t('home.createGameSub')}</div>
-          </div>
-        </div>
-        <div className="hero-cta-arrow">
-          <Icon name="arrow-right-01" size={18} />
-        </div>
-      </button>
+      <div className="home-cta-row">
+        <button type="button" className="btn" onClick={goCreate}>
+          <Icon name="plus-sign" size={16} />
+          {t('home.createGame')}
+        </button>
+        <span className="home-cta-hint">{t('home.createGameSub')}</span>
+      </div>
 
       <div className="stat-strip">
         <div className="stat">

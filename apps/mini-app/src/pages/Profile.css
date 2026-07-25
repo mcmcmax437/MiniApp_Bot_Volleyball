@@ -59,7 +59,7 @@
   flex-shrink: 0;
   position: relative;
   z-index: 1;
-  box-shadow: 0 4px 16px var(--brand-glow);
+  box-shadow: var(--shadow-md);
   letter-spacing: -0.02em;
 }
 
@@ -144,7 +144,7 @@
 }
 
 .profileHero-badge-admin {
-  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+  background: var(--surface-3);
   color: white;
   box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
 }
@@ -185,7 +185,7 @@
 }
 
 .formSection-num-admin {
-  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+  background: var(--surface-3);
   color: white;
 }
 
@@ -280,7 +280,7 @@
   background: var(--brand-soft);
   border-color: var(--brand);
   color: var(--brand-300);
-  box-shadow: 0 4px 16px var(--brand-glow);
+  box-shadow: var(--shadow-md);
 }
 
 .skillCard-active i {
@@ -419,7 +419,7 @@
 .reminderOption-active {
   background: var(--brand-soft);
   border-color: var(--brand);
-  box-shadow: 0 4px 16px var(--brand-glow);
+  box-shadow: var(--shadow-md);
 }
 
 .reminderOption-active .reminderOption-icon {
@@ -438,7 +438,7 @@
 .reminderOption-active .radio-dot {
   width: 10px;
   height: 10px;
-  box-shadow: 0 0 8px var(--brand-glow);
+  box-shadow: none;
 }
 
 /* ============================================================
@@ -498,7 +498,7 @@
   width: 44px;
   height: 44px;
   border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+  background: var(--surface-3);
   color: white;
   display: flex;
   align-items: center;
@@ -570,7 +570,7 @@
 }
 
 .profilePhotoStatus-admin {
-  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+  background: var(--surface-3);
   color: #fff;
 }
 
