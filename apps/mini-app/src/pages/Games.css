@@ -78,14 +78,14 @@
 }
 
 /* ============================================================
-   Filter chips
+   Filter chips — outline inactive / solid white active (visual ref)
    ============================================================ */
 .skillChips {
   display: flex;
   gap: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   overflow-x: auto;
-  padding: 2px 2px 8px;
+  padding: 0 0 4px;
   scrollbar-width: none;
   scroll-snap-type: x proximity;
 }
@@ -99,18 +99,21 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 12px;
-  border-radius: var(--radius-pill);
-  background: var(--surface-1);
-  border: 1px solid var(--border);
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--border-strong);
   color: var(--text-secondary);
   font-size: 12px;
-  font-weight: 700;
-  font-family: inherit;
+  font-weight: 600;
+  font-family: var(--font-body);
   cursor: pointer;
-  transition: all var(--dur-fast) var(--ease-out);
+  transition: background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
   min-height: 32px;
   scroll-snap-align: start;
+  box-shadow: none;
 }
 
 .chip:hover {
@@ -120,15 +123,15 @@
 }
 
 .chip:active {
-  transform: scale(0.96);
+  transform: scale(0.98);
   transition-duration: var(--dur-instant);
 }
 
 .chip-active {
-  background: var(--gradient-brand);
+  background: var(--brand);
   color: var(--text-inverse);
-  border-color: transparent;
-  box-shadow: var(--shadow-sm);
+  border-color: var(--brand);
+  box-shadow: none;
 }
 
 .chip-active i {
@@ -141,7 +144,7 @@
 
 .gamesPage .page-header .gamesHeader-tool.isActive,
 .gamesPage .page-header .gamesHeader-clear {
-  color: var(--brand);
+  color: var(--text-primary);
 }
 
 .gamesFilters {

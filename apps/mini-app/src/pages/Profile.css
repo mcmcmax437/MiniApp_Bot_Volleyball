@@ -15,33 +15,15 @@
   padding: 20px;
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  box-shadow: var(--shadow-md);
 }
 
-.profileHero::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.12) 50%, transparent 100%);
-}
-
+.profileHero::before,
 .profileHero::after {
-  content: "";
-  position: absolute;
-  top: -30px;
-  right: -30px;
-  width: 160px;
-  height: 160px;
-  background: var(--gradient-cool);
-  filter: blur(50px);
-  opacity: 0.18;
-  border-radius: 50%;
-  pointer-events: none;
+  display: none;
 }
 
 .profileAvatar {
@@ -71,8 +53,8 @@
 }
 
 .profileHero-name {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 500;
   font-family: var(--font-display);
   color: var(--text-primary);
   margin: 0 0 4px;

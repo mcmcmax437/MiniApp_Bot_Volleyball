@@ -95,49 +95,52 @@
 }
 
 /* ============================================================
-   Stats strip
+   Stats strip — three separate cards (matches visual ref)
    ============================================================ */
 .stat-strip {
-  display: flex;
-  align-items: stretch;
-  background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 16px 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
   margin-bottom: 24px;
-  box-shadow: var(--shadow-md);
+  background: transparent;
+  border: none;
+  padding: 0;
+  box-shadow: none;
 }
 
 .stat {
-  flex: 1;
-  text-align: center;
-  padding: 0 4px;
-  position: relative;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 12px 10px;
+  text-align: left;
+  min-width: 0;
 }
 
 .stat-value {
-  font-size: 22px;
+  display: block;
+  font-size: 20px;
   font-weight: 600;
   font-family: var(--font-body);
   color: var(--text-primary);
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .stat-label {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-tertiary);
-  font-weight: 500;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  line-height: 1.25;
 }
 
 .stat-divider {
-  width: 1px;
-  background: var(--border);
-  margin: 4px 0;
+  display: none;
 }
 
 /* ============================================================

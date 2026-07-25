@@ -146,37 +146,22 @@ export function ProfilePage() {
                 </span>
               ) : null
             }
-            bottomRightBadge={
-              effectiveSkillLevel(meQ.data) ? (
-                <SkillBadge
-                  level={effectiveSkillLevel(meQ.data)!}
-                  size="sm"
-                  className="skillBadge-on-photo"
-                />
-              ) : null
-            }
           />
         </div>
         <div className="profileHero-info">
           <h1 className="profileHero-name">
             {meQ.data.firstName} {meQ.data.lastName ?? ""}
           </h1>
-          <div className="profileHero-meta">
-            {meQ.data.username && (
+          {meQ.data.username && (
+            <div className="profileHero-meta">
               <span className="profileHero-username">@{meQ.data.username}</span>
-            )}
-            {isAdmin && (
-              <span className="profileHero-badge profileHero-badge-admin">
-                <Icon name="crown" size={11} />
-                {t('profile.status.admin')}
-              </span>
-            )}
-          </div>
+            </div>
+          )}
           {effectiveSkillLevel(meQ.data) && (
-            // Display-only — level is set at first onboarding, then adjusted
-            // by peer ratings. No tap-to-change from Profile either.
+            // Display-only under the name (not on the photo) — avoids
+            // corner-badge clipping and matches the prominent skill rule.
             <div className="profileHero-skillBig" aria-label={t('profile.skill')}>
-              <SkillBadge level={effectiveSkillLevel(meQ.data)!} size="md" withLabel />
+              <SkillBadge level={effectiveSkillLevel(meQ.data)!} size="xl" withLabel />
             </div>
           )}
           {meQ.data.evaluatedSkillLevel && meQ.data.skillLevel &&

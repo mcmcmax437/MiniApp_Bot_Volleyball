@@ -259,14 +259,12 @@ export function HomePage() {
           <div className="stat-value">{openGames.length}</div>
           <div className="stat-label">{t('home.openGames')}</div>
         </div>
-        <div className="stat-divider" />
         <div className="stat">
           <div className="stat-value">
             {openGames.reduce((sum, g) => sum + (g.spotsTotal - g.participantsCount), 0)}
           </div>
           <div className="stat-label">{t('home.freeSpots')}</div>
         </div>
-        <div className="stat-divider" />
         <div className="stat">
           <div className="stat-value">{gamesQ.data?.length ?? 0}</div>
           <div className="stat-label">{t('home.allGames')}</div>
