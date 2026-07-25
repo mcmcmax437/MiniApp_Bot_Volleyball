@@ -24,6 +24,7 @@ interface DayBucket {
     skillLevel: SkillLevel;
     spotsTotal: number;
     participantsCount: number;
+    isClosed: boolean;
     venue: { name: string; address: string };
   }>;
 }
@@ -59,6 +60,8 @@ export function CalendarPage() {
         city: filterCity,
         from: from.toISOString(),
         to: to.toISOString(),
+        // Closed lobbies stay visible so the lock + capacity still show.
+        includeClosed: true,
       }),
     { enabled: !!filterCity },
   );
@@ -142,7 +145,6 @@ export function CalendarPage() {
                       hour: '2-digit',
                       minute: '2-digit',
                     });
-                    const left = g.spotsTotal - g.participantsCount;
                     return (
                       <Link
                         key={g.id}
@@ -157,8 +159,22 @@ export function CalendarPage() {
                         </span>
                         <span className="calendarGame-info">
                           <span className="calendarGame-venue">{g.venue.name}</span>
-                          <span className="calendarGame-meta">
-                            {left > 0 ? t('game.spotsLeft', { n: left }) : t('game.spotsFull')}
+                        </span>
+                        <span className="calendarGame-side">
+                          {g.isClosed && (
+                            <span
+                              className="calendarGame-lock"
+                              title={t('game.closed')}
+                              aria-label={t('game.closed')}
+                            >
+                              <Icon name="lock" size={14} />
+                            </span>
+                          )}
+                          <span
+                            className="calendarGame-capacity"
+                            aria-label={`${g.participantsCount}/${g.spotsTotal} ${t('game.playersShort')}`}
+                          >
+                            {g.participantsCount}/{g.spotsTotal}
                           </span>
                         </span>
                       </Link>

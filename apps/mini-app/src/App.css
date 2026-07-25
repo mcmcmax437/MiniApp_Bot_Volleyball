@@ -262,6 +262,8 @@ body.keyboard-open .app-container {
 .tag {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  text-align: center;
   gap: 4px;
   padding: 4px 10px;
   border-radius: var(--radius-pill);
@@ -271,6 +273,7 @@ body.keyboard-open .app-container {
   color: var(--text-secondary);
   letter-spacing: 0.01em;
   border: 1px solid var(--border-subtle);
+  line-height: 1;
 }
 
 .tag.accent {
@@ -965,7 +968,7 @@ button.btn[type="submit"],
 }
 .calendarGame {
   display: grid;
-  grid-template-columns: 56px 36px 1fr;
+  grid-template-columns: 56px 36px 1fr auto;
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
@@ -996,6 +999,31 @@ button.btn[type="submit"],
 .calendarGame-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .calendarGame-venue { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .calendarGame-meta { font-size: 12px; color: var(--text-tertiary); }
+.calendarGame-side {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.calendarGame-capacity {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+}
+.calendarGame-lock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text-tertiary);
+  border: 1px solid var(--border-subtle);
+}
 
 /* Blacklist */
 .blacklistList { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
@@ -1262,6 +1290,8 @@ button.btn[type="submit"],
 .closedPill {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  text-align: center;
   gap: 4px;
   padding: 3px 8px;
   background: var(--surface-3);
@@ -1269,6 +1299,7 @@ button.btn[type="submit"],
   font-size: 11px;
   color: var(--text-secondary);
   font-weight: 600;
+  line-height: 1;
 }
 
 .requestBanner {
