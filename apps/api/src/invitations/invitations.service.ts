@@ -20,7 +20,7 @@ export class InvitationsService {
     }
     const game = await this.prisma.game.findUnique({
       where: { id: gameId },
-      include: { venue: { select: { name: true } } },
+      include: { venue: { select: { name: true, address: true } } },
     });
     if (!game) throw new NotFoundException('Game not found');
     if (game.hostId !== me.id) {
@@ -72,6 +72,7 @@ export class InvitationsService {
         inviteMessage({
           inviterName,
           venueName: game.venue.name,
+          venueAddress: game.venue.address,
           startAt: game.startAt,
           locale,
         }),

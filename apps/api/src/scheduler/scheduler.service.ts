@@ -60,6 +60,7 @@ export class SchedulerService {
 
           const text = reminderMessage({
             venueName: g.venue.name,
+            venueAddress: g.venue.address,
             startAt: g.startAt,
             minutesUntil: offset,
             players: g.participants.length,
@@ -114,6 +115,7 @@ export class SchedulerService {
     for (const p of game.participants) {
       const text = cancelledMessage({
         venueName: game.venue.name,
+        venueAddress: game.venue.address,
         startAt: game.startAt,
         locale: p.user.language ?? 'en',
       });

@@ -1,6 +1,10 @@
 /**
  * HTML bodies for Telegram bot notifications.
  * `TelegramSender` always sends with parse_mode: 'HTML'.
+ *
+ * Times must use APP_TIMEZONE (not the VPS clock). The API stores UTC
+ * instants; without an explicit zone, Node on the server formats as UTC
+ * and Telegram shows e.g. 12:00 while the Mini App (phone local) shows 15:00.
  */
 
 function esc(s: string): string {
@@ -10,23 +14,45 @@ function esc(s: string): string {
     .replace(/>/g, '&gt;');
 }
 
-/** Human-friendly local datetime, e.g. "Sun, 26 Jul · 17:00". */
-export function formatGameWhen(date: Date, locale = 'en'): string {
+/** IANA zone for game times in bot DMs. Override with APP_TIMEZONE in .env. */
+export function appTimeZone(): string {
+  return (
+    process.env.APP_TIMEZONE?.trim() ||
+    process.env.TZ?.trim() ||
+    'Europe/Warsaw'
+  );
+}
+
+/** Human-friendly datetime in the app timezone, e.g. "Sun, 26 Jul · 17:00". */
+export function formatGameWhen(
+  date: Date,
+  locale = 'en',
+  timeZone: string = appTimeZone(),
+): string {
   try {
     const day = new Intl.DateTimeFormat(locale, {
       weekday: 'short',
       day: 'numeric',
       month: 'short',
+      timeZone,
     }).format(date);
     const time = new Intl.DateTimeFormat(locale, {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,
+      timeZone,
     }).format(date);
     return `${day} · ${time}`;
   } catch {
     return date.toISOString().replace('T', ' ').slice(0, 16);
   }
+}
+
+function placeLine(venueName: string, venueAddress?: string | null): string {
+  if (venueAddress && venueAddress.trim() && venueAddress.trim() !== venueName.trim()) {
+    return `📍 <b>${esc(venueName)}</b>\n   ${esc(venueAddress.trim())}`;
+  }
+  return `📍 <b>${esc(venueName)}</b>`;
 }
 
 function card(lines: string[]): string {
@@ -36,6 +62,7 @@ function card(lines: string[]): string {
 export function inviteMessage(opts: {
   inviterName: string;
   venueName: string;
+  venueAddress?: string | null;
   startAt: Date;
   locale?: string;
 }): string {
@@ -45,7 +72,7 @@ export function inviteMessage(opts: {
     ``,
     `<b>${esc(opts.inviterName)}</b> invited you to a volleyball game.`,
     ``,
-    `📍 <b>${esc(opts.venueName)}</b>`,
+    placeLine(opts.venueName, opts.venueAddress),
     `🗓 ${esc(when)}`,
     ``,
     `<i>Open the app to accept or decline.</i>`,
@@ -54,6 +81,7 @@ export function inviteMessage(opts: {
 
 export function reminderMessage(opts: {
   venueName: string;
+  venueAddress?: string | null;
   startAt: Date;
   minutesUntil: number;
   players: number;
@@ -68,7 +96,7 @@ export function reminderMessage(opts: {
   return card([
     `⏰ <b>Game reminder</b> · in ${esc(lead)}`,
     ``,
-    `📍 <b>${esc(opts.venueName)}</b>`,
+    placeLine(opts.venueName, opts.venueAddress),
     `🗓 ${esc(when)}`,
     `👥 ${opts.players}/${opts.spotsTotal} players`,
     ``,
@@ -78,6 +106,7 @@ export function reminderMessage(opts: {
 
 export function cancelledMessage(opts: {
   venueName: string;
+  venueAddress?: string | null;
   startAt: Date;
   locale?: string;
 }): string {
@@ -85,7 +114,7 @@ export function cancelledMessage(opts: {
   return card([
     `❌ <b>Game cancelled</b>`,
     ``,
-    `📍 <b>${esc(opts.venueName)}</b>`,
+    placeLine(opts.venueName, opts.venueAddress),
     `🗓 ${esc(when)}`,
     ``,
     `<i>The host cancelled this game.</i>`,
