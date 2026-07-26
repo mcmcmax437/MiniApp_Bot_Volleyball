@@ -147,6 +147,9 @@ export const ru: Record<string, string> = {
   'game.evaluations': 'Оценить игроков',
   'game.managePayments': 'Платежи',
   'game.invitePlayers': 'Пригласить игроков',
+  'game.share': 'Поделиться',
+  'game.shareText': '🏐 {venue}\n🗓 {when}\nПрисоединяйся к игре в VolleyBot:',
+  'game.shareUnavailable': 'Поделиться пока нельзя — попробуй чуть позже.',
 
   'gameDetail.players': 'Игроки',
   'gameDetail.noPlayers': 'Игроков ещё нет',

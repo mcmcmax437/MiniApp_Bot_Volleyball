@@ -154,6 +154,9 @@ export const uk: Record<string, string> = {
   'game.evaluations': 'Оцінити гравців',
   'game.managePayments': 'Оплати',
   'game.invitePlayers': 'Запросити гравців',
+  'game.share': 'Поділитися',
+  'game.shareText': '🏐 {venue}\n🗓 {when}\nПриєднуйся до гри у VolleyBot:',
+  'game.shareUnavailable': 'Поділитися поки неможливо — спробуй трохи згодом.',
 
   'gameDetail.players': 'Гравці',
   'gameDetail.noPlayers': 'Ще немає гравців',

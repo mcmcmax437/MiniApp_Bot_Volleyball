@@ -6,6 +6,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { CreateVenueDto, ListVenuesQuery } from './dto';
 import { ConfigService } from '@nestjs/config';
 import { canonicalizeCity, expandCityFilter } from '../shared/city';
+import { TelegramSender } from '../bot/telegram-sender';
 import type { User } from '@prisma/client';
 
 @Controller('venues')
@@ -13,6 +14,7 @@ export class VenuesController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly bot: TelegramSender,
   ) {}
 
   @Get()
@@ -47,6 +49,8 @@ export class VenuesController {
       lat: Number(this.config.get<string>('DEFAULT_CITY_LAT') ?? 0) || null,
       lng: Number(this.config.get<string>('DEFAULT_CITY_LNG') ?? 0) || null,
       timeZone,
+      /** Bot @username (no @) for t.me share / startapp deep links. */
+      botUsername: this.bot.getUsername(),
     };
   }
 

@@ -29,11 +29,17 @@ export interface TelegramUser {
 
 interface TelegramWebApp {
   initData: string;
-  initDataUnsafe?: { user?: TelegramUser };
+  initDataUnsafe?: {
+    user?: TelegramUser;
+    /** From t.me/<bot>?startapp=<param> when the Mini App is opened. */
+    start_param?: string;
+  };
   colorScheme: 'light' | 'dark';
   ready: () => void;
   expand: () => void;
   close: () => void;
+  /** Open a t.me / telegram.me link inside Telegram (share sheet, chats, …). */
+  openTelegramLink?: (url: string) => void;
   viewportHeight?: number;
   viewportStableHeight?: number;
   isExpanded?: boolean;

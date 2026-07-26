@@ -13,9 +13,13 @@ export class TelegramSender implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(TelegramSender.name);
   private bot: Bot<Context> | null = null;
   private readonly token: string | undefined;
+  /** @username without @ — from getMe() or BOT_USERNAME env. */
+  private botUsername: string | null = null;
 
   constructor(private readonly config: ConfigService) {
     this.token = this.config.get<string>('BOT_TOKEN');
+    const envUser = this.config.get<string>('BOT_USERNAME')?.trim().replace(/^@/, '');
+    if (envUser) this.botUsername = envUser;
   }
 
   onModuleInit() {
@@ -39,17 +43,43 @@ export class TelegramSender implements OnModuleInit, OnModuleDestroy {
       }
     });
 
+    this.bot.api
+      .getMe()
+      .then((me) => {
+        if (me.username) {
+          this.botUsername = me.username;
+          this.logger.log(`Bot username @${me.username}`);
+        }
+      })
+      .catch((err) => this.logger.warn(`getMe failed: ${(err as Error).message}`));
+
     this.bot
       .start()
       .catch((err) => this.logger.error(`bot.start failed: ${err?.message ?? err}`));
+  }
+
+  /** Public bot username (no @) for t.me deep links / share sheets. */
+  getUsername(): string | null {
+    return this.botUsername;
   }
 
   async onModuleDestroy() {
     if (this.bot) await this.bot.stop();
   }
 
-  /** Shared “Open App” button used on invite / reminder / cancel messages. */
-  openAppButton(label = 'Open app'): InlineKeyboard | undefined {
+  /**
+   * Shared “Open App” button used on invite / reminder / cancel messages.
+   * Prefers a t.me deep link (opens the Mini App) when we know the bot
+   * username; falls back to WEBAPP_URL.
+   */
+  openAppButton(label = 'Open app', startParam?: string): InlineKeyboard | undefined {
+    const username = this.getUsername();
+    if (username) {
+      const q = startParam
+        ? `?startapp=${encodeURIComponent(startParam)}`
+        : '';
+      return new InlineKeyboard().url(label, `https://t.me/${username}${q}`);
+    }
     const webappUrl = this.config.get<string>('WEBAPP_URL')?.trim();
     if (!webappUrl) return undefined;
     return new InlineKeyboard().url(label, webappUrl);

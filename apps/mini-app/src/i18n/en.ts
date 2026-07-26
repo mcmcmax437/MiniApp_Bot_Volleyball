@@ -161,6 +161,9 @@ export const en: Record<string, string> = {
   'game.evaluations': 'Rate players',
   'game.managePayments': 'Track payments',
   'game.invitePlayers': 'Invite players',
+  'game.share': 'Share',
+  'game.shareText': '🏐 {venue}\n🗓 {when}\nJoin the game in VolleyBot:',
+  'game.shareUnavailable': 'Sharing isn’t available yet — try again in a moment.',
 
   // ===== Game detail =====
   'gameDetail.players': 'Players',

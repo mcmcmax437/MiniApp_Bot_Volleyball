@@ -28,6 +28,7 @@ import { MessageNotify } from './components/MessageNotify';
 import { useAnalytics } from './hooks/useAnalytics';
 import { useInvitationRealtime } from './hooks/useInvitationRealtime';
 import { setAppTimeZone } from './lib/datetime';
+import { parseGameStartParam } from './lib/share-game';
 import './App.css';
 
 function LoadingScreen() {
@@ -166,6 +167,21 @@ export function App() {
       loginMut.mutate();
     }
   }, [ready, initData, meQ.isFetched, meQ.data, loginMut.isLoading]);
+
+  // Deep link: t.me/<bot>?startapp=g_<gameId> → open that game.
+  useEffect(() => {
+    if (!ready) return;
+    const param =
+      window.Telegram?.WebApp?.initDataUnsafe?.start_param ??
+      new URLSearchParams(window.location.search).get('tgWebAppStartParam');
+    const gameId = parseGameStartParam(param);
+    if (!gameId) return;
+    // Only auto-navigate once per cold start (avoid fighting back-button).
+    const key = `volley:startapp:${gameId}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+    navigate(`/games/${gameId}`, { replace: true });
+  }, [ready, navigate]);
 
   // Onboarding redirect
   useEffect(() => {

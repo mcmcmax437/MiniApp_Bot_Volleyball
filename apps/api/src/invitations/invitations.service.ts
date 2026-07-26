@@ -76,7 +76,7 @@ export class InvitationsService {
           startAt: game.startAt,
           locale,
         }),
-        { replyMarkup: this.bot.openAppButton('Open invite') },
+        { replyMarkup: this.bot.openAppButton('Open invite', `g_${gameId}`) },
       )
       .catch(() => undefined);
 

@@ -16,6 +16,7 @@ import { EvaluatePlayersModal } from './EvaluatePlayersModal';
 import { InvitePlayerModal } from './InvitePlayerModal';
 import { confirmDialog } from '../lib/confirm';
 import { formatGameDateTime } from '../lib/datetime';
+import { shareGameToTelegram } from '../lib/share-game';
 import './GameDetail.css';
 
 function formatMoney(minor: number, currency: string): string {
@@ -154,6 +155,10 @@ export function GameDetailPage() {
 
   const meQ = useQuery(['me'], () => api.me());
   const gameQ = useQuery(['game', id], () => api.getGame(id!), { enabled: !!id });
+  const cityQ = useQuery(['default-city'], () => api.defaultCity(), {
+    staleTime: 60 * 60_000,
+  });
+  const [shareError, setShareError] = useState<string | null>(null);
 
   // Pending join-request for closed lobbies
   const myJoinRequest = useMemo(() => {
@@ -554,6 +559,28 @@ export function GameDetailPage() {
       {/* Action area */}
       {!isClosed && (
         <div className="detailActions">
+          <button
+            type="button"
+            className="btn btn-sm btn-ghost detailActions-secondary"
+            onClick={() => {
+              setShareError(null);
+              const bot = cityQ.data?.botUsername;
+              if (!bot) {
+                setShareError(t('game.shareUnavailable'));
+                return;
+              }
+              const when = formatGameDateTime(g.startAt, { locale: lang });
+              const ok = shareGameToTelegram({
+                botUsername: bot,
+                gameId: g.id,
+                text: t('game.shareText', { venue: g.venue.name, when }),
+              });
+              if (!ok) setShareError(t('game.shareUnavailable'));
+            }}
+            data-analytics-label="game-share"
+          >
+            <Icon name="share-01" size={14} /> {t('game.share')}
+          </button>
           {isHost ? (
             <>
               <button
@@ -643,9 +670,10 @@ export function GameDetailPage() {
         </button>
       )}
 
-      {(joinMut.isError || leaveMut.isError || cancelMut.isError) && (
+      {(joinMut.isError || leaveMut.isError || cancelMut.isError || shareError) && (
         <div className="error">
-          {(joinMut.error as Error)?.message ??
+          {shareError ??
+            (joinMut.error as Error)?.message ??
             (leaveMut.error as Error)?.message ??
             (cancelMut.error as Error)?.message}
         </div>

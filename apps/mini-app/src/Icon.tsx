@@ -59,6 +59,7 @@ export type IconName =
   | "globe"
   | "flag-01"
   | "send-01"
+  | "share-01"
   | "mail-01"
   | "message-01"
   | "lock"

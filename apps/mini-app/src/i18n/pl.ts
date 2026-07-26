@@ -147,6 +147,9 @@ export const pl: Record<string, string> = {
   'game.evaluations': 'Oceń graczy',
   'game.managePayments': 'Płatności',
   'game.invitePlayers': 'Zaproś graczy',
+  'game.share': 'Udostępnij',
+  'game.shareText': '🏐 {venue}\n🗓 {when}\nDołącz do gry w VolleyBot:',
+  'game.shareUnavailable': 'Udostępnianie niedostępne — spróbuj za chwilę.',
 
   'gameDetail.players': 'Gracze',
   'gameDetail.noPlayers': 'Brak graczy',

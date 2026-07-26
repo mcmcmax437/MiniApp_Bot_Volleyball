@@ -39,11 +39,10 @@ export class SchedulerService {
       take: 200,
     });
 
-    const openBtn = this.sender.openAppButton('Open game');
-
     for (const g of games) {
       const start = g.startAt.getTime();
       const minutesUntil = (start - now) / 60_000;
+      const openBtn = this.sender.openAppButton('Open game', `g_${g.id}`);
 
       for (const p of g.participants) {
         const offsets = this.normalizeOffsets(p.user.reminderOffsets);

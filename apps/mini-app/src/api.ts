@@ -547,6 +547,8 @@ export function useApi() {
         lng: number | null;
         /** IANA zone shared with bot notifications (APP_TIMEZONE). */
         timeZone?: string | null;
+        /** Bot username (no @) for t.me share / startapp deep links. */
+        botUsername?: string | null;
       }>('/venues/default-city', { method: 'GET' }, initData),
 
     // Admin endpoints
