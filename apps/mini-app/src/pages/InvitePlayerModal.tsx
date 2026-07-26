@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useApi, InviteSearchUser } from '../api';
 import { useI18n } from '../i18n';
@@ -8,6 +8,7 @@ import { Photo } from '../Photo';
 import { SkillBadge } from '../SkillBadge';
 import { AdminCrownBadge, isAdminUser } from '../AdminCrownBadge';
 import { effectiveSkillLevel } from '../lib/skill';
+import { useTelegram } from '../tg';
 import './InvitePlayerModal.css';
 
 interface Props {
@@ -15,6 +16,13 @@ interface Props {
   gameId: string;
   onClose: () => void;
 }
+
+type InviteFeedback = {
+  userId: string;
+  name: string;
+  kind: 'success' | 'error';
+  message?: string;
+};
 
 /**
  * Host picks who to invite from a searchable list of players instead of
@@ -25,8 +33,22 @@ interface Props {
 export function InvitePlayerModal({ open, gameId, onClose }: Props) {
   const api = useApi();
   const { t } = useI18n();
+  const { webApp } = useTelegram();
   const qc = useQueryClient();
   const [query, setQuery] = useState('');
+  const [feedback, setFeedback] = useState<InviteFeedback | null>(null);
+  /** Locally marked invited this session so the + flips to ✓ before refetch. */
+  const [justInvitedIds, setJustInvitedIds] = useState<string[]>([]);
+  const [pressingId, setPressingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) {
+      setFeedback(null);
+      setJustInvitedIds([]);
+      setPressingId(null);
+      setQuery('');
+    }
+  }, [open]);
 
   const gameQ = useQuery(['game', gameId], () => api.getGame(gameId), { enabled: open });
 
@@ -56,14 +78,41 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
   );
 
   const inviteMut = useMutation(
-    (userId: string) => api.invitePlayer(gameId, userId),
+    ({ userId }: { userId: string; name: string }) => api.invitePlayer(gameId, userId),
     {
-      onSuccess: () => qc.invalidateQueries(['game', gameId]),
+      onSuccess: (_data, vars) => {
+        setJustInvitedIds((prev) =>
+          prev.includes(vars.userId) ? prev : [...prev, vars.userId],
+        );
+        setFeedback({ userId: vars.userId, name: vars.name, kind: 'success' });
+        webApp?.HapticFeedback?.notificationOccurred('success');
+        qc.invalidateQueries(['game', gameId]);
+      },
+      onError: (err, vars) => {
+        setFeedback({
+          userId: vars.userId,
+          name: vars.name,
+          kind: 'error',
+          message: (err as Error).message,
+        });
+        webApp?.HapticFeedback?.notificationOccurred('error');
+      },
+      onSettled: () => {
+        setPressingId(null);
+      },
     },
   );
 
   const users = searchQ.data?.users ?? [];
   const pendingIds = gameQ.data?.invitations?.map((i) => i.userId) ?? [];
+
+  const sendInvite = (u: InviteSearchUser) => {
+    const name = u.lastName ? `${u.firstName} ${u.lastName}` : u.firstName;
+    setFeedback(null);
+    setPressingId(u.id);
+    webApp?.HapticFeedback?.impactOccurred('light');
+    inviteMut.mutate({ userId: u.id, name });
+  };
 
   return (
     <Modal open={open} onClose={onClose} title={t('invite.invitePlayer')}>
@@ -89,6 +138,27 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
         )}
       </div>
 
+      {feedback && (
+        <div
+          className={`inviteToast inviteToast-${feedback.kind}`}
+          role="status"
+          key={`${feedback.kind}:${feedback.userId}:${feedback.message ?? 'ok'}`}
+        >
+          <Icon
+            name={feedback.kind === 'success' ? 'checkmark-square-01' : 'bell-dot'}
+            size={14}
+          />
+          <span>
+            {feedback.kind === 'success'
+              ? t('invite.invitedTo', { name: feedback.name })
+              : t('invite.inviteFailed', { name: feedback.name })}
+            {feedback.kind === 'error' && feedback.message
+              ? ` — ${feedback.message}`
+              : null}
+          </span>
+        </div>
+      )}
+
       {searchQ.isLoading && (
         <div className="inviteList">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -107,12 +177,30 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
       {!searchQ.isLoading && users.length > 0 && (
         <div className="inviteList" role="list">
           {users.map((u: InviteSearchUser) => {
-            const isPending = pendingIds.includes(u.id);
+            const name = u.lastName ? `${u.firstName} ${u.lastName}` : u.firstName;
+            const isPending =
+              pendingIds.includes(u.id) || justInvitedIds.includes(u.id);
             const lvl = effectiveSkillLevel(u);
             const isInviting =
-              inviteMut.isLoading && inviteMut.variables === u.id;
+              inviteMut.isLoading && inviteMut.variables?.userId === u.id;
+            const rowFlash =
+              feedback?.userId === u.id
+                ? feedback.kind === 'success'
+                  ? ' isSuccess'
+                  : ' isError'
+                : '';
+            const btnState = isPending
+              ? ' isSent'
+              : isInviting || pressingId === u.id
+                ? ' isSending'
+                : '';
+
             return (
-              <div className="inviteRow" key={u.id} role="listitem">
+              <div
+                className={`inviteRow${rowFlash}`}
+                key={u.id}
+                role="listitem"
+              >
                 <Photo
                   src={u.photoUrl}
                   name={u.firstName}
@@ -128,23 +216,24 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
                   }
                 />
                 <div className="inviteRow-body">
-                  <span className="inviteRow-name">
-                    {u.firstName}
-                    {u.lastName ? ` ${u.lastName}` : ''}
-                  </span>
+                  <span className="inviteRow-name">{name}</span>
                   <span className="inviteRow-sub">
                     {u.username ? <span>@{u.username}</span> : null}
+                    {isPending && (
+                      <span className="inviteRow-status">{t('invite.invited')}</span>
+                    )}
                   </span>
                 </div>
                 <button
-                  className="inviteAdd"
-                  onClick={() => inviteMut.mutate(u.id)}
-                  disabled={isPending || isInviting || inviteMut.isLoading}
+                  type="button"
+                  className={`inviteAdd${btnState}`}
+                  onClick={() => sendInvite(u)}
+                  disabled={isPending || inviteMut.isLoading}
                   aria-label={t('invite.inviteAction', { name: u.firstName })}
                   data-analytics-label="invite-add"
                 >
                   {isPending ? (
-                    <Icon name="clock-01" size={16} />
+                    <Icon name="checkmark-square-01" size={16} />
                   ) : isInviting ? (
                     <Icon name="loading" size={16} />
                   ) : (
@@ -154,20 +243,6 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
               </div>
             );
           })}
-        </div>
-      )}
-
-      {inviteMut.isError && (
-        <div className="error">
-          <Icon name="bell-dot" size={14} />
-          <span>{(inviteMut.error as Error).message}</span>
-        </div>
-      )}
-
-      {inviteMut.isSuccess && (
-        <div className="success-banner">
-          <Icon name="checkmark-square-01" size={14} />
-          <span>{t('invite.invited')}</span>
         </div>
       )}
 

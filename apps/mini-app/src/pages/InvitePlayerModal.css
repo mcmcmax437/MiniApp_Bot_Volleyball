@@ -41,6 +41,42 @@
   color: var(--text-tertiary);
 }
 
+.inviteToast {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-bottom: 10px;
+  animation: inviteToast-in 280ms var(--ease-out);
+}
+
+.inviteToast-success {
+  background: var(--success-soft, rgba(16, 185, 129, 0.14));
+  color: var(--success, #34d399);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+.inviteToast-error {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+}
+
+@keyframes inviteToast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .inviteList {
   display: flex;
   flex-direction: column;
@@ -60,11 +96,39 @@
   border-radius: var(--radius-md);
   background: var(--surface-1);
   border: 1px solid var(--border-subtle);
-  transition: background var(--dur-fast) var(--ease-out);
+  transition: background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
 }
 
 .inviteRow:hover {
   background: var(--surface-hover);
+}
+
+.inviteRow.isSuccess {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.08);
+  animation: inviteRow-success 520ms var(--ease-out);
+}
+
+.inviteRow.isError {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.08);
+  animation: inviteRow-error 420ms var(--ease-out);
+}
+
+@keyframes inviteRow-success {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.015); }
+  100% { transform: scale(1); }
+}
+
+@keyframes inviteRow-error {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
 }
 
 .inviteRow-body {
@@ -92,12 +156,20 @@
   font-weight: 500;
 }
 
+.inviteRow-status {
+  color: var(--success, #34d399);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 .inviteAdd {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--gradient-brand);
-  color: var(--text-inverse);
+  background: var(--gradient-brand, #fff);
+  color: var(--text-inverse, #0e0e0e);
   border: none;
   display: inline-flex;
   align-items: center;
@@ -107,19 +179,46 @@
   box-shadow: var(--shadow-sm);
   transition: transform var(--dur-fast) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out),
-    opacity var(--dur-fast) var(--ease-out);
+    opacity var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
 }
 
 .inviteAdd:hover:not(:disabled) {
-  transform: scale(1.05);
+  transform: scale(1.06);
   box-shadow: var(--shadow-md);
 }
 
 .inviteAdd:active:not(:disabled) {
-  transform: scale(0.95);
+  transform: scale(0.9);
 }
 
-.inviteAdd:disabled {
+.inviteAdd.isSending {
+  animation: inviteAdd-pulse 700ms var(--ease-out);
+  pointer-events: none;
+}
+
+.inviteAdd.isSent {
+  background: var(--success, #10b981);
+  color: #fff;
+  opacity: 1;
+  cursor: default;
+  animation: inviteAdd-pop 380ms var(--ease-out);
+}
+
+@keyframes inviteAdd-pulse {
+  0% { transform: scale(1); }
+  30% { transform: scale(0.88); }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+@keyframes inviteAdd-pop {
+  0% { transform: scale(0.85); }
+  55% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+.inviteAdd:disabled:not(.isSent) {
   cursor: not-allowed;
   opacity: 0.55;
   background: var(--surface-3);

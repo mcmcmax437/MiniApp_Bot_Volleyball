@@ -275,6 +275,8 @@ export const en: Record<string, string> = {
   'invite.bannerTitle': 'You have a new game invitation',
   'invite.openGame': 'Open game',
   'invite.invited': 'Invitation sent',
+  'invite.invitedTo': 'Invitation sent to {name}',
+  'invite.inviteFailed': 'Couldn’t invite {name}',
   'invite.searchPlaceholder': 'Search by name or @username',
   'invite.noResults': 'No players match your search',
   'invite.inviteAction': 'Invite {name}',

@@ -262,6 +262,8 @@ export const uk: Record<string, string> = {
   'invite.bannerTitle': 'У вас нове запрошення на гру',
   'invite.openGame': 'Відкрити гру',
   'invite.invited': 'Запрошення надіслано',
+  'invite.invitedTo': 'Запрошення надіслано: {name}',
+  'invite.inviteFailed': 'Не вдалося запросити {name}',
   'invite.searchPlaceholder': 'Пошук за іменем або @username',
   'invite.noResults': 'За вашим запитом гравців не знайдено',
   'invite.inviteAction': 'Запросити {name}',

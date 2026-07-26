@@ -250,6 +250,8 @@ export const pl: Record<string, string> = {
   'invite.decline': 'Odrzuć',
   'invite.invitePlayer': 'Zaproś gracza',
   'invite.invited': 'Zaproszenie wysłane',
+  'invite.invitedTo': 'Zaproszenie wysłane do {name}',
+  'invite.inviteFailed': 'Nie udało się zaprosić {name}',
   'invite.bannerTitle': 'Masz nowe zaproszenie do gry',
   'invite.openGame': 'Otwórz grę',
   'invite.searchPlaceholder': 'Szukaj po imieniu lub @username',

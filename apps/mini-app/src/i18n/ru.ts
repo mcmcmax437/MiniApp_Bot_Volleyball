@@ -252,6 +252,8 @@ export const ru: Record<string, string> = {
   'invite.bannerTitle': 'У вас новое приглашение на игру',
   'invite.openGame': 'Открыть игру',
   'invite.invited': 'Приглашение отправлено',
+  'invite.invitedTo': 'Приглашение отправлено: {name}',
+  'invite.inviteFailed': 'Не удалось пригласить {name}',
   'invite.searchPlaceholder': 'Поиск по имени или @username',
   'invite.noResults': 'По вашему запросу игроков не найдено',
   'invite.inviteAction': 'Пригласить {name}',
