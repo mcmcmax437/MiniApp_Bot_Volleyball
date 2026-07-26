@@ -144,9 +144,7 @@ export function CreateGamePage() {
         startAt: wallClockToUtcIso(startAt, getAppTimeZone()),
         endAt: endAtIso,
         skillLevel: skill,
-        spotsTotal: unlimitedSpots
-          ? (selectedVenue?.capacity ?? Math.max(spotsTotal, 40))
-          : spotsTotal,
+        spotsTotal: unlimitedSpots ? Math.max(spotsTotal, 100) : spotsTotal,
         totalCost: Math.round((Number(finalCostDecimal) || 0) * 100),
         notes: notes || undefined,
         currency,
@@ -242,7 +240,7 @@ export function CreateGamePage() {
             <div className="venueSelectedHint">
               <Icon name={selectedVenue.indoor ? 'building-01' : 'maps'} size={12} />
               <span>
-                {selectedVenue.indoor ? 'Indoor' : 'Outdoor'} · up to {selectedVenue.capacity} ·{' '}
+                {selectedVenue.indoor ? 'Indoor' : 'Outdoor'} ·{' '}
                 {CURRENCY_SYMBOLS[currency]}
                 {(selectedVenue.hourlyPrice / 100).toFixed(2)}/hr
               </span>

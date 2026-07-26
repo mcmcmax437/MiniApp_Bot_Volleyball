@@ -56,16 +56,10 @@ export class GamesService {
     if (!(start < end)) throw new BadRequestException('startAt must be before endAt');
     if (start < new Date()) throw new BadRequestException('startAt must be in the future');
 
-    let spotsTotal = dto.spotsTotal;
-    if (spotsTotal > venue.capacity) {
-      // "Unlimited" clients send a high spotsTotal; clamp to venue capacity
-      // instead of hard-failing so create still succeeds.
-      if (spotsTotal >= 1000) {
-        spotsTotal = venue.capacity;
-      } else {
-        throw new BadRequestException(`spotsTotal exceeds venue capacity (${venue.capacity})`);
-      }
-    }
+    // spotsTotal is the lobby size the host wants — not capped by venue.capacity.
+    // Venue capacity is catalog metadata only; hosts often overbook or run
+    // multi-court sessions (e.g. 14–20 players at a "12" court listing).
+    const spotsTotal = dto.spotsTotal;
 
     const currency = dto.currency ?? 'UAH';
     if (!SUPPORTED_CURRENCIES.has(currency)) {
