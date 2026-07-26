@@ -162,7 +162,12 @@ export const en: Record<string, string> = {
   'game.managePayments': 'Track payments',
   'game.invitePlayers': 'Invite players',
   'game.share': 'Share',
-  'game.shareText': '🏐 {venue}\n🗓 {when}\nJoin the game in VolleyBot:',
+  'game.shareHeadline': 'Open volleyball game — who\'s in?',
+  'game.shareCta': 'Tap the link to open & join in VolleyBot',
+  'game.shareSpots': '{filled}/{total} players · {left} free',
+  'game.shareSpotsFull': '{filled}/{total} players · full',
+  'game.shareFree': 'Free to join',
+  'game.shareSkill': 'Level S{n}',
   'game.shareUnavailable': 'Sharing isn’t available yet — try again in a moment.',
 
   // ===== Game detail =====

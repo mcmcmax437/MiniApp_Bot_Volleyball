@@ -3,6 +3,9 @@
  *
  * Deep link: https://t.me/<bot>?startapp=g_<gameId>
  * The Mini App reads `start_param` on launch and opens /games/:id.
+ *
+ * Note: t.me/share/url only supports plain text (no HTML). The deep link
+ * is required as `url`; we put the eye-catching copy in `text`.
  */
 
 export const GAME_START_PREFIX = 'g_';
@@ -20,6 +23,52 @@ export function parseGameStartParam(param: string | null | undefined): string | 
 export function gameDeepLink(botUsername: string, gameId: string): string {
   const user = botUsername.replace(/^@/, '');
   return `https://t.me/${user}?startapp=${encodeURIComponent(gameStartParam(gameId))}`;
+}
+
+export type GameShareDetails = {
+  venueName: string;
+  address?: string | null;
+  when: string;
+  playTypeLabel?: string | null;
+  skillLabel?: string | null;
+  closed?: boolean;
+  spotsLine?: string | null;
+  priceLabel?: string | null;
+  headline: string;
+  cta: string;
+};
+
+/** Build a plain-text invite card for Telegram share. */
+export function buildGameShareText(d: GameShareDetails): string {
+  const lines: string[] = [
+    '━━━━ 🏐 ━━━━',
+    d.headline,
+    '━━━━━━━━━━',
+    '',
+    `📍 ${d.venueName}`,
+  ];
+
+  const addr = d.address?.trim();
+  if (addr && addr !== d.venueName.trim()) {
+    lines.push(`🗺 ${addr}`);
+  }
+
+  lines.push(`🗓 ${d.when}`);
+
+  const chips: string[] = [];
+  if (d.playTypeLabel) chips.push(d.playTypeLabel);
+  if (d.skillLabel) chips.push(d.skillLabel);
+  if (d.closed) chips.push('🔒');
+  if (chips.length) lines.push(`🏷 ${chips.join(' · ')}`);
+
+  if (d.spotsLine) lines.push(`👥 ${d.spotsLine}`);
+  if (d.priceLabel) lines.push(`💰 ${d.priceLabel}`);
+
+  lines.push('');
+  lines.push(d.cta);
+  lines.push('👇');
+
+  return lines.join('\n');
 }
 
 export function shareGameToTelegram(opts: {

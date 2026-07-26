@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useApi, SKILL_LEVEL_LABELS, SkillLevel, CURRENCY_SYMBOLS, UserRole } from '../api';
+import {
+  useApi,
+  SKILL_LEVEL_LABELS,
+  SKILL_LEVELS,
+  SkillLevel,
+  CURRENCY_SYMBOLS,
+  UserRole,
+} from '../api';
 import { Icon } from '../Icon';
 import { Photo } from '../Photo';
 import { SkillBadge } from '../SkillBadge';
@@ -16,7 +23,7 @@ import { EvaluatePlayersModal } from './EvaluatePlayersModal';
 import { InvitePlayerModal } from './InvitePlayerModal';
 import { confirmDialog } from '../lib/confirm';
 import { formatGameDateTime } from '../lib/datetime';
-import { shareGameToTelegram } from '../lib/share-game';
+import { buildGameShareText, shareGameToTelegram } from '../lib/share-game';
 import './GameDetail.css';
 
 function formatMoney(minor: number, currency: string): string {
@@ -570,10 +577,40 @@ export function GameDetailPage() {
                 return;
               }
               const when = formatGameDateTime(g.startAt, { locale: lang });
+              const skillNum = SKILL_LEVELS.indexOf(g.skillLevel) + 1;
+              const left = Math.max(0, g.spotsTotal - g.participantsCount);
+              const spotsLine =
+                left > 0
+                  ? t('game.shareSpots', {
+                      filled: g.participantsCount,
+                      total: g.spotsTotal,
+                      left,
+                    })
+                  : t('game.shareSpotsFull', {
+                      filled: g.participantsCount,
+                      total: g.spotsTotal,
+                    });
+              const priceLabel = g.isPaid
+                ? t('game.perPlayer', {
+                    amount: formatMoney(g.perPlayerCost ?? 0, g.currency),
+                  })
+                : t('game.shareFree');
+              const text = buildGameShareText({
+                headline: t('game.shareHeadline'),
+                cta: t('game.shareCta'),
+                venueName: g.venue.name,
+                address: g.venue.address,
+                when,
+                playTypeLabel: t(`game.playType.${g.playType.toLowerCase()}`),
+                skillLabel: skillNum > 0 ? t('game.shareSkill', { n: skillNum }) : null,
+                closed: g.isClosed,
+                spotsLine,
+                priceLabel,
+              });
               const ok = shareGameToTelegram({
                 botUsername: bot,
                 gameId: g.id,
-                text: t('game.shareText', { venue: g.venue.name, when }),
+                text,
               });
               if (!ok) setShareError(t('game.shareUnavailable'));
             }}

@@ -148,7 +148,12 @@ export const pl: Record<string, string> = {
   'game.managePayments': 'Płatności',
   'game.invitePlayers': 'Zaproś graczy',
   'game.share': 'Udostępnij',
-  'game.shareText': '🏐 {venue}\n🗓 {when}\nDołącz do gry w VolleyBot:',
+  'game.shareHeadline': 'Otwarta gra w siatkówkę — kto gra?',
+  'game.shareCta': 'Kliknij link, aby otworzyć i dołączyć w VolleyBot',
+  'game.shareSpots': '{filled}/{total} graczy · {left} wolnych',
+  'game.shareSpotsFull': '{filled}/{total} graczy · brak miejsc',
+  'game.shareFree': 'Za darmo',
+  'game.shareSkill': 'Poziom S{n}',
   'game.shareUnavailable': 'Udostępnianie niedostępne — spróbuj za chwilę.',
 
   'gameDetail.players': 'Gracze',
