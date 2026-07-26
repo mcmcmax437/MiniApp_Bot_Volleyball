@@ -107,22 +107,23 @@ export function defaultWallStartAt(timeZone: string = appTimeZone): string {
   return `${datePart}T${hh}:00`;
 }
 
+/** e.g. `27.08.2026 - Saturday, 18:00` (weekday localized). */
 export function formatGameDateTime(
   iso: string | Date,
   opts: { locale?: string | null; timeZone?: string } = {},
 ): string {
   const d = typeof iso === 'string' ? new Date(iso) : iso;
   const timeZone = opts.timeZone ?? appTimeZone;
-  const locale = localeTag(opts.locale) || undefined;
-  return d.toLocaleString(locale, {
+  const locale = localeTag(opts.locale) || 'en-GB';
+  const p = partsInZone(d, timeZone);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const weekday = new Intl.DateTimeFormat(locale, {
     timeZone,
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
+    weekday: 'long',
+  }).format(d);
+  // Capitalize first letter (some locales return lowercase weekdays).
+  const dayName = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+  return `${pad(p.day)}.${pad(p.month)}.${p.year} - ${dayName}, ${pad(p.hour)}:${pad(p.minute)}`;
 }
 
 export function formatGameTimeOnly(
