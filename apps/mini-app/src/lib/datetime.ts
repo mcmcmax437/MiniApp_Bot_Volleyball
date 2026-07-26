@@ -107,8 +107,8 @@ export function defaultWallStartAt(timeZone: string = appTimeZone): string {
   return `${datePart}T${hh}:00`;
 }
 
-/** e.g. `27.08.2026 - Saturday, 18:00` (weekday localized). */
-export function formatGameDateTime(
+/** e.g. `27.08.2026 - Saturday` (weekday localized). */
+export function formatGameDateOnly(
   iso: string | Date,
   opts: { locale?: string | null; timeZone?: string } = {},
 ): string {
@@ -123,7 +123,7 @@ export function formatGameDateTime(
   }).format(d);
   // Capitalize first letter (some locales return lowercase weekdays).
   const dayName = weekday.charAt(0).toUpperCase() + weekday.slice(1);
-  return `${pad(p.day)}.${pad(p.month)}.${p.year} - ${dayName}, ${pad(p.hour)}:${pad(p.minute)}`;
+  return `${pad(p.day)}.${pad(p.month)}.${p.year} - ${dayName}`;
 }
 
 export function formatGameTimeOnly(
@@ -132,13 +132,17 @@ export function formatGameTimeOnly(
 ): string {
   const d = typeof iso === 'string' ? new Date(iso) : iso;
   const timeZone = opts.timeZone ?? appTimeZone;
-  const locale = localeTag(opts.locale) || undefined;
-  return d.toLocaleTimeString(locale, {
-    timeZone,
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
+  const p = partsInZone(d, timeZone);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(p.hour)}:${pad(p.minute)}`;
+}
+
+/** e.g. `27.08.2026 - Saturday, 18:00` (weekday localized). */
+export function formatGameDateTime(
+  iso: string | Date,
+  opts: { locale?: string | null; timeZone?: string } = {},
+): string {
+  return `${formatGameDateOnly(iso, opts)}, ${formatGameTimeOnly(iso, opts)}`;
 }
 
 export function formatGameDayKey(

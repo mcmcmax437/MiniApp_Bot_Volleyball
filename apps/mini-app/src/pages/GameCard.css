@@ -21,7 +21,7 @@
    ============================================================ */
 .gameCard-hero {
   position: relative;
-  height: 150px;
+  height: 168px;
   background: var(--surface-2);
   isolation: isolate;
 }
@@ -118,17 +118,25 @@
   font-size: 16px;
 }
 
+/* Host-set game level — sits beside play type on the hero. */
+.gameCard-heroSkill {
+  margin-left: 2px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  vertical-align: middle;
+}
+
 .gameCard-heroMeta {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   color: rgba(255, 255, 255, 0.85);
   font-size: 11px;
   font-weight: 500;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
-.gameCard-heroMeta span {
+.gameCard-heroMeta > span {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -140,6 +148,36 @@
 .gameCard-heroMeta i {
   color: rgba(255, 255, 255, 0.75);
   flex-shrink: 0;
+}
+
+.gameCard-heroWhen {
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  white-space: normal;
+}
+
+.gameCard-heroWhenIcon {
+  align-self: center;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.gameCard-heroTime {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
+}
+
+.gameCard-heroDate {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+  letter-spacing: 0.01em;
 }
 
 /* ============================================================

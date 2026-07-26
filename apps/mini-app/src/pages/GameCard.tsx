@@ -8,7 +8,7 @@ import { AdminCrownBadge, isAdminUser } from "../AdminCrownBadge";
 import { useI18n } from "../i18n";
 import { effectiveSkillLevel } from "../lib/skill";
 import { coverForPlayType } from "../lib/play-type";
-import { formatGameDateTime } from "../lib/datetime";
+import { formatGameDateOnly, formatGameTimeOnly } from "../lib/datetime";
 import "./GameCard.css";
 
 function statusToBadgeClass(status: ApiGame["status"]): string {
@@ -48,10 +48,6 @@ function toParticipant(u: any): ApiGameParticipantUser {
     return u.user as ApiGameParticipantUser;
   }
   return u as ApiGameParticipantUser;
-}
-
-function formatGameTime(iso: string, locale?: string): string {
-  return formatGameDateTime(iso, { locale });
 }
 
 function formatMoney(minor: number): string {
@@ -121,11 +117,21 @@ export function GameCard({ game }: GameCardProps) {
             <div className="gameCard-heroTitle">
               <Icon name={playTypeIcon(game.playType)} size={14} className="gameCard-heroTitleIcon" />
               <span>{t(`game.playType.${game.playType.toLowerCase()}`)}</span>
+              <SkillBadge
+                level={game.skillLevel}
+                size="md"
+                className="gameCard-heroSkill"
+              />
             </div>
             <div className="gameCard-heroMeta">
-              <span>
-                <Icon name="calendar-01" size={12} />
-                {formatGameTime(game.startAt, lang)}
+              <span className="gameCard-heroWhen">
+                <Icon name="calendar-01" size={14} className="gameCard-heroWhenIcon" />
+                <span className="gameCard-heroTime">
+                  {formatGameTimeOnly(game.startAt, { locale: lang })}
+                </span>
+                <span className="gameCard-heroDate">
+                  {formatGameDateOnly(game.startAt, { locale: lang })}
+                </span>
               </span>
               <span>
                 <Icon name="map-pin" size={12} />
