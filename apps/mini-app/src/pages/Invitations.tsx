@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useApi } from '../api';
 import { useI18n } from '../i18n';
 import { Icon } from '../Icon';
+import { Photo } from '../Photo';
+import { AdminCrownBadge, isAdminUser } from '../AdminCrownBadge';
 
 export function InvitationsPage() {
   const api = useApi();
@@ -51,48 +53,69 @@ export function InvitationsPage() {
       )}
 
       <div className="invitationsList">
-        {(listQ.data ?? []).map((inv) => (
-          <article key={inv.id} className="invitationItem card">
-            <div className="invitationItem-meta">
-              <div className="invitationItem-when">
-                {new Date(inv.game.startAt).toLocaleString(undefined, {
-                  weekday: 'short',
-                  day: 'numeric',
-                  month: 'short',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+        {(listQ.data ?? []).map((inv) => {
+          const inviterName = inv.inviter.lastName
+            ? `${inv.inviter.firstName} ${inv.inviter.lastName}`
+            : inv.inviter.firstName;
+          return (
+            <article key={inv.id} className="invitationItem card">
+              <div className="invitationItem-head">
+                <Photo
+                  src={inv.inviter.photoUrl}
+                  name={inviterName}
+                  size={48}
+                  variant="rounded"
+                  topLeftBadge={
+                    isAdminUser(inv.inviter) ? (
+                      <AdminCrownBadge title={t('profile.status.admin')} size="sm" />
+                    ) : null
+                  }
+                />
+                <div className="invitationItem-meta">
+                  <div className="invitationItem-from">
+                    <strong>{inviterName}</strong>
+                    {inv.inviter.username ? (
+                      <span className="invitationItem-username">@{inv.inviter.username}</span>
+                    ) : null}
+                  </div>
+                  <div className="invitationItem-when">
+                    {new Date(inv.game.startAt).toLocaleString(undefined, {
+                      weekday: 'short',
+                      day: 'numeric',
+                      month: 'short',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </div>
+                  <div className="invitationItem-venue">
+                    {inv.game.venue.name} · {inv.game.venue.address}
+                  </div>
+                </div>
               </div>
-              <div className="invitationItem-venue">
-                {inv.game.venue.name} · {inv.game.venue.address}
+              <div className="invitationItem-actions">
+                <button
+                  className="btn btn-primary"
+                  onClick={() => respondMut.mutate({ id: inv.id, accept: true })}
+                  disabled={respondMut.isLoading}
+                >
+                  <Icon name="checkmark-square-01" size={14} />
+                  {t('invite.accept')}
+                </button>
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => respondMut.mutate({ id: inv.id, accept: false })}
+                  disabled={respondMut.isLoading}
+                >
+                  <Icon name="cancel-01" size={14} />
+                  {t('invite.decline')}
+                </button>
+                <Link to={`/games/${inv.game.id}`} className="btn btn-ghost">
+                  {t('invite.openGame')}
+                </Link>
               </div>
-              <div className="invitationItem-from">
-                {inv.inviter.firstName}{inv.inviter.lastName ? ' ' + inv.inviter.lastName : ''}
-              </div>
-            </div>
-            <div className="invitationItem-actions">
-              <button
-                className="btn btn-primary"
-                onClick={() => respondMut.mutate({ id: inv.id, accept: true })}
-                disabled={respondMut.isLoading}
-              >
-                <Icon name="checkmark-square-01" size={14} />
-                {t('invite.accept')}
-              </button>
-              <button
-                className="btn btn-ghost"
-                onClick={() => respondMut.mutate({ id: inv.id, accept: false })}
-                disabled={respondMut.isLoading}
-              >
-                <Icon name="cancel-01" size={14} />
-                {t('invite.decline')}
-              </button>
-              <Link to={`/games/${inv.game.id}`} className="btn btn-ghost">
-                {t('common.search')}
-              </Link>
-            </div>
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </div>
     </div>
   );

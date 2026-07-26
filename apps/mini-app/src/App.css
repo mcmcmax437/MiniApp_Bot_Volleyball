@@ -1068,10 +1068,28 @@ button.btn[type="submit"],
 /* Invitations */
 .invitationsList { display: flex; flex-direction: column; gap: 10px; }
 .invitationItem { padding: 14px; }
-.invitationItem-meta { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
-.invitationItem-when { font-weight: 700; font-size: 15px; }
+.invitationItem-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.invitationItem-meta { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.invitationItem-when { font-weight: 700; font-size: 14px; }
 .invitationItem-venue { font-size: 13px; color: var(--text-secondary); }
-.invitationItem-from { font-size: 12px; color: var(--text-tertiary); }
+.invitationItem-from {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+.invitationItem-username {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
 .invitationItem-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
 /* Payments */

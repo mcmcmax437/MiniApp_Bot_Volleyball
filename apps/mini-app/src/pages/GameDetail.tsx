@@ -14,6 +14,7 @@ import { Modal } from '../Modal';
 import { ReportUserModal } from './ReportUserModal';
 import { EvaluatePlayersModal } from './EvaluatePlayersModal';
 import { InvitePlayerModal } from './InvitePlayerModal';
+import { confirmDialog } from '../lib/confirm';
 import './GameDetail.css';
 
 
@@ -172,21 +173,27 @@ export function GameDetailPage() {
 
   const [pendingJoinBlockedWarn, setPendingJoinBlockedWarn] = useState<string[] | null>(null);
 
+  const refreshGameLists = () => {
+    // Home / Games / Calendar all key off `['games', …]` — must drop those
+    // after cancel/leave/join or the cancelled game stays visible from cache.
+    qc.invalidateQueries(['game', id]);
+    qc.invalidateQueries(['games']);
+  };
+
   const joinMut = useMutation(() => api.joinGame(id!), {
-    onSuccess: () => qc.invalidateQueries(['game', id]),
+    onSuccess: () => refreshGameLists(),
   });
   const leaveMut = useMutation(() => api.leaveGame(id!), {
-    onSuccess: () => qc.invalidateQueries(['game', id]),
+    onSuccess: () => refreshGameLists(),
   });
   const cancelMut = useMutation(() => api.cancelGame(id!), {
-    onSuccess: () => qc.invalidateQueries(['game', id]),
+    onSuccess: () => refreshGameLists(),
   });
   const finishMut = useMutation(() => api.finishGame(id!), {
     onSuccess: () => {
       // Invalidate both the per-game cache and the home/feed list cache
       // so the game disappears from "Upcoming games" immediately.
-      qc.invalidateQueries(['game', id]);
-      qc.invalidateQueries(['games']);
+      refreshGameLists();
       qc.invalidateQueries(['evaluations', 'pending']);
       // Host is always a participant — open the rating modal immediately.
       setShowEvaluate(true);
@@ -576,8 +583,8 @@ export function GameDetailPage() {
               )}
               <button
                 className="btn btn-sm btn-ghost detailActions-secondary"
-                onClick={() => {
-                  if (window.confirm(t('game.finishConfirm'))) finishMut.mutate();
+                onClick={async () => {
+                  if (await confirmDialog(t('game.finishConfirm'))) finishMut.mutate();
                 }}
                 disabled={finishMut.isLoading}
                 data-analytics-label="game-finish"
@@ -586,10 +593,11 @@ export function GameDetailPage() {
               </button>
               <button
                 className="btn btn-sm btn-ghost detailActions-danger"
-                onClick={() => {
-                  if (window.confirm(t('game.cancelConfirm'))) cancelMut.mutate();
+                onClick={async () => {
+                  if (await confirmDialog(t('game.cancelConfirm'))) cancelMut.mutate();
                 }}
                 disabled={cancelMut.isLoading}
+                data-analytics-label="game-cancel"
               >
                 <Icon name="cancel-01" size={14} /> {t('game.cancel')}
               </button>

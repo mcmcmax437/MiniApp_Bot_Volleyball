@@ -5,9 +5,9 @@
   top: calc(12px + env(safe-area-inset-top, 0px));
   right: 14px;
   z-index: 90;
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
   border: 1px solid var(--border);
   background: var(--surface-1);
   color: var(--text-primary);
@@ -16,11 +16,31 @@
   justify-content: center;
   cursor: pointer;
   box-shadow: var(--shadow-md);
+  padding: 0;
   animation: msgNotify-shake 0.7s var(--ease-out) 0s 2;
 }
 
 .msgNotify:active {
   transform: scale(0.94);
+}
+
+.msgNotify .photoWrap {
+  pointer-events: none;
+}
+
+.msgNotify-mail {
+  position: absolute;
+  left: -4px;
+  bottom: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text-primary);
+  border: 2px solid var(--bg-1, #0e0e0e);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .msgNotify-count {
