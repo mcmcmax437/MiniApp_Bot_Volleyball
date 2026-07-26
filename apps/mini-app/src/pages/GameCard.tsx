@@ -8,6 +8,7 @@ import { AdminCrownBadge, isAdminUser } from "../AdminCrownBadge";
 import { useI18n } from "../i18n";
 import { effectiveSkillLevel } from "../lib/skill";
 import { coverForPlayType } from "../lib/play-type";
+import { formatGameDateTime } from "../lib/datetime";
 import "./GameCard.css";
 
 function statusToBadgeClass(status: ApiGame["status"]): string {
@@ -49,15 +50,8 @@ function toParticipant(u: any): ApiGameParticipantUser {
   return u as ApiGameParticipantUser;
 }
 
-function formatGameTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleString(undefined, {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+function formatGameTime(iso: string, locale?: string): string {
+  return formatGameDateTime(iso, { locale });
 }
 
 function formatMoney(minor: number): string {
@@ -82,7 +76,7 @@ interface GameCardProps {
 }
 
 export function GameCard({ game }: GameCardProps) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const spotsLeft = game.spotsTotal - game.participantsCount;
 
   return (
@@ -131,7 +125,7 @@ export function GameCard({ game }: GameCardProps) {
             <div className="gameCard-heroMeta">
               <span>
                 <Icon name="calendar-01" size={12} />
-                {formatGameTime(game.startAt)}
+                {formatGameTime(game.startAt, lang)}
               </span>
               <span>
                 <Icon name="map-pin" size={12} />

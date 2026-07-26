@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useApi, CURRENCY_SYMBOLS } from '../api';
 import { useI18n } from '../i18n';
 import { Icon } from '../Icon';
+import { formatGameDateTime } from '../lib/datetime';
 
 function formatMoney(amount: number, currency: string): string {
   const symbol = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] ?? currency;
@@ -11,7 +12,7 @@ function formatMoney(amount: number, currency: string): string {
 
 export function PaymentsPage() {
   const api = useApi();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   const myQ = useQuery(['payments', 'mine'], () => api.listMyPayments());
 
@@ -49,12 +50,7 @@ export function PaymentsPage() {
               <span className="paymentsUnpaid-info">
                 <span className="paymentsUnpaid-venue">{p.game.venue.name}</span>
                 <span className="paymentsUnpaid-when">
-                  {new Date(p.game.startAt).toLocaleString(undefined, {
-                    day: 'numeric',
-                    month: 'short',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                  {formatGameDateTime(p.game.startAt, { locale: lang })}
                 </span>
               </span>
             </Link>
@@ -83,12 +79,7 @@ export function PaymentsPage() {
               <div className="paymentItem-venue">{p.game.venue.name}</div>
               <div className="paymentItem-meta">
                 {formatMoney(p.amount, p.currency)} ·{' '}
-                {new Date(p.game.startAt).toLocaleString(undefined, {
-                  day: 'numeric',
-                  month: 'short',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                {formatGameDateTime(p.game.startAt, { locale: lang })}
               </div>
             </div>
             <Link to={`/games/${p.game.id}`} className="btn btn-ghost">

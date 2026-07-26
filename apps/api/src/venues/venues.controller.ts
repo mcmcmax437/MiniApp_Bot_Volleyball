@@ -36,10 +36,17 @@ export class VenuesController {
 
   @Get('default-city')
   defaultCity() {
+    // timeZone is shared with bot DMs (APP_TIMEZONE) so Mini App game
+    // clocks match Telegram notifications regardless of the phone's TZ.
+    const timeZone =
+      this.config.get<string>('APP_TIMEZONE')?.trim() ||
+      process.env.TZ?.trim() ||
+      'Europe/Warsaw';
     return {
       city: this.config.get<string>('DEFAULT_CITY') ?? null,
       lat: Number(this.config.get<string>('DEFAULT_CITY_LAT') ?? 0) || null,
       lng: Number(this.config.get<string>('DEFAULT_CITY_LNG') ?? 0) || null,
+      timeZone,
     };
   }
 

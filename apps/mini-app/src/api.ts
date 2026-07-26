@@ -541,11 +541,13 @@ export function useApi() {
       http<ApiGameDetail>(`/games/${id}/cancel`, { method: 'POST' }, initData),
 
     defaultCity: () =>
-      http<{ city: string | null; lat: number | null; lng: number | null }>(
-        '/venues/default-city',
-        { method: 'GET' },
-        initData,
-      ),
+      http<{
+        city: string | null;
+        lat: number | null;
+        lng: number | null;
+        /** IANA zone shared with bot notifications (APP_TIMEZONE). */
+        timeZone?: string | null;
+      }>('/venues/default-city', { method: 'GET' }, initData),
 
     // Admin endpoints
     adminStats: () => http<AdminStats>('/admin/stats', { method: 'GET' }, initData),

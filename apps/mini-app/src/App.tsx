@@ -27,6 +27,7 @@ import { PendingEvaluationsPrompt } from './components/PendingEvaluationsPrompt'
 import { MessageNotify } from './components/MessageNotify';
 import { useAnalytics } from './hooks/useAnalytics';
 import { useInvitationRealtime } from './hooks/useInvitationRealtime';
+import { setAppTimeZone } from './lib/datetime';
 import './App.css';
 
 function LoadingScreen() {
@@ -140,6 +141,16 @@ export function App() {
     refetchOnMount: 'always',
     staleTime: 0,
   });
+
+  // Shared game clock with the bot (APP_TIMEZONE). Loaded early so Home /
+  // GameCard format times in the venue zone, not the phone's home TZ.
+  const cityQ = useQuery(['default-city'], () => api.defaultCity(), {
+    enabled: ready,
+    staleTime: 60 * 60_000,
+  });
+  useEffect(() => {
+    if (cityQ.data?.timeZone) setAppTimeZone(cityQ.data.timeZone);
+  }, [cityQ.data?.timeZone]);
 
   // Live invite push (SSE). Falls back to MessageNotify's short poll if the
   // stream drops. Only connect once we have an authenticated, non-banned user.

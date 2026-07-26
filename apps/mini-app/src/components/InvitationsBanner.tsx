@@ -6,6 +6,7 @@ import { useI18n } from '../i18n';
 import { Icon } from '../Icon';
 import { Photo } from '../Photo';
 import { AdminCrownBadge, isAdminUser } from '../AdminCrownBadge';
+import { formatGameDateTime } from '../lib/datetime';
 import './InvitationsBanner.css';
 
 /**
@@ -21,7 +22,7 @@ export function InvitationsBanner() {
   const api = useApi();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   // Show at most one invitation at a time to avoid stacking banners.
   // The list still refreshes behind the scenes, so dismissing advances to
@@ -80,13 +81,7 @@ export function InvitationsBanner() {
   const inviterName = inv.inviter.lastName
     ? `${inv.inviter.firstName} ${inv.inviter.lastName}`
     : inv.inviter.firstName;
-  const when = new Date(inv.game.startAt).toLocaleString(undefined, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const when = formatGameDateTime(inv.game.startAt, { locale: lang });
 
   return (
     <div className="inviteBanner" role="region" aria-label={t('invite.bannerTitle')}>

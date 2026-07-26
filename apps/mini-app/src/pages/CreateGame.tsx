@@ -13,6 +13,12 @@ import {
 } from '../api';
 import { useI18n } from '../i18n';
 import { Icon, IconName } from '../Icon';
+import {
+  defaultWallStartAt,
+  getAppTimeZone,
+  setAppTimeZone,
+  wallClockToUtcIso,
+} from '../lib/datetime';
 import './CreateGame.css';
 
 const SKILL_ICONS: Record<SkillLevel, IconName> = {
@@ -24,18 +30,6 @@ const SKILL_ICONS: Record<SkillLevel, IconName> = {
   LEVEL_6: 'crown',
 };
 
-function toIsoLocal(value: string): string {
-  return new Date(value).toISOString();
-}
-
-function defaultStartAt(): string {
-  const d = new Date();
-  d.setMinutes(0, 0, 0);
-  d.setHours(d.getHours() + 24);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 export function CreateGamePage() {
   const api = useApi();
   const navigate = useNavigate();
@@ -45,6 +39,11 @@ export function CreateGamePage() {
   const meQ = useQuery(['me'], () => api.me());
   const cityQ = useQuery(['default-city'], () => api.defaultCity());
   const filterCity = meQ.data?.city || cityQ.data?.city || undefined;
+
+  // Keep create-form wall clock in sync with bot / APP_TIMEZONE.
+  useEffect(() => {
+    if (cityQ.data?.timeZone) setAppTimeZone(cityQ.data.timeZone);
+  }, [cityQ.data?.timeZone]);
   // City catalog + venues from games this user hosted (covers city-alias
   // mismatches and places used before the picker knew about them).
   const venuesQ = useQuery(
@@ -86,7 +85,7 @@ export function CreateGamePage() {
   const [venueId, setVenueId] = useState('');
   const [venueName, setVenueName] = useState('');
   const [venueAddress, setVenueAddress] = useState('');
-  const [startAt, setStartAt] = useState(defaultStartAt());
+  const [startAt, setStartAt] = useState(() => defaultWallStartAt());
   const [durationHours, setDurationHours] = useState<number | ''>(2);
   const [skill, setSkill] = useState<SkillLevel>('LEVEL_3');
   // 0 = unlimited. We use 0 because the field minimum is 1 in HTML, but we
@@ -124,7 +123,7 @@ export function CreateGamePage() {
       : '0.00';
 
   const endAtIso = useMemo(() => {
-    const start = new Date(toIsoLocal(startAt));
+    const start = new Date(wallClockToUtcIso(startAt, getAppTimeZone()));
     const hours = durationHours === '' ? 1 : durationHours;
     const end = new Date(start.getTime() + hours * 3600_000);
     return end.toISOString();
@@ -142,7 +141,7 @@ export function CreateGamePage() {
         venueId: venueId || undefined,
         venueName: venueName.trim() || undefined,
         venueAddress: venueAddress.trim(),
-        startAt: toIsoLocal(startAt),
+        startAt: wallClockToUtcIso(startAt, getAppTimeZone()),
         endAt: endAtIso,
         skillLevel: skill,
         spotsTotal: unlimitedSpots

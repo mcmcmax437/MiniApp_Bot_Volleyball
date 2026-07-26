@@ -23,20 +23,28 @@ export function appTimeZone(): string {
   );
 }
 
+const LOCALE_TAG: Record<string, string> = {
+  uk: 'uk-UA',
+  pl: 'pl-PL',
+  en: 'en-GB',
+  ru: 'ru-RU',
+};
+
 /** Human-friendly datetime in the app timezone, e.g. "Sun, 26 Jul · 17:00". */
 export function formatGameWhen(
   date: Date,
   locale = 'en',
   timeZone: string = appTimeZone(),
 ): string {
+  const tag = LOCALE_TAG[locale] ?? locale;
   try {
-    const day = new Intl.DateTimeFormat(locale, {
+    const day = new Intl.DateTimeFormat(tag, {
       weekday: 'short',
       day: 'numeric',
       month: 'short',
       timeZone,
     }).format(date);
-    const time = new Intl.DateTimeFormat(locale, {
+    const time = new Intl.DateTimeFormat(tag, {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,

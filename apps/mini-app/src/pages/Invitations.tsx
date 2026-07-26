@@ -5,11 +5,12 @@ import { useI18n } from '../i18n';
 import { Icon } from '../Icon';
 import { Photo } from '../Photo';
 import { AdminCrownBadge, isAdminUser } from '../AdminCrownBadge';
+import { formatGameDateTime } from '../lib/datetime';
 
 export function InvitationsPage() {
   const api = useApi();
   const qc = useQueryClient();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   const listQ = useQuery(['invitations', 'mine'], () => api.listMyInvitations());
 
@@ -79,13 +80,7 @@ export function InvitationsPage() {
                     ) : null}
                   </div>
                   <div className="invitationItem-when">
-                    {new Date(inv.game.startAt).toLocaleString(undefined, {
-                      weekday: 'short',
-                      day: 'numeric',
-                      month: 'short',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                    {formatGameDateTime(inv.game.startAt, { locale: lang })}
                   </div>
                   <div className="invitationItem-venue">
                     {inv.game.venue.name} · {inv.game.venue.address}

@@ -1,9 +1,17 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQuery } from 'react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApi, SkillLevel, SKILL_LEVELS } from '../api';
 import { useI18n } from '../i18n';
 import { Icon, IconName } from '../Icon';
+import {
+  dateFromDayKey,
+  formatGameDayKey,
+  formatGameTimeOnly,
+  getAppTimeZone,
+  setAppTimeZone,
+  wallClockToUtcIso,
+} from '../lib/datetime';
 
 const SKILL_ICONS: Record<SkillLevel, IconName> = {
   LEVEL_1: 'tennis-ball',
@@ -29,38 +37,42 @@ interface DayBucket {
   }>;
 }
 
-function dayKey(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
 export function CalendarPage() {
   const api = useApi();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
-
-  // 60-day window centred on today
-  const from = new Date();
-  from.setHours(0, 0, 0, 0);
-  from.setDate(from.getDate() - 7);
-  const to = new Date(from);
-  to.setDate(to.getDate() + 60);
 
   const meQ = useQuery(['me'], () => api.me());
   const cityQ = useQuery(['default-city'], () => api.defaultCity());
   const filterCity = meQ.data?.city || cityQ.data?.city || undefined;
 
-  // Same city scope as Home / Games. Invites stay cross-city elsewhere.
+  useEffect(() => {
+    if (cityQ.data?.timeZone) setAppTimeZone(cityQ.data.timeZone);
+  }, [cityQ.data?.timeZone]);
+
+  const tz = cityQ.data?.timeZone || getAppTimeZone();
+
+  // 60-day window in the app timezone (not the phone clock).
+  const { fromIso, toIso, todayKey, dayKeys } = useMemo(() => {
+    const today = formatGameDayKey(new Date(), tz);
+    const todayNoon = dateFromDayKey(today, tz);
+    const keys: string[] = [];
+    for (let i = -7; i < 53; i++) {
+      const d = new Date(todayNoon.getTime() + i * 24 * 3600_000);
+      keys.push(formatGameDayKey(d, tz));
+    }
+    const fromIso = wallRangeStart(keys[0], tz);
+    const toIso = wallRangeEnd(keys[keys.length - 1], tz);
+    return { fromIso, toIso, todayKey: today, dayKeys: keys };
+  }, [tz]);
+
   const gamesQ = useQuery(
-    ['games', 'calendar', filterCity, from.toISOString(), to.toISOString()],
+    ['games', 'calendar', filterCity, fromIso, toIso],
     () =>
       api.listGames({
         city: filterCity,
-        from: from.toISOString(),
-        to: to.toISOString(),
-        // Closed lobbies stay visible so the lock + capacity still show.
+        from: fromIso,
+        to: toIso,
         includeClosed: true,
       }),
     { enabled: !!filterCity },
@@ -68,25 +80,22 @@ export function CalendarPage() {
 
   const days: DayBucket[] = useMemo(() => {
     const map = new Map<string, DayBucket>();
-    // Pre-fill the visible days so empty days still appear
-    for (let i = 0; i < 60; i++) {
-      const d = new Date(from);
-      d.setDate(from.getDate() + i);
-      const key = dayKey(d);
-      map.set(key, { dateKey: key, date: d, games: [] });
+    for (const key of dayKeys) {
+      map.set(key, {
+        dateKey: key,
+        date: dateFromDayKey(key, tz),
+        games: [],
+      });
     }
     if (gamesQ.data) {
       for (const g of gamesQ.data) {
-        const d = new Date(g.startAt);
-        const key = dayKey(d);
+        const key = formatGameDayKey(g.startAt, tz);
         const bucket = map.get(key);
-        if (bucket) bucket.games.push(g as any);
+        if (bucket) bucket.games.push(g as DayBucket['games'][number]);
       }
     }
-    return Array.from(map.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
-  }, [gamesQ.data]);
-
-  const todayKey = dayKey(new Date());
+    return Array.from(map.values());
+  }, [gamesQ.data, dayKeys, tz]);
 
   return (
     <div className="calendarPage">
@@ -123,7 +132,8 @@ export function CalendarPage() {
                 <span
                   className={`calendarDay-pill${day.dateKey === todayKey ? ' isToday' : ''}`}
                 >
-                  {day.date.toLocaleDateString(undefined, {
+                  {day.date.toLocaleDateString(lang === 'en' ? 'en-GB' : lang, {
+                    timeZone: tz,
                     weekday: 'short',
                     day: 'numeric',
                     month: 'short',
@@ -141,10 +151,7 @@ export function CalendarPage() {
                 <div className="calendarDay-games">
                   {day.games.map((g) => {
                     const skillNum = SKILL_LEVELS.indexOf(g.skillLevel) + 1;
-                    const time = new Date(g.startAt).toLocaleTimeString(undefined, {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    });
+                    const time = formatGameTimeOnly(g.startAt, { locale: lang });
                     return (
                       <Link
                         key={g.id}
@@ -188,4 +195,12 @@ export function CalendarPage() {
       )}
     </div>
   );
+}
+
+function wallRangeStart(dayKey: string, tz: string): string {
+  return wallClockToUtcIso(`${dayKey}T00:00`, tz);
+}
+
+function wallRangeEnd(dayKey: string, tz: string): string {
+  return wallClockToUtcIso(`${dayKey}T23:59`, tz);
 }

@@ -15,18 +15,8 @@ import { ReportUserModal } from './ReportUserModal';
 import { EvaluatePlayersModal } from './EvaluatePlayersModal';
 import { InvitePlayerModal } from './InvitePlayerModal';
 import { confirmDialog } from '../lib/confirm';
+import { formatGameDateTime } from '../lib/datetime';
 import './GameDetail.css';
-
-
-function formatGameTime(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
-    weekday: 'short',
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
 
 function formatMoney(minor: number, currency: string): string {
   return `${CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] ?? currency}${(minor / 100).toFixed(2)}`;
@@ -160,7 +150,7 @@ export function GameDetailPage() {
   const api = useApi();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   const meQ = useQuery(['me'], () => api.me());
   const gameQ = useQuery(['game', id], () => api.getGame(id!), { enabled: !!id });
@@ -309,7 +299,7 @@ export function GameDetailPage() {
           </div>
           <div className="detailHero-meta">
             <span>
-              <Icon name="calendar-01" size={14} /> {formatGameTime(g.startAt)}
+              <Icon name="calendar-01" size={14} /> {formatGameDateTime(g.startAt, { locale: lang })}
             </span>
             <span>
               <Icon name="map-pin" size={14} /> {g.venue.address}
@@ -517,7 +507,8 @@ export function GameDetailPage() {
           <div className="detailInfo-row">
             <Icon name="calendar-01" className="icon-inline" />
             <span>
-              <strong>{t('gameDetail.startsAt')}:</strong> {formatGameTime(g.startAt)}
+              <strong>{t('gameDetail.startsAt')}:</strong>{' '}
+              {formatGameDateTime(g.startAt, { locale: lang })}
             </span>
           </div>
           <div className="detailInfo-row">
