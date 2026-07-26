@@ -3,6 +3,7 @@ import { useQuery } from "react-query";
 import { Link } from "react-router-dom";
 import { useApi, type PlayType } from "../api";
 import { useI18n } from "../i18n";
+import { FILTER_GAMES_BY_CITY } from "../lib/city-filter";
 import { GameCard } from "./GameCard";
 import { Icon } from "../Icon";
 import "./Games.css";
@@ -36,7 +37,7 @@ export function GamesPage() {
   const listArgs = useMemo(() => {
     const today = quick === "TODAY" ? todayRange() : null;
     return {
-      city: filterCity,
+      city: FILTER_GAMES_BY_CITY ? filterCity : undefined,
       from: today?.from ?? (dateFrom ? new Date(dateFrom).toISOString() : undefined),
       to: today?.to ?? (dateTo ? new Date(dateTo + "T23:59:59").toISOString() : undefined),
       minSpots: spotsMin ? Number(spotsMin) : undefined,
@@ -51,7 +52,11 @@ export function GamesPage() {
   const gamesQ = useQuery(
     ["games", "list", JSON.stringify(listArgs)],
     () => api.listGames(listArgs),
-    { enabled: !!cityQ.data || !!meQ.data?.city },
+    {
+      enabled: FILTER_GAMES_BY_CITY
+        ? !!cityQ.data || !!meQ.data?.city
+        : !!meQ.data || cityQ.isFetched,
+    },
   );
 
   const count = gamesQ.data?.length ?? 0;
@@ -85,7 +90,10 @@ export function GamesPage() {
         <div style={{ flex: 1 }}>
           <h1 className="page-header-title">{t("games.title")}</h1>
           <p className="page-header-sub">
-            {filterCity ?? "your city"} · {count} game{count === 1 ? "" : "s"}
+            {FILTER_GAMES_BY_CITY
+              ? `${filterCity ?? "your city"} · `
+              : ""}
+            {count} game{count === 1 ? "" : "s"}
           </p>
         </div>
         {filtersActive && (

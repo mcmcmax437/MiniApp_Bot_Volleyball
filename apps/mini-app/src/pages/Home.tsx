@@ -9,6 +9,7 @@ import { SkillBadge } from "../SkillBadge";
 import { useI18n } from "../i18n";
 import { reverseGeocode } from "../geo";
 import { effectiveSkillLevel } from "../lib/skill";
+import { FILTER_GAMES_BY_CITY } from "../lib/city-filter";
 import { GameCard } from "./GameCard";
 import "./Home.css";
 
@@ -44,15 +45,23 @@ export function HomePage() {
   // Prefer profile city so Home matches games the user just created
   // (venues are stamped with me.city). Server expands aliases
   // (Poznań / Познань) so DEFAULT_CITY and profile spellings both match.
+  // FILTER_GAMES_BY_CITY is temporarily off — all cities are listed.
   const filterCity = meQ.data?.city || cityQ.data?.city || undefined;
   // Query key includes a version suffix so changes to the games payload
   // shape (e.g. the v4 fields `playType` / `participants.evaluatedSkillLevel`)
   // automatically invalidate any cached entries from an older build without
   // requiring a hard reload.
   const gamesQ = useQuery(
-    ["games", filterCity, "HOME", "v4"],
-    () => api.listGames({ city: filterCity }),
-    { enabled: !!cityQ.data || !!meQ.data?.city },
+    ["games", FILTER_GAMES_BY_CITY ? filterCity : "ALL", "HOME", "v4"],
+    () =>
+      api.listGames(
+        FILTER_GAMES_BY_CITY && filterCity ? { city: filterCity } : {},
+      ),
+    {
+      enabled: FILTER_GAMES_BY_CITY
+        ? !!cityQ.data || !!meQ.data?.city
+        : !!meQ.data || cityQ.isFetched,
+    },
   );
   const navigate = useNavigate();
 

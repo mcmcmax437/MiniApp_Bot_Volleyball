@@ -12,6 +12,7 @@ import {
   setAppTimeZone,
   wallClockToUtcIso,
 } from '../lib/datetime';
+import { FILTER_GAMES_BY_CITY } from '../lib/city-filter';
 
 const SKILL_ICONS: Record<SkillLevel, IconName> = {
   LEVEL_1: 'tennis-ball',
@@ -67,15 +68,19 @@ export function CalendarPage() {
   }, [tz]);
 
   const gamesQ = useQuery(
-    ['games', 'calendar', filterCity, fromIso, toIso],
+    ['games', 'calendar', FILTER_GAMES_BY_CITY ? filterCity : 'ALL', fromIso, toIso],
     () =>
       api.listGames({
-        city: filterCity,
+        city: FILTER_GAMES_BY_CITY ? filterCity : undefined,
         from: fromIso,
         to: toIso,
         includeClosed: true,
       }),
-    { enabled: !!filterCity },
+    {
+      enabled: FILTER_GAMES_BY_CITY
+        ? !!filterCity
+        : !!meQ.data || cityQ.isFetched,
+    },
   );
 
   const days: DayBucket[] = useMemo(() => {
