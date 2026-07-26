@@ -96,7 +96,16 @@
   padding: 12px 14px;
   color: #fff;
   display: flex;
-  flex-direction: column-reverse; /* title last (closest to bottom), meta on top */
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.gameCard-heroLeft {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column-reverse; /* title closest to bottom, meta above */
   gap: 4px;
 }
 
@@ -150,34 +159,36 @@
   flex-shrink: 0;
 }
 
-.gameCard-heroWhen {
-  align-items: baseline;
-  gap: 8px;
-  flex-wrap: wrap;
-  white-space: normal;
+/* Big start-time clock — bottom-right of the hero cover. */
+.gameCard-heroClock {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.12) inset;
 }
 
-.gameCard-heroWhenIcon {
-  align-self: center;
-  color: rgba(255, 255, 255, 0.9);
+.gameCard-heroClockIcon {
+  color: rgba(255, 255, 255, 0.92);
+  flex-shrink: 0;
 }
 
 .gameCard-heroTime {
   font-family: var(--font-display);
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.03em;
   color: #fff;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
-}
-
-.gameCard-heroDate {
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.88);
-  letter-spacing: 0.01em;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
 }
 
 /* ============================================================

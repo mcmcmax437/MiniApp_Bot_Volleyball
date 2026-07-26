@@ -112,30 +112,36 @@ export function GameCard({ game }: GameCardProps) {
             </div>
           </div>
 
-          {/* Bottom: title + meta */}
+          {/* Bottom: title + meta (left) + start-time clock (right) */}
           <div className="gameCard-heroBody">
-            <div className="gameCard-heroTitle">
-              <Icon name={playTypeIcon(game.playType)} size={14} className="gameCard-heroTitleIcon" />
-              <span>{t(`game.playType.${game.playType.toLowerCase()}`)}</span>
-              <SkillBadge
-                level={game.skillLevel}
-                size="md"
-                className="gameCard-heroSkill"
-              />
-            </div>
-            <div className="gameCard-heroMeta">
-              <span className="gameCard-heroWhen">
-                <Icon name="calendar-01" size={14} className="gameCard-heroWhenIcon" />
-                <span className="gameCard-heroTime">
-                  {formatGameTimeOnly(game.startAt, { locale: lang })}
-                </span>
-                <span className="gameCard-heroDate">
+            <div className="gameCard-heroLeft">
+              <div className="gameCard-heroTitle">
+                <Icon name={playTypeIcon(game.playType)} size={14} className="gameCard-heroTitleIcon" />
+                <span>{t(`game.playType.${game.playType.toLowerCase()}`)}</span>
+                <SkillBadge
+                  level={game.skillLevel}
+                  size="md"
+                  className="gameCard-heroSkill"
+                />
+              </div>
+              <div className="gameCard-heroMeta">
+                <span>
+                  <Icon name="calendar-01" size={12} />
                   {formatGameDateOnly(game.startAt, { locale: lang })}
                 </span>
-              </span>
-              <span>
-                <Icon name="map-pin" size={12} />
-                {game.venue.name}
+                <span>
+                  <Icon name="map-pin" size={12} />
+                  {game.venue.name}
+                </span>
+              </div>
+            </div>
+            <div
+              className="gameCard-heroClock"
+              aria-label={formatGameTimeOnly(game.startAt, { locale: lang })}
+            >
+              <Icon name="clock-01" size={16} className="gameCard-heroClockIcon" />
+              <span className="gameCard-heroTime">
+                {formatGameTimeOnly(game.startAt, { locale: lang })}
               </span>
             </div>
           </div>
