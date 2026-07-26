@@ -456,11 +456,6 @@ export function CreateGamePage() {
               <span className="toggle-label">{t('create.field.unlimited')}</span>
             </label>
           </div>
-          {selectedVenue && !unlimitedSpots && (
-            <div className="field-hint">
-              {t('create.venueMax', { n: selectedVenue.capacity })}
-            </div>
-          )}
           {unlimitedSpots && <div className="field-hint">{t('create.unlimitedHint')}</div>}
         </div>
       </section>
