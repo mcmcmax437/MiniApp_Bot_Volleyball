@@ -2,11 +2,13 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { useApi, AdminVenueListItem } from "../api";
 import { Icon } from "../Icon";
+import { confirmDialog } from "../lib/confirm";
 
 export function AdminVenuesPage() {
   const api = useApi();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const q = useQuery<AdminVenueListItem>(
     ["admin", "venues", search],
@@ -16,12 +18,24 @@ export function AdminVenuesPage() {
   const setStatus = useMutation(
     ({ id, status }: { id: string; status: "PUBLISHED" | "HIDDEN" }) =>
       api.adminUpdateVenue(id, { status }),
-    { onSuccess: () => qc.invalidateQueries(["admin", "venues"]) },
+    {
+      onSuccess: () => {
+        setActionError(null);
+        qc.invalidateQueries(["admin", "venues"]);
+      },
+      onError: (err) => setActionError((err as Error).message),
+    },
   );
 
   const del = useMutation(
     (id: string) => api.adminDeleteVenue(id),
-    { onSuccess: () => qc.invalidateQueries(["admin", "venues"]) },
+    {
+      onSuccess: () => {
+        setActionError(null);
+        qc.invalidateQueries(["admin", "venues"]);
+      },
+      onError: (err) => setActionError((err as Error).message),
+    },
   );
 
   return (
@@ -53,6 +67,12 @@ export function AdminVenuesPage() {
         <div className="error">
           <Icon name="bell-dot" size={16} />
           <span>{(q.error as Error).message}</span>
+        </div>
+      )}
+      {actionError && (
+        <div className="error">
+          <Icon name="bell-dot" size={16} />
+          <span>{actionError}</span>
         </div>
       )}
       {q.data && (
@@ -107,13 +127,23 @@ export function AdminVenuesPage() {
               <button
                 type="button"
                 className="adminItem-btn adminItem-btn-danger"
-                onClick={() => {
-                  if (window.confirm("Delete this venue? Refused if it has games.")) {
-                    del.mutate(v.id);
-                  }
+                onClick={async () => {
+                  setActionError(null);
+                  const games = v._count.games;
+                  const ok = await confirmDialog(
+                    games > 0
+                      ? `Delete “${v.name}” and its ${games} game${games === 1 ? "" : "s"}? This cannot be undone.`
+                      : `Delete “${v.name}”?`,
+                  );
+                  if (!ok) return;
+                  del.mutate(v.id);
                 }}
                 disabled={del.isLoading}
-                title="Delete venue"
+                title={
+                  v._count.games > 0
+                    ? `Delete venue and ${v._count.games} linked game(s)`
+                    : "Delete venue"
+                }
               >
                 <Icon name="delete-01" size={14} />
               </button>

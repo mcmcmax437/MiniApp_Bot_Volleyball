@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   AdminUpdateGameDto,
@@ -371,14 +376,26 @@ export class AdminService {
     const venue = await this.prisma.venue.findUnique({ where: { id } });
     if (!venue) throw new NotFoundException(`Venue ${id} not found`);
     const gameCount = await this.prisma.game.count({ where: { venueId: id } });
-    if (gameCount > 0) {
-      throw new NotFoundException(
-        `Cannot delete venue with ${gameCount} game(s). Hide it instead by setting status=HIDDEN.`,
+
+    // Games hold a required FK to venue (no onDelete cascade). Admin delete
+    // removes those games first — child rows (participants, payments, …)
+    // already cascade from Game.
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        if (gameCount > 0) {
+          await tx.game.deleteMany({ where: { venueId: id } });
+        }
+        await tx.venue.delete({ where: { id } });
+      });
+    } catch (err) {
+      this.logger.error(`Failed to delete venue ${id}`, err as Error);
+      throw new BadRequestException(
+        `Could not delete venue${gameCount > 0 ? ` (${gameCount} linked game(s))` : ''}. Try hiding it instead.`,
       );
     }
-    await this.prisma.venue.delete({ where: { id } });
-    await this.log(actorId, 'venue.delete', 'venue', id, null);
-    return { ok: true };
+
+    await this.log(actorId, 'venue.delete', 'venue', id, { gameCount });
+    return { ok: true, deletedGames: gameCount };
   }
 
   // ---------- Audit log ----------
