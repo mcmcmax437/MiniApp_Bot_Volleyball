@@ -309,8 +309,17 @@ export const uk: Record<string, string> = {
   'common.retry': 'Спробувати ще',
   'common.error': 'Щось пішло не так',
   'common.close': 'Закрити',
+  'common.back': 'Назад',
   'common.optional': 'Необов\'язково',
   'common.you': 'Ви',
+
+  'userProfile.view': 'Переглянути профіль',
+  'userProfile.viewNamed': 'Профіль гравця {name}',
+  'userProfile.openTelegram': 'Відкрити в Telegram',
+  'userProfile.block': 'Заблокувати',
+  'userProfile.blockConfirm': 'Заблокувати {name}? Гравець не з\'являтиметься у ваших підказках.',
+  'userProfile.notFound': 'Гравця не знайдено',
+  'userProfile.notFoundText': 'Цей профіль видалено або він недоступний.',
 
   'banner.signOut': 'Ви вийшли з акаунту.',
   'banner.saved': 'Збережено.',

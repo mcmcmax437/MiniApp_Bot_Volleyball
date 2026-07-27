@@ -299,8 +299,17 @@ export const ru: Record<string, string> = {
   'common.retry': 'Повторить',
   'common.error': 'Что-то пошло не так',
   'common.close': 'Закрыть',
+  'common.back': 'Назад',
   'common.optional': 'Необязательно',
   'common.you': 'Вы',
+
+  'userProfile.view': 'Смотреть профиль',
+  'userProfile.viewNamed': 'Профиль игрока {name}',
+  'userProfile.openTelegram': 'Открыть в Telegram',
+  'userProfile.block': 'Заблокировать',
+  'userProfile.blockConfirm': 'Заблокировать {name}? Игрок не будет появляться в ваших подсказках.',
+  'userProfile.notFound': 'Игрок не найден',
+  'userProfile.notFoundText': 'Этот профиль удалён или недоступен.',
 
   'banner.signOut': 'Вы вышли.',
   'banner.saved': 'Сохранено.',

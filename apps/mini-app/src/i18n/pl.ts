@@ -299,8 +299,17 @@ export const pl: Record<string, string> = {
   'common.retry': 'Ponów',
   'common.error': 'Coś poszło nie tak',
   'common.close': 'Zamknij',
+  'common.back': 'Wstecz',
   'common.optional': 'Opcjonalne',
   'common.you': 'Ty',
+
+  'userProfile.view': 'Zobacz profil',
+  'userProfile.viewNamed': 'Profil gracza {name}',
+  'userProfile.openTelegram': 'Otwórz w Telegramie',
+  'userProfile.block': 'Zablokuj gracza',
+  'userProfile.blockConfirm': 'Zablokować {name}? Nie będzie pojawiać się w Twoich podpowiedziach.',
+  'userProfile.notFound': 'Nie znaleziono gracza',
+  'userProfile.notFoundText': 'Ten profil został usunięty lub jest niedostępny.',
 
   'banner.signOut': 'Wylogowano.',
   'banner.saved': 'Zapisano.',

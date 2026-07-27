@@ -17,7 +17,7 @@ export class SchedulerService {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async tick() {
-    // Auto-finish games whose end time has passed so they drop out of
+    // Auto-finish games one hour after start so they drop out of
     // upcoming lists and can no longer be joined.
     await this.autoFinishEndedGames();
 
@@ -84,13 +84,18 @@ export class SchedulerService {
     }
   }
 
-  /** Mark OPEN/FULL games past their endAt as FINISHED. */
+  /**
+   * Auto-finish OPEN/FULL games one hour after kickoff (startAt + 1h),
+   * not at the configured endAt. Example: starts 18:00 → finished at 19:00.
+   * Hosts can still finish earlier via the manual Finish action.
+   */
   private async autoFinishEndedGames() {
     try {
+      const oneHourAfterKickoff = new Date(Date.now() - 60 * 60 * 1000);
       const result = await this.prisma.game.updateMany({
         where: {
           status: { in: ['OPEN', 'FULL'] },
-          endAt: { lte: new Date() },
+          startAt: { lte: oneHourAfterKickoff },
         },
         data: { status: 'FINISHED' },
       });

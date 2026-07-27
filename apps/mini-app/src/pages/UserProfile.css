@@ -1,0 +1,44 @@
+.userProfile-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.userProfile-back:active {
+  color: var(--text-primary);
+}
+
+.userProfile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.userProfile-actions .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.userProfile-block {
+  color: var(--danger, #f87171);
+}
+
+.userProfile-blacklistLink {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-decoration: none;
+  padding: 4px 0 8px;
+}
+
+.userProfile-blacklistLink:active {
+  color: var(--text-secondary);
+}

@@ -327,8 +327,18 @@ export const en: Record<string, string> = {
   'common.retry': 'Retry',
   'common.error': 'Something went wrong',
   'common.close': 'Close',
+  'common.back': 'Back',
   'common.optional': 'Optional',
   'common.you': 'You',
+
+  // ===== Other player profile =====
+  'userProfile.view': 'View profile',
+  'userProfile.viewNamed': 'View {name}\'s profile',
+  'userProfile.openTelegram': 'Open in Telegram',
+  'userProfile.block': 'Block player',
+  'userProfile.blockConfirm': 'Block {name}? They won\'t appear in your games suggestions.',
+  'userProfile.notFound': 'Player not found',
+  'userProfile.notFoundText': 'This profile may have been removed or is unavailable.',
 
   // ===== Banners =====
   'banner.signOut': 'Signed out.',

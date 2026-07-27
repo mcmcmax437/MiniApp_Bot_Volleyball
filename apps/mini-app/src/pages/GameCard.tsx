@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Icon } from "../Icon";
 import { Photo } from "../Photo";
 import { CURRENCY_SYMBOLS } from "../api";
@@ -73,6 +73,7 @@ interface GameCardProps {
 
 export function GameCard({ game }: GameCardProps) {
   const { t, lang } = useI18n();
+  const navigate = useNavigate();
   const spotsLeft = game.spotsTotal - game.participantsCount;
 
   return (
@@ -183,18 +184,31 @@ export function GameCard({ game }: GameCardProps) {
                   {visible.map((u) => {
                     const lvl = effectiveSkillLevel(u);
                     return (
-                      <Photo
+                      <button
                         key={u.id}
-                        src={u.photoUrl ?? null}
-                        name={u.firstName ?? null}
-                        size={36}
-                        topLeftBadge={
-                          isAdminUser(u) ? (
-                            <AdminCrownBadge title={t('profile.status.admin')} size="sm" />
-                          ) : null
-                        }
-                        bottomRightBadge={lvl ? <SkillBadge level={lvl} size="sm" className="skillBadge-on-photo" /> : null}
-                      />
+                        type="button"
+                        className="gameCard-playerBtn"
+                        title={u.firstName ?? undefined}
+                        aria-label={t('userProfile.viewNamed', { name: u.firstName ?? '' })}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (u.id) navigate(`/users/${u.id}`);
+                        }}
+                        data-analytics-label="game-card-open-profile"
+                      >
+                        <Photo
+                          src={u.photoUrl ?? null}
+                          name={u.firstName ?? null}
+                          size={36}
+                          topLeftBadge={
+                            isAdminUser(u) ? (
+                              <AdminCrownBadge title={t('profile.status.admin')} size="sm" />
+                            ) : null
+                          }
+                          bottomRightBadge={lvl ? <SkillBadge level={lvl} size="sm" className="skillBadge-on-photo" /> : null}
+                        />
+                      </button>
                     );
                   })}
                   {overflow > 0 && (

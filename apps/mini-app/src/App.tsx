@@ -12,6 +12,7 @@ import { GameDetailPage } from './pages/GameDetail';
 import { CreateGamePage } from './pages/CreateGame';
 import { VenuesPage } from './pages/Venues';
 import { ProfilePage } from './pages/Profile';
+import { UserProfilePage } from './pages/UserProfile';
 import { WelcomePage } from './pages/Welcome';
 import { AdminPage } from './pages/Admin';
 import { AdminStatsPage } from './pages/AdminStats';
@@ -278,6 +279,7 @@ export function App() {
           <Route path="/create" element={<CreateGamePage />} />
           <Route path="/venues" element={<VenuesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/users/:id" element={<UserProfilePage />} />
           <Route path="/welcome" element={<WelcomePage />} />
           <Route path="/welcome/change" element={<WelcomeChangePage />} />
           <Route path="/admin" element={<AdminGate><AdminPage /></AdminGate>} />

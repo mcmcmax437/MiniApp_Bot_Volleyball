@@ -27,6 +27,22 @@ export interface InviteSearchUser {
   role?: UserRole;
 }
 
+/** Public profile returned by `GET /users/:id` (no private fields). */
+export interface PublicUserProfile {
+  id: string;
+  firstName: string;
+  lastName: string | null;
+  username: string | null;
+  photoUrl: string | null;
+  role: UserRole;
+  skillLevel: SkillLevel | null;
+  evaluatedSkillLevel: SkillLevel | null;
+  age: number | null;
+  city: string;
+  gamesHosted: number;
+  gamesJoined: number;
+}
+
 export const SKILL_LEVELS: SkillLevel[] = [
   'LEVEL_1',
   'LEVEL_2',
@@ -717,6 +733,8 @@ export function useApi() {
         initData,
       );
     },
+    getPublicUser: (id: string) =>
+      http<PublicUserProfile>(`/users/${id}`, { method: 'GET' }, initData),
     cancelInvitation: (id: string) =>
       http<{ ok: boolean }>(`/invitations/${id}`, { method: 'DELETE' }, initData),
     respondInvitation: (id: string, accept: boolean) =>

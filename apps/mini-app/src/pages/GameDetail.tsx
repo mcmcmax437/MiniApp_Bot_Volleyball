@@ -43,6 +43,7 @@ interface PlayerRowProps {
   isHost: boolean;
   isYou: boolean;
   roleLabel: string;
+  onOpenProfile: () => void;
   onReport: () => void;
   menuOpen: boolean;
   onToggleMenu: () => void;
@@ -67,6 +68,7 @@ function PlayerRow({
   isHost,
   isYou,
   roleLabel,
+  onOpenProfile,
   onReport,
   menuOpen,
   onToggleMenu,
@@ -86,34 +88,39 @@ function PlayerRow({
   const showAdmin = isAdminUser({ role });
   return (
     <li className="detailPlayer" data-user-id={userId}>
-      <Photo
-        src={photoUrl}
-        name={fullName}
-        size={44}
-        variant="rounded"
-        topLeftBadge={showAdmin ? <AdminCrownBadge title={t('profile.status.admin')} /> : null}
-        bottomRightBadge={level ? <SkillBadge level={level} size="sm" className="skillBadge-on-photo" /> : null}
-      />
-      <span className="detailPlayer-body">
-        <span className="detailPlayer-name">
-          <span className="detailPlayer-nameText">{fullName}</span>
-          {isYou && (
-            <span className="detailPlayer-tag detailPlayer-tag-you">
-              {t('gameDetail.tagYou')}
-            </span>
-          )}
+      <button
+        type="button"
+        className="detailPlayer-main"
+        onClick={onOpenProfile}
+        data-analytics-label="game-player-open-profile"
+      >
+        <Photo
+          src={photoUrl}
+          name={fullName}
+          size={44}
+          variant="rounded"
+          topLeftBadge={showAdmin ? <AdminCrownBadge title={t('profile.status.admin')} /> : null}
+          bottomRightBadge={level ? <SkillBadge level={level} size="sm" className="skillBadge-on-photo" /> : null}
+        />
+        <span className="detailPlayer-body">
+          <span className="detailPlayer-name">
+            <span className="detailPlayer-nameText">{fullName}</span>
+            {isYou && (
+              <span className="detailPlayer-tag detailPlayer-tag-you">
+                {t('gameDetail.tagYou')}
+              </span>
+            )}
+          </span>
+          <span className="detailPlayer-sub">
+            {isHost && (
+              <span className="detailPlayer-tag detailPlayer-tag-host">
+                {t('gameDetail.tagHost')}
+              </span>
+            )}
+            {showRoleLabel && <span>{roleLabel}</span>}
+          </span>
         </span>
-        <span className="detailPlayer-sub">
-          {isHost && (
-            <span className="detailPlayer-tag detailPlayer-tag-host">
-              {t('gameDetail.tagHost')}
-            </span>
-          )}
-          {showRoleLabel && <span>{roleLabel}</span>}
-          {/* Skill lives on the photo badge only — a second pill next to
-              the role label was redundant and hard to read. */}
-        </span>
-      </span>
+      </button>
       {showMenu && (
         <div className="detailPlayer-menu">
           <button
@@ -134,6 +141,17 @@ function PlayerRow({
           </button>
           {menuOpen && (
             <div className="detailPlayer-menuPop" role="menu">
+              <button
+                className="detailPlayer-menuItem"
+                onClick={() => {
+                  onToggleMenu();
+                  onOpenProfile();
+                }}
+                role="menuitem"
+                data-analytics-label="game-view-profile"
+              >
+                <Icon name="user-account" size={14} /> {t('userProfile.view')}
+              </button>
               <button
                 className="detailPlayer-menuItem"
                 onClick={() => {
@@ -386,6 +404,9 @@ export function GameDetailPage() {
               isHost
               isYou={myId === g.host.id}
               roleLabel={t('gameDetail.roleOrganizer')}
+              onOpenProfile={() =>
+                navigate(myId === g.host.id ? '/profile' : `/users/${g.host.id}`)
+              }
               onReport={() => setReportTarget({ id: g.host.id, name: g.host.firstName })}
               menuOpen={openMenuFor === g.host.id}
               onToggleMenu={() =>
@@ -407,6 +428,9 @@ export function GameDetailPage() {
                   isHost={false}
                   isYou={myId === p.userId}
                   roleLabel={t('gameDetail.rolePlayer')}
+                  onOpenProfile={() =>
+                    navigate(myId === p.userId ? '/profile' : `/users/${p.userId}`)
+                  }
                   onReport={() =>
                     setReportTarget({ id: p.userId, name: p.user.firstName })
                   }
@@ -434,7 +458,13 @@ export function GameDetailPage() {
                     : r.userId;
                   return (
                     <li key={r.id} className="detailPlayer" style={{ flexWrap: 'wrap', gap: 8 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+                      <button
+                        type="button"
+                        className="detailPlayer-main"
+                        style={{ flex: 1, minWidth: 0 }}
+                        onClick={() => u?.id && navigate(`/users/${u.id}`)}
+                        data-analytics-label="game-join-request-open-profile"
+                      >
                         <Photo
                           src={u?.photoUrl ?? null}
                           name={name}
@@ -460,7 +490,7 @@ export function GameDetailPage() {
                             <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>@{u.username}</div>
                           )}
                         </div>
-                      </div>
+                      </button>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button
                           type="button"

@@ -107,10 +107,9 @@
 }
 
 .detailPlayer {
-  display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) 36px;
+  display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   padding: 10px 0;
   color: var(--text-secondary);
   font-size: 14px;
@@ -120,6 +119,28 @@
 
 .detailPlayer:last-of-type {
   border-bottom: none;
+}
+
+.detailPlayer-main {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+}
+
+.detailPlayer-main:active {
+  opacity: 0.85;
 }
 
 .detailPlayer-body {

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Header, Param, Post, Query, Sse, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, NotFoundException, Param, Post, Query, Sse, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
 import { Observable } from 'rxjs';
 import { InvitationsService } from './invitations.service';
@@ -133,5 +133,55 @@ export class InvitationsController {
     });
 
     return { users };
+  }
+
+  /**
+   * Public player profile for the Mini App. Safe fields only — no telegramId,
+   * coordinates, reminders, or ban internals. Banned accounts look like a 404
+   * so they don't appear in the social graph.
+   */
+  @Get('users/:id')
+  async getPublicUser(
+    @CurrentUser() me: User | null,
+    @Param('id') id: string,
+  ) {
+    if (!me) throw new UnauthorizedException('User not found');
+
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        username: true,
+        photoUrl: true,
+        role: true,
+        skillLevel: true,
+        evaluatedSkillLevel: true,
+        age: true,
+        city: true,
+        isBanned: true,
+      },
+    });
+    if (!user || user.isBanned) {
+      throw new NotFoundException('User not found');
+    }
+
+    const [gamesHosted, gamesJoined] = await Promise.all([
+      this.prisma.game.count({ where: { hostId: id } }),
+      this.prisma.gameParticipant.count({
+        where: {
+          userId: id,
+          game: { status: { in: ['OPEN', 'FULL', 'FINISHED'] } },
+        },
+      }),
+    ]);
+
+    const { isBanned: _banned, ...publicFields } = user;
+    return {
+      ...publicFields,
+      gamesHosted,
+      gamesJoined,
+    };
   }
 }
