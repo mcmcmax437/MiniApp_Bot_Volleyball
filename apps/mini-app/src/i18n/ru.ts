@@ -271,6 +271,7 @@ export const ru: Record<string, string> = {
   'invite.statusAccepted': 'Принято',
   'invite.statusDeclined': 'Отклонено',
   'invite.statusIgnored': 'Игнорировано',
+  'invite.statusInactive': 'Неактивно',
 
   'payments.title': 'Платежи',
   'payments.totalCost': 'Общая стоимость',

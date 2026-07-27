@@ -281,6 +281,7 @@ export const uk: Record<string, string> = {
   'invite.statusAccepted': 'Прийнято',
   'invite.statusDeclined': 'Відхилено',
   'invite.statusIgnored': 'Проігноровано',
+  'invite.statusInactive': 'Неактивне',
 
   'payments.title': 'Платежі',
   'payments.totalCost': 'Загальна вартість',

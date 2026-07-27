@@ -92,12 +92,25 @@ export class SchedulerService {
   private async autoFinishEndedGames() {
     try {
       const oneHourAfterKickoff = new Date(Date.now() - 60 * 60 * 1000);
-      const result = await this.prisma.game.updateMany({
+      const due = await this.prisma.game.findMany({
         where: {
           status: { in: ['OPEN', 'FULL'] },
           startAt: { lte: oneHourAfterKickoff },
         },
+        select: { id: true },
+        take: 200,
+      });
+      if (!due.length) return;
+
+      const ids = due.map((g) => g.id);
+      const result = await this.prisma.game.updateMany({
+        where: { id: { in: ids } },
         data: { status: 'FINISHED' },
+      });
+      // Pending invites become inactive once the game is finished.
+      await this.prisma.gameInvitation.updateMany({
+        where: { gameId: { in: ids }, status: 'PENDING' },
+        data: { status: 'IGNORED', respondedAt: new Date() },
       });
       if (result.count > 0) {
         this.logger.log(`Auto-finished ${result.count} ended game(s)`);

@@ -288,16 +288,15 @@ export class AdminService {
 
     const updated = await this.prisma.game.update({ where: { id }, data });
 
-    // If admin cancelled a previously-open game, notify participants.
-    if (dto.status === 'CANCELLED' && before.status !== 'CANCELLED') {
-      // best-effort: import scheduler lazily to avoid circulars
-      try {
-        const { SchedulerService } = await import('../scheduler/scheduler.service');
-        // The scheduler is module-scoped; log only.
-        this.logger.log(`Game ${id} cancelled by admin ${actorId}`);
-      } catch {
-        // ignore
-      }
+    if (
+      (dto.status === 'CANCELLED' || dto.status === 'FINISHED') &&
+      before.status !== dto.status
+    ) {
+      await this.prisma.gameInvitation.updateMany({
+        where: { gameId: id, status: 'PENDING' },
+        data: { status: 'IGNORED', respondedAt: new Date() },
+      });
+      this.logger.log(`Game ${id} set to ${dto.status} by admin ${actorId}`);
     }
 
     await this.log(actorId, 'game.update', 'game', id, {
@@ -314,6 +313,10 @@ export class AdminService {
     const updated = await this.prisma.game.update({
       where: { id },
       data: { status: 'CANCELLED' },
+    });
+    await this.prisma.gameInvitation.updateMany({
+      where: { gameId: id, status: 'PENDING' },
+      data: { status: 'IGNORED', respondedAt: new Date() },
     });
     await this.log(actorId, 'game.cancel', 'game', id, { before, after: updated });
     return updated;

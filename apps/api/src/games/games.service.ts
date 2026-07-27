@@ -8,6 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { SchedulerService } from '../scheduler/scheduler.service';
+import { InvitationsService } from '../invitations/invitations.service';
 import { CreateGameDto, ListGamesQuery } from './dto';
 import { SKILL_BUCKETS, SKILL_LEVELS } from '../shared/skill-levels';
 import { canonicalizeCity, expandCityFilter, foldCity } from '../shared/city';
@@ -21,6 +22,7 @@ export class GamesService {
     private readonly prisma: PrismaService,
     private readonly scheduler: SchedulerService,
     private readonly config: ConfigService,
+    private readonly invitations: InvitationsService,
   ) {}
 
   /**
@@ -392,7 +394,7 @@ export class GamesService {
   }
 
   async join(me: User, gameId: string) {
-    return this.prisma.$transaction(async (tx) => {
+    const joined = await this.prisma.$transaction(async (tx) => {
       const game = await tx.game.findUnique({
         where: { id: gameId },
         include: { participants: true },
@@ -449,6 +451,11 @@ export class GamesService {
 
       return this.findOne(gameId);
     });
+
+    if (joined.status === 'FULL') {
+      await this.invitations.refreshPendingInvitees(gameId).catch(() => undefined);
+    }
+    return joined;
   }
 
   async leave(me: User, gameId: string) {
@@ -484,6 +491,7 @@ export class GamesService {
     });
 
     if (result.wasHost) {
+      await this.invitations.deactivatePendingForGame(gameId).catch(() => undefined);
       await this.scheduler.notifyCancelled(gameId).catch(() => undefined);
     }
     return this.findOne(gameId);
@@ -494,6 +502,7 @@ export class GamesService {
     if (!game) throw new NotFoundException('Game not found');
     if (game.hostId !== me.id) throw new ForbiddenException('Only host can cancel');
     await this.prisma.game.update({ where: { id: gameId }, data: { status: 'CANCELLED' } });
+    await this.invitations.deactivatePendingForGame(gameId).catch(() => undefined);
     await this.scheduler.notifyCancelled(gameId).catch(() => undefined);
     return this.findOne(gameId);
   }
@@ -561,6 +570,7 @@ export class GamesService {
       where: { id: gameId },
       data: { status: 'FINISHED' },
     });
+    await this.invitations.deactivatePendingForGame(gameId).catch(() => undefined);
     return this.findOne(gameId);
   }
 
@@ -675,7 +685,10 @@ export class GamesService {
       return { ok: true, status: 'APPROVED' };
     }).then(async (result) => {
       // Refresh so the host client sees the new roster.
-      await this.findOne(gameId);
+      const game = await this.findOne(gameId);
+      if (game.status === 'FULL') {
+        await this.invitations.refreshPendingInvitees(gameId).catch(() => undefined);
+      }
       return result;
     });
   }

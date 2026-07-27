@@ -271,6 +271,7 @@ export const pl: Record<string, string> = {
   'invite.statusAccepted': 'Zaakceptowano',
   'invite.statusDeclined': 'Odrzucono',
   'invite.statusIgnored': 'Zignorowano',
+  'invite.statusInactive': 'Nieaktywne',
 
   'payments.title': 'Płatności',
   'payments.totalCost': 'Łączny koszt',

@@ -145,6 +145,14 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
   };
 
   const statusLabel = (inv: GameSentInvitation) => {
+    const gameStatus = gameQ.data?.status;
+    if (
+      inv.status === 'PENDING' &&
+      gameStatus &&
+      (gameStatus === 'FULL' || gameStatus === 'CANCELLED' || gameStatus === 'FINISHED')
+    ) {
+      return t('invite.statusInactive');
+    }
     switch (inv.status) {
       case 'ACCEPTED':
         return t('invite.statusAccepted');

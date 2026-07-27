@@ -294,6 +294,7 @@ export const en: Record<string, string> = {
   'invite.statusAccepted': 'Accepted',
   'invite.statusDeclined': 'Declined',
   'invite.statusIgnored': 'Ignored',
+  'invite.statusInactive': 'Inactive',
 
   // ===== Payments =====
   'payments.title': 'Payments',

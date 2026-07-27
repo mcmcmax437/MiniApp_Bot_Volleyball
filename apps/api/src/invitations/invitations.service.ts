@@ -31,6 +31,9 @@ export class InvitationsService {
     if (game.status !== 'OPEN' && game.status !== 'FULL') {
       throw new BadRequestException(`Cannot invite to a ${game.status} game`);
     }
+    if (game.status === 'FULL') {
+      throw new BadRequestException('Game is full — invites are inactive');
+    }
     if (game.endAt.getTime() <= Date.now()) {
       throw new BadRequestException('Game has already ended');
     }
@@ -225,12 +228,16 @@ export class InvitationsService {
     }
 
     // Host already invited this person — seat them even on closed lobbies.
-    // Validate capacity / status before flipping the invite to ACCEPTED.
-    if (inv.game.status !== 'OPEN' && inv.game.status !== 'FULL') {
-      throw new BadRequestException(`Game is ${inv.game.status}`);
+    // Invites are inactive once the lobby is full, finished, or cancelled.
+    if (inv.game.status !== 'OPEN') {
+      throw new BadRequestException(
+        inv.game.status === 'FULL'
+          ? 'Game is full — this invite is inactive'
+          : `Game is ${inv.game.status} — this invite is inactive`,
+      );
     }
     if (inv.game.endAt.getTime() <= Date.now()) {
-      throw new BadRequestException('Game has already ended');
+      throw new BadRequestException('Game has already ended — this invite is inactive');
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -293,6 +300,14 @@ export class InvitationsService {
       startAt: inv.game.startAt,
     });
 
+    const after = await this.prisma.game.findUnique({
+      where: { id: inv.gameId },
+      select: { status: true },
+    });
+    if (after?.status === 'FULL') {
+      await this.refreshPendingInvitees(inv.gameId).catch(() => undefined);
+    }
+
     return { ok: true };
   }
 
@@ -345,10 +360,15 @@ export class InvitationsService {
       .catch(() => undefined);
   }
 
-  /** Pending invites the current user has received. */
+  /** Pending invites the current user has received (actionable only). */
   async listMinePending(me: User) {
-    return this.prisma.gameInvitation.findMany({
-      where: { inviteeId: me.id, status: 'PENDING' },
+    const rows = await this.prisma.gameInvitation.findMany({
+      where: {
+        inviteeId: me.id,
+        status: 'PENDING',
+        // Full / finished / cancelled games leave invites inactive.
+        game: { status: 'OPEN' },
+      },
       orderBy: { createdAt: 'desc' },
       include: {
         inviter: {
@@ -364,9 +384,70 @@ export class InvitationsService {
         game: {
           include: {
             venue: { select: { id: true, name: true, address: true, city: true } },
+            _count: { select: { participants: true } },
           },
         },
       },
     });
+
+    // Hide invites for lobbies that are already at capacity.
+    return rows
+      .filter((inv) => inv.game._count.participants < inv.game.spotsTotal)
+      .map(({ game, ...rest }) => {
+        const { _count, ...gameRest } = game;
+        return { ...rest, game: gameRest };
+      });
+  }
+
+  /**
+   * System-deactivate pending invites when a game is cancelled / finished
+   * (or otherwise no longer joinable). No Telegram ping to the host —
+   * this is not a player response.
+   */
+  async deactivatePendingForGame(gameId: string) {
+    const pending = await this.prisma.gameInvitation.findMany({
+      where: { gameId, status: 'PENDING' },
+      select: { id: true, inviteeId: true, inviterId: true },
+    });
+    if (!pending.length) return { ok: true, count: 0 };
+
+    const now = new Date();
+    await this.prisma.gameInvitation.updateMany({
+      where: { id: { in: pending.map((i) => i.id) } },
+      data: {
+        status: 'IGNORED',
+        respondedAt: now,
+      },
+    });
+
+    for (const inv of pending) {
+      // Refresh invitee inbox (drops inactive cards / notify badge).
+      this.realtime.publishInvite(inv.inviteeId, {
+        invitationId: inv.id,
+        gameId,
+      });
+      this.realtime.publishInviteUpdate(inv.inviterId, {
+        invitationId: inv.id,
+        gameId,
+        status: 'IGNORED',
+        kind: 'response',
+      });
+    }
+
+    return { ok: true, count: pending.length };
+  }
+
+  /** Ping invitees so soft-inactive invites (e.g. game just went FULL) drop from inbox. */
+  async refreshPendingInvitees(gameId: string) {
+    const pending = await this.prisma.gameInvitation.findMany({
+      where: { gameId, status: 'PENDING' },
+      select: { id: true, inviteeId: true },
+    });
+    for (const inv of pending) {
+      this.realtime.publishInvite(inv.inviteeId, {
+        invitationId: inv.id,
+        gameId,
+      });
+    }
   }
 }
