@@ -251,8 +251,10 @@ export const ru: Record<string, string> = {
 
   'invite.title': 'Приглашения',
   'invite.empty': 'Нет новых приглашений.',
+  'invite.emptySearch': 'Пока нет игроков — попробуй имя или @username.',
   'invite.accept': 'Принять',
   'invite.decline': 'Отклонить',
+  'invite.ignore': 'Игнорировать',
   'invite.invitePlayer': 'Пригласить игрока',
   'invite.bannerTitle': 'У вас новое приглашение на игру',
   'invite.openGame': 'Открыть игру',
@@ -263,6 +265,12 @@ export const ru: Record<string, string> = {
   'invite.noResults': 'По вашему запросу игроков не найдено',
   'invite.inviteAction': 'Пригласить {name}',
   'invite.notifyAria': '{count} ожидающих приглашений',
+  'invite.sentTitle': 'Отправленные',
+  'invite.statusSent': 'Отправлено',
+  'invite.statusRead': 'Прочитано',
+  'invite.statusAccepted': 'Принято',
+  'invite.statusDeclined': 'Отклонено',
+  'invite.statusIgnored': 'Игнорировано',
 
   'payments.title': 'Платежи',
   'payments.totalCost': 'Общая стоимость',

@@ -1,5 +1,11 @@
 import { Body, Controller, Delete, Get, Header, NotFoundException, Param, Post, Query, Sse, UnauthorizedException, UseGuards } from '@nestjs/common';
-import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 import { Observable } from 'rxjs';
 import { InvitationsService } from './invitations.service';
 import { InvitationsRealtimeService } from './invitations-realtime.service';
@@ -16,6 +22,13 @@ class InviteDto {
 
 class RespondDto {
   @IsBoolean() accept!: boolean;
+}
+
+class MarkReadDto {
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  ids?: string[];
 }
 
 @UseGuards(JwtAuthGuard, NotBannedGuard)
@@ -63,6 +76,19 @@ export class InvitationsController {
   ) {
     if (!me) throw new UnauthorizedException('User not found');
     return this.inv.respond(me, id, dto.accept);
+  }
+
+  @Post('invitations/:id/ignore')
+  ignore(@CurrentUser() me: User | null, @Param('id') id: string) {
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.inv.ignore(me, id);
+  }
+
+  /** Mark pending invites as read (invitee opened the inbox). */
+  @Post('invitations/read')
+  markRead(@CurrentUser() me: User | null, @Body() dto: MarkReadDto) {
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.inv.markRead(me, dto.ids);
   }
 
   @Get('invitations/mine')

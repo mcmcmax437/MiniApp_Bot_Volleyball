@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
-import { useApi, InviteSearchUser } from '../api';
+import { useApi, InviteSearchUser, GameSentInvitation } from '../api';
 import { useI18n } from '../i18n';
 import { Icon } from '../Icon';
 import { Modal } from '../Modal';
@@ -23,6 +23,22 @@ type InviteFeedback = {
   kind: 'success' | 'error';
   message?: string;
 };
+
+function inviteeIdOf(inv: GameSentInvitation): string {
+  return inv.userId || inv.inviteeId;
+}
+
+function ReadTicks({ read }: { read: boolean }) {
+  return (
+    <span
+      className={`inviteTicks${read ? ' isRead' : ''}`}
+      title={read ? 'Read' : 'Sent'}
+      aria-hidden="true"
+    >
+      {read ? '✓✓' : '✓'}
+    </span>
+  );
+}
 
 /**
  * Host picks who to invite from a searchable list of players instead of
@@ -50,7 +66,17 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
     }
   }, [open]);
 
-  const gameQ = useQuery(['game', gameId], () => api.getGame(gameId), { enabled: open });
+  const gameQ = useQuery(['game', gameId], () => api.getGame(gameId), {
+    enabled: open,
+    refetchInterval: open ? 4_000 : false,
+  });
+
+  const sentInvites = useMemo(() => {
+    const list = gameQ.data?.invitations ?? [];
+    return [...list].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+  }, [gameQ.data?.invitations]);
 
   // IDs to exclude: host, current participants, anyone with a pending
   // invitation. Computed once the game data is available so the search
@@ -61,7 +87,9 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
     if (!g) return [] as string[];
     if (g.host?.id) ids.add(g.host.id);
     g.participants.forEach((p) => ids.add(p.userId));
-    g.invitations?.forEach((i) => ids.add(i.userId));
+    g.invitations
+      ?.filter((i) => i.status === 'PENDING')
+      .forEach((i) => ids.add(inviteeIdOf(i)));
     return Array.from(ids);
   }, [gameQ.data]);
 
@@ -104,7 +132,9 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
   );
 
   const users = searchQ.data?.users ?? [];
-  const pendingIds = gameQ.data?.invitations?.map((i) => i.userId) ?? [];
+  const pendingIds = (gameQ.data?.invitations ?? [])
+    .filter((i) => i.status === 'PENDING')
+    .map(inviteeIdOf);
 
   const sendInvite = (u: InviteSearchUser) => {
     const name = u.lastName ? `${u.firstName} ${u.lastName}` : u.firstName;
@@ -112,6 +142,19 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
     setPressingId(u.id);
     webApp?.HapticFeedback?.impactOccurred('light');
     inviteMut.mutate({ userId: u.id, name });
+  };
+
+  const statusLabel = (inv: GameSentInvitation) => {
+    switch (inv.status) {
+      case 'ACCEPTED':
+        return t('invite.statusAccepted');
+      case 'DECLINED':
+        return t('invite.statusDeclined');
+      case 'IGNORED':
+        return t('invite.statusIgnored');
+      default:
+        return inv.readAt ? t('invite.statusRead') : t('invite.statusSent');
+    }
   };
 
   return (
@@ -159,6 +202,43 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
         </div>
       )}
 
+      {sentInvites.length > 0 && (
+        <div className="inviteSent">
+          <div className="inviteSent-title">{t('invite.sentTitle')}</div>
+          <div className="inviteList inviteList-sent" role="list">
+            {sentInvites.slice(0, 8).map((inv) => {
+              const u = inv.invitee;
+              const name = u
+                ? u.lastName
+                  ? `${u.firstName} ${u.lastName}`
+                  : u.firstName
+                : inviteeIdOf(inv);
+              return (
+                <div className="inviteRow inviteRow-sent" key={inv.id} role="listitem">
+                  <Photo
+                    src={u?.photoUrl ?? null}
+                    name={name}
+                    size={32}
+                    variant="rounded"
+                  />
+                  <div className="inviteRow-body">
+                    <span className="inviteRow-name">{name}</span>
+                    <span className="inviteRow-sub">
+                      <span className={`inviteRow-status inviteRow-status-${inv.status.toLowerCase()}`}>
+                        {statusLabel(inv)}
+                      </span>
+                      {inv.status === 'PENDING' && (
+                        <ReadTicks read={!!inv.readAt} />
+                      )}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {searchQ.isLoading && (
         <div className="inviteList">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -170,7 +250,7 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
       {!searchQ.isLoading && users.length === 0 && (
         <div className="inviteEmpty">
           <Icon name="user-account" size={24} />
-          <p>{query ? t('invite.noResults') : t('invite.empty')}</p>
+          <p>{query ? t('invite.noResults') : t('invite.emptySearch')}</p>
         </div>
       )}
 
@@ -180,6 +260,9 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
             const name = u.lastName ? `${u.firstName} ${u.lastName}` : u.firstName;
             const isPending =
               pendingIds.includes(u.id) || justInvitedIds.includes(u.id);
+            const pendingInv = (gameQ.data?.invitations ?? []).find(
+              (i) => i.status === 'PENDING' && inviteeIdOf(i) === u.id,
+            );
             const lvl = effectiveSkillLevel(u);
             const isInviting =
               inviteMut.isLoading && inviteMut.variables?.userId === u.id;
@@ -220,7 +303,10 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
                   <span className="inviteRow-sub">
                     {u.username ? <span>@{u.username}</span> : null}
                     {isPending && (
-                      <span className="inviteRow-status">{t('invite.invited')}</span>
+                      <>
+                        <span className="inviteRow-status">{t('invite.invited')}</span>
+                        <ReadTicks read={!!pendingInv?.readAt} />
+                      </>
                     )}
                   </span>
                 </div>
@@ -234,8 +320,6 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
                 >
                   {isPending ? (
                     <Icon name="checkmark-square-01" size={16} />
-                  ) : isInviting ? (
-                    <Icon name="loading" size={16} />
                   ) : (
                     <Icon name="plus-sign" size={16} />
                   )}

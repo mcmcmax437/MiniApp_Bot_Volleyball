@@ -261,8 +261,10 @@ export const uk: Record<string, string> = {
 
   'invite.title': 'Запрошення',
   'invite.empty': 'Немає нових запрошень.',
+  'invite.emptySearch': 'Поки немає гравців — спробуй імʼя або @username.',
   'invite.accept': 'Прийняти',
   'invite.decline': 'Відхилити',
+  'invite.ignore': 'Ігнорувати',
   'invite.invitePlayer': 'Запросити гравця',
   'invite.bannerTitle': 'У вас нове запрошення на гру',
   'invite.openGame': 'Відкрити гру',
@@ -273,6 +275,12 @@ export const uk: Record<string, string> = {
   'invite.noResults': 'За вашим запитом гравців не знайдено',
   'invite.inviteAction': 'Запросити {name}',
   'invite.notifyAria': '{count} очікуваних запрошень',
+  'invite.sentTitle': 'Надіслані',
+  'invite.statusSent': 'Надіслано',
+  'invite.statusRead': 'Прочитано',
+  'invite.statusAccepted': 'Прийнято',
+  'invite.statusDeclined': 'Відхилено',
+  'invite.statusIgnored': 'Проігноровано',
 
   'payments.title': 'Платежі',
   'payments.totalCost': 'Загальна вартість',

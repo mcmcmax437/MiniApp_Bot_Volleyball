@@ -274,8 +274,10 @@ export const en: Record<string, string> = {
   // ===== Invitations =====
   'invite.title': 'Invitations',
   'invite.empty': 'No pending invitations.',
+  'invite.emptySearch': 'No players to show yet — try a name or @username.',
   'invite.accept': 'Accept',
   'invite.decline': 'Decline',
+  'invite.ignore': 'Ignore',
   'invite.invitePlayer': 'Invite a player',
   'invite.bannerTitle': 'You have a new game invitation',
   'invite.openGame': 'Open game',
@@ -286,6 +288,12 @@ export const en: Record<string, string> = {
   'invite.noResults': 'No players match your search',
   'invite.inviteAction': 'Invite {name}',
   'invite.notifyAria': '{count} pending invitations',
+  'invite.sentTitle': 'Sent invites',
+  'invite.statusSent': 'Sent',
+  'invite.statusRead': 'Read',
+  'invite.statusAccepted': 'Accepted',
+  'invite.statusDeclined': 'Declined',
+  'invite.statusIgnored': 'Ignored',
 
   // ===== Payments =====
   'payments.title': 'Payments',

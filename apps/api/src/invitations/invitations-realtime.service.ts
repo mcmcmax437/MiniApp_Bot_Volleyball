@@ -20,6 +20,25 @@ export class InvitationsRealtimeService {
     } as MessageEvent);
   }
 
+  /** Tell the host their invite was accepted / declined / ignored / read. */
+  publishInviteUpdate(
+    inviterId: string,
+    payload: {
+      invitationId: string;
+      gameId: string;
+      status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'IGNORED';
+      readAt?: string | null;
+      kind: 'response' | 'read';
+    },
+  ) {
+    const channel = this.channels.get(inviterId);
+    if (!channel) return;
+    channel.next({
+      type: 'invite_update',
+      data: payload,
+    } as MessageEvent);
+  }
+
   /**
    * Subscribe the current user to invite push events. Includes a heartbeat
    * every 25s so nginx / Telegram WebView proxies don't idle-close the pipe.

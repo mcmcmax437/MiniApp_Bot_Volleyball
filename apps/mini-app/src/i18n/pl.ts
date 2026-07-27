@@ -251,8 +251,10 @@ export const pl: Record<string, string> = {
 
   'invite.title': 'Zaproszenia',
   'invite.empty': 'Brak oczekujących zaproszeń.',
+  'invite.emptySearch': 'Brak graczy — spróbuj imienia lub @username.',
   'invite.accept': 'Akceptuj',
   'invite.decline': 'Odrzuć',
+  'invite.ignore': 'Ignoruj',
   'invite.invitePlayer': 'Zaproś gracza',
   'invite.invited': 'Zaproszenie wysłane',
   'invite.invitedTo': 'Zaproszenie wysłane do {name}',
@@ -263,6 +265,12 @@ export const pl: Record<string, string> = {
   'invite.noResults': 'Brak graczy spełniających kryteria',
   'invite.inviteAction': 'Zaproś {name}',
   'invite.notifyAria': '{count} oczekujących zaproszeń',
+  'invite.sentTitle': 'Wysłane',
+  'invite.statusSent': 'Wysłano',
+  'invite.statusRead': 'Przeczytano',
+  'invite.statusAccepted': 'Zaakceptowano',
+  'invite.statusDeclined': 'Odrzucono',
+  'invite.statusIgnored': 'Zignorowano',
 
   'payments.title': 'Płatności',
   'payments.totalCost': 'Łączny koszt',

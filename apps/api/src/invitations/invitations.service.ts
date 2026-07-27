@@ -1,9 +1,11 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TelegramSender } from '../bot/telegram-sender';
-import { inviteMessage } from '../bot/notify-messages';
+import { inviteMessage, inviteResponseMessage } from '../bot/notify-messages';
 import { InvitationsRealtimeService } from './invitations-realtime.service';
 import type { User } from '@prisma/client';
+
+type InviteOutcome = 'accepted' | 'declined' | 'ignored';
 
 @Injectable()
 export class InvitationsService {
@@ -54,7 +56,13 @@ export class InvitationsService {
         inviterId: me.id,
         status: 'PENDING',
       },
-      update: { status: 'PENDING' },
+      // Re-invite resets delivery / response state so ticks restart.
+      update: {
+        status: 'PENDING',
+        inviterId: me.id,
+        readAt: null,
+        respondedAt: null,
+      },
     });
 
     // Push to any open Mini App SSE stream for this invitee (near-instant icon).
@@ -96,6 +104,87 @@ export class InvitationsService {
   }
 
   /**
+   * Invitee marks pending invites as read (opened the inbox). Hosts see a
+   * double-check in the invite UI once `readAt` is set.
+   */
+  async markRead(me: User, invitationIds?: string[]) {
+    const where: {
+      inviteeId: string;
+      status: 'PENDING';
+      readAt: null;
+      id?: { in: string[] };
+    } = {
+      inviteeId: me.id,
+      status: 'PENDING',
+      readAt: null,
+    };
+    if (invitationIds?.length) {
+      where.id = { in: invitationIds };
+    }
+
+    const unread = await this.prisma.gameInvitation.findMany({
+      where,
+      select: { id: true, gameId: true, inviterId: true },
+    });
+    if (!unread.length) return { ok: true, count: 0 };
+
+    const now = new Date();
+    await this.prisma.gameInvitation.updateMany({
+      where: { id: { in: unread.map((i) => i.id) } },
+      data: { readAt: now },
+    });
+
+    for (const inv of unread) {
+      this.realtime.publishInviteUpdate(inv.inviterId, {
+        invitationId: inv.id,
+        gameId: inv.gameId,
+        status: 'PENDING',
+        readAt: now.toISOString(),
+        kind: 'read',
+      });
+    }
+
+    return { ok: true, count: unread.length };
+  }
+
+  /** Invitee dismisses without accepting or declining. */
+  async ignore(me: User, invitationId: string) {
+    const inv = await this.prisma.gameInvitation.findUnique({
+      where: { id: invitationId },
+      include: {
+        game: { include: { venue: { select: { name: true, address: true } } } },
+        invitee: true,
+      },
+    });
+    if (!inv) throw new NotFoundException('Invitation not found');
+    if (inv.inviteeId !== me.id) {
+      throw new ForbiddenException('Not your invitation');
+    }
+    if (inv.status !== 'PENDING') return { ok: true };
+
+    const updated = await this.prisma.gameInvitation.update({
+      where: { id: invitationId },
+      data: {
+        status: 'IGNORED',
+        respondedAt: new Date(),
+        readAt: inv.readAt ?? new Date(),
+      },
+    });
+
+    await this.notifyInviterOfResponse(updated.inviterId, {
+      invitationId: updated.id,
+      gameId: updated.gameId,
+      outcome: 'ignored',
+      invitee: inv.invitee,
+      venueName: inv.game.venue.name,
+      venueAddress: inv.game.venue.address,
+      startAt: inv.game.startAt,
+    });
+
+    return { ok: true };
+  }
+
+  /**
    * Invitee responds to an invite. Accept seats the player (same payment /
    * capacity rules as open join). Failures throw so the invite stays PENDING
    * and the client can show the real error — never mark ACCEPTED without seating.
@@ -103,7 +192,10 @@ export class InvitationsService {
   async respond(me: User, invitationId: string, accept: boolean) {
     const inv = await this.prisma.gameInvitation.findUnique({
       where: { id: invitationId },
-      include: { game: true },
+      include: {
+        game: { include: { venue: { select: { name: true, address: true } } } },
+        invitee: true,
+      },
     });
     if (!inv) throw new NotFoundException('Invitation not found');
     if (inv.inviteeId !== me.id) {
@@ -112,12 +204,22 @@ export class InvitationsService {
     if (inv.status !== 'PENDING') return inv;
 
     if (!accept) {
-      await this.prisma.gameInvitation.update({
+      const updated = await this.prisma.gameInvitation.update({
         where: { id: invitationId },
         data: {
           status: 'DECLINED',
           respondedAt: new Date(),
+          readAt: inv.readAt ?? new Date(),
         },
+      });
+      await this.notifyInviterOfResponse(updated.inviterId, {
+        invitationId: updated.id,
+        gameId: updated.gameId,
+        outcome: 'declined',
+        invitee: inv.invitee,
+        venueName: inv.game.venue.name,
+        venueAddress: inv.game.venue.address,
+        startAt: inv.game.startAt,
       });
       return { ok: true };
     }
@@ -176,11 +278,71 @@ export class InvitationsService {
         data: {
           status: 'ACCEPTED',
           respondedAt: new Date(),
+          readAt: inv.readAt ?? new Date(),
         },
       });
     });
 
+    await this.notifyInviterOfResponse(inv.inviterId, {
+      invitationId: inv.id,
+      gameId: inv.gameId,
+      outcome: 'accepted',
+      invitee: inv.invitee,
+      venueName: inv.game.venue.name,
+      venueAddress: inv.game.venue.address,
+      startAt: inv.game.startAt,
+    });
+
     return { ok: true };
+  }
+
+  private async notifyInviterOfResponse(
+    inviterId: string,
+    opts: {
+      invitationId: string;
+      gameId: string;
+      outcome: InviteOutcome;
+      invitee: User;
+      venueName: string;
+      venueAddress?: string | null;
+      startAt: Date;
+    },
+  ) {
+    const status =
+      opts.outcome === 'accepted'
+        ? 'ACCEPTED'
+        : opts.outcome === 'declined'
+          ? 'DECLINED'
+          : 'IGNORED';
+
+    this.realtime.publishInviteUpdate(inviterId, {
+      invitationId: opts.invitationId,
+      gameId: opts.gameId,
+      status,
+      kind: 'response',
+    });
+
+    const inviter = await this.prisma.user.findUnique({ where: { id: inviterId } });
+    if (!inviter) return;
+
+    const inviteeName = opts.invitee.lastName
+      ? `${opts.invitee.firstName} ${opts.invitee.lastName}`
+      : opts.invitee.firstName;
+
+    this.bot
+      .sendToTelegramId(
+        inviter.telegramId,
+        inviteResponseMessage({
+          inviteeName,
+          outcome: opts.outcome,
+          venueName: opts.venueName,
+          venueAddress: opts.venueAddress,
+          startAt: opts.startAt,
+          locale: inviter.language ?? 'en',
+        }),
+        { replyMarkup: this.bot.openAppButton('Open game', `g_${opts.gameId}`) },
+      )
+      .catch(() => undefined);
   }
 
   /** Pending invites the current user has received. */

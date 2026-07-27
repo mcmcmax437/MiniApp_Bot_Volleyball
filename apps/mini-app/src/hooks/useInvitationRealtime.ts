@@ -37,15 +37,21 @@ export function useInvitationRealtime(enabled: boolean) {
         invalidate();
       });
 
+      es.addEventListener('invite_update', () => {
+        backoffRef.current = 1000;
+        // Host: invite was read / accepted / declined / ignored.
+        qc.invalidateQueries(['game']);
+        qc.invalidateQueries(['invitations']);
+      });
+
       // Some proxies strip named events; also handle generic messages.
       es.onmessage = (ev) => {
         try {
           const raw = typeof ev.data === 'string' ? ev.data : '';
           if (!raw || raw === '[DONE]') return;
-          // Heartbeat / connected payloads — ignore unless they look like invites.
-          if (raw.includes('invitationId') || raw.includes('"ok"')) {
-            // connected hello has ok:true — don't invalidate on that.
-            if (raw.includes('invitationId')) invalidate();
+          if (raw.includes('invitationId')) {
+            invalidate();
+            qc.invalidateQueries(['game']);
           }
         } catch {
           // ignore parse noise

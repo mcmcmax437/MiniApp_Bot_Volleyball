@@ -200,8 +200,25 @@ export class GamesService {
           orderBy: { createdAt: 'asc' },
         },
         invitations: {
-          where: { status: 'PENDING' },
-          select: { id: true, inviteeId: true, inviterId: true, createdAt: true },
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            inviteeId: true,
+            inviterId: true,
+            createdAt: true,
+            status: true,
+            readAt: true,
+            respondedAt: true,
+            invitee: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                username: true,
+                photoUrl: true,
+              },
+            },
+          },
         },
         payments: {
           select: {
@@ -219,6 +236,18 @@ export class GamesService {
 
     return {
       ...game,
+      // Client historically used `userId` for the invitee on invitation rows.
+      invitations: game.invitations.map((inv) => ({
+        id: inv.id,
+        userId: inv.inviteeId,
+        inviteeId: inv.inviteeId,
+        inviterId: inv.inviterId,
+        createdAt: inv.createdAt,
+        status: inv.status,
+        readAt: inv.readAt,
+        respondedAt: inv.respondedAt,
+        invitee: inv.invitee,
+      })),
       participantsCount: game.participants.length,
       // Display the *planned* per-player price (total / spotsTotal) so the card
       // and detail view show the same number regardless of who's currently

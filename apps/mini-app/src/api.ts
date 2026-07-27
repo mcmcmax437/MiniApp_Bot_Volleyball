@@ -180,7 +180,7 @@ export interface ApiGameDetail extends Omit<ApiGame, 'participants'> {
       evaluatedSkillLevel?: SkillLevel | null;
     };
   }>;
-  invitations?: Array<{ id: string; userId: string; inviterId: string; createdAt: string; status: 'PENDING' | 'ACCEPTED' | 'DECLINED' }>;
+  invitations?: GameSentInvitation[];
   payments?: Array<{
     id: string;
     userId: string;
@@ -366,7 +366,8 @@ export interface ReportDto {
 export interface GameInvitationDto {
   id: string;
   gameId: string;
-  status: 'PENDING' | 'ACCEPTED' | 'DECLINED';
+  status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'IGNORED';
+  readAt?: string | null;
   createdAt: string;
   game: {
     id: string;
@@ -383,6 +384,25 @@ export interface GameInvitationDto {
     username: string | null;
     photoUrl: string | null;
     role?: UserRole;
+  };
+}
+
+export interface GameSentInvitation {
+  id: string;
+  /** Alias of inviteeId — kept for older clients. */
+  userId: string;
+  inviteeId: string;
+  inviterId: string;
+  createdAt: string;
+  status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'IGNORED';
+  readAt: string | null;
+  respondedAt: string | null;
+  invitee: {
+    id: string;
+    firstName: string;
+    lastName: string | null;
+    username: string | null;
+    photoUrl: string | null;
   };
 }
 
@@ -741,6 +761,13 @@ export function useApi() {
       http<{ ok: boolean }>(`/invitations/${id}/respond`, {
         method: 'POST',
         body: JSON.stringify({ accept }),
+      }, initData),
+    ignoreInvitation: (id: string) =>
+      http<{ ok: boolean }>(`/invitations/${id}/ignore`, { method: 'POST' }, initData),
+    markInvitationsRead: (ids?: string[]) =>
+      http<{ ok: boolean; count: number }>(`/invitations/read`, {
+        method: 'POST',
+        body: JSON.stringify(ids?.length ? { ids } : {}),
       }, initData),
     listMyInvitations: () =>
       http<GameInvitationDto[]>(`/invitations/mine`, { method: 'GET' }, initData),

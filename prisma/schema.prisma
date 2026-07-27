@@ -58,6 +58,7 @@ enum InvitationStatus {
   PENDING
   ACCEPTED
   DECLINED
+  IGNORED
 }
 
 enum JoinRequestStatus {
@@ -271,6 +272,8 @@ model GameInvitation {
   inviteeId   String
   invitee     User             @relation("InvitationInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
   status      InvitationStatus @default(PENDING)
+  /// Set when the invitee opens / views the invitation in the Mini App.
+  readAt      DateTime?
   respondedAt DateTime?
   createdAt   DateTime         @default(now())
 

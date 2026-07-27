@@ -87,6 +87,49 @@
   padding: 2px 2px 8px;
 }
 
+.inviteSent {
+  margin-bottom: 14px;
+}
+
+.inviteSent-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+
+.inviteList-sent {
+  max-height: 180px;
+}
+
+.inviteRow-sent {
+  grid-template-columns: 32px minmax(0, 1fr);
+}
+
+.inviteTicks {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  color: var(--text-tertiary);
+  margin-left: 2px;
+}
+
+.inviteTicks.isRead {
+  color: var(--accent, #38bdf8);
+}
+
+.inviteRow-status-accepted {
+  color: var(--success, #34d399);
+}
+
+.inviteRow-status-declined,
+.inviteRow-status-ignored {
+  color: var(--text-tertiary);
+}
+
 .inviteRow {
   display: grid;
   grid-template-columns: 36px minmax(0, 1fr) 36px;

@@ -87,6 +87,31 @@ export function inviteMessage(opts: {
   ]);
 }
 
+/** Notify the host when an invitee accepts / declines / ignores. */
+export function inviteResponseMessage(opts: {
+  inviteeName: string;
+  outcome: 'accepted' | 'declined' | 'ignored';
+  venueName: string;
+  venueAddress?: string | null;
+  startAt: Date;
+  locale?: string;
+}): string {
+  const when = formatGameWhen(opts.startAt, opts.locale);
+  const name = esc(opts.inviteeName);
+  const headline =
+    opts.outcome === 'accepted'
+      ? `✅ <b>${name}</b> accepted your invite`
+      : opts.outcome === 'declined'
+        ? `❌ <b>${name}</b> declined your invite`
+        : `🙈 <b>${name}</b> ignored your invite`;
+  return card([
+    headline,
+    ``,
+    placeLine(opts.venueName, opts.venueAddress),
+    `🗓 ${esc(when)}`,
+  ]);
+}
+
 export function reminderMessage(opts: {
   venueName: string;
   venueAddress?: string | null;
