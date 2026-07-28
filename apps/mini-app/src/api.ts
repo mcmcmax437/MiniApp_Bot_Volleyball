@@ -325,6 +325,12 @@ export interface AdminUserDetail {
     paymentsMade: number;
     avgSessionsPerWeek: number;
     lastActiveAt: string | null;
+    /** App opens in the last 24h / 7d / 30d (admin activity trackers). */
+    entriesDay: number;
+    entriesWeek: number;
+    entriesMonth: number;
+    /** Average session length in ms over the last 28 days. */
+    avgSessionMs: number;
   };
 }
 
@@ -824,8 +830,18 @@ export function useApi() {
         method: 'POST',
         body: JSON.stringify({ events }),
       }, initData),
-    heartbeat: () =>
-      http<{ ok: boolean }>(`/analytics/heartbeat`, { method: 'POST' }, initData),
+    startAnalyticsSession: () =>
+      http<{ sessionId: string }>(`/analytics/session/start`, { method: 'POST', body: '{}' }, initData),
+    heartbeat: (sessionId?: string) =>
+      http<{ ok: boolean }>(`/analytics/heartbeat`, {
+        method: 'POST',
+        body: JSON.stringify(sessionId ? { sessionId } : {}),
+      }, initData),
+    endAnalyticsSession: (sessionId: string) =>
+      http<{ ok: boolean }>(`/analytics/session/end`, {
+        method: 'POST',
+        body: JSON.stringify({ sessionId }),
+      }, initData),
 
     // ===== Game edits (host) =====
 

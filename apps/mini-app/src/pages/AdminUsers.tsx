@@ -6,6 +6,17 @@ import { Photo } from "../Photo";
 import { SkillBadge } from "../SkillBadge";
 import { useI18n } from "../i18n";
 
+function formatDurationMs(ms: number): string {
+  if (!ms || ms < 1000) return '0s';
+  const totalSec = Math.round(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
 export function AdminUsersPage() {
   const api = useApi();
   const qc = useQueryClient();
@@ -244,6 +255,37 @@ function UserDetailsModal({ userId, onClose }: { userId: string | null; onClose:
                 <div className="statCard-label">{t('admin.stat.sessionsPerWeek')}</div>
               </div>
             </div>
+
+            <h2 className="formSection-title" style={{ marginTop: 16 }}>
+              <span className="formSection-num"><Icon name="clock-01" size={12} /></span>
+              {t('admin.appUsage')}
+            </h2>
+            <div className="statsGrid">
+              <div className="statCard">
+                <div className="statCard-value">{q.data.stats.entriesDay ?? 0}</div>
+                <div className="statCard-label">{t('admin.stat.entriesDay')}</div>
+              </div>
+              <div className="statCard">
+                <div className="statCard-value">{q.data.stats.entriesWeek ?? 0}</div>
+                <div className="statCard-label">{t('admin.stat.entriesWeek')}</div>
+              </div>
+              <div className="statCard">
+                <div className="statCard-value">{q.data.stats.entriesMonth ?? 0}</div>
+                <div className="statCard-label">{t('admin.stat.entriesMonth')}</div>
+              </div>
+              <div className="statCard statCard-cool">
+                <div className="statCard-value">
+                  {formatDurationMs(q.data.stats.avgSessionMs ?? 0)}
+                </div>
+                <div className="statCard-label">{t('admin.stat.avgTimeInApp')}</div>
+              </div>
+            </div>
+            {q.data.stats.lastActiveAt && (
+              <div className="costRow">
+                <span>{t('admin.stat.lastActive')}</span>
+                <strong>{new Date(q.data.stats.lastActiveAt).toLocaleString()}</strong>
+              </div>
+            )}
 
             <div className="costRow">
               <span>{t('admin.stat.evalGiven')}</span>

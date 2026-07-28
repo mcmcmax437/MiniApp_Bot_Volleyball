@@ -10,6 +10,7 @@ type Event = {
 };
 
 const QUEUE_KEY = 'volley:analytics:queue:v1';
+const SESSION_KEY = 'volley:analytics:session:v1';
 const FLUSH_INTERVAL_MS = 8000;
 
 function loadQueue(): Event[] {
@@ -31,16 +32,34 @@ function saveQueue(events: Event[]) {
   }
 }
 
+function loadSessionId(): string | null {
+  try {
+    return sessionStorage.getItem(SESSION_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function saveSessionId(id: string | null) {
+  try {
+    if (id) sessionStorage.setItem(SESSION_KEY, id);
+    else sessionStorage.removeItem(SESSION_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * Installs a global click listener that funnels events into a queue, plus a
- * screen-view recorder that fires on every route change. The queue is
- * flushed to the server every `FLUSH_INTERVAL_MS` ms (or on visibility
- * change). The hook is idempotent — it can be mounted multiple times safely.
+ * screen-view recorder that fires on every route change. Also tracks Mini App
+ * sessions (start / heartbeat / end) for admin activity trackers.
  */
 export function useAnalytics() {
   const api = useApi();
   const queueRef = useRef<Event[]>(loadQueue());
   const screenRef = useRef<string>('');
+  const sessionIdRef = useRef<string | null>(loadSessionId());
+  const startingRef = useRef(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -81,7 +100,23 @@ export function useAnalytics() {
     }
     document.addEventListener('click', onClick, true);
 
-    // 3. Periodic flush
+    // 3. Session start (once per Mini App open / tab)
+    const ensureSession = async () => {
+      if (sessionIdRef.current || startingRef.current) return;
+      startingRef.current = true;
+      try {
+        const res = await api.startAnalyticsSession();
+        sessionIdRef.current = res.sessionId;
+        saveSessionId(res.sessionId);
+      } catch {
+        /* ignore — heartbeat can still bump lastActive without a session */
+      } finally {
+        startingRef.current = false;
+      }
+    };
+    void ensureSession();
+
+    // 4. Periodic flush + session heartbeat
     const flush = async () => {
       if (queueRef.current.length === 0) return;
       const batch = queueRef.current.slice(-100);
@@ -97,25 +132,46 @@ export function useAnalytics() {
     };
 
     const heartbeat = () => {
-      api.heartbeat().catch(() => undefined);
+      const sid = sessionIdRef.current;
+      api.heartbeat(sid ?? undefined).catch(() => undefined);
+    };
+
+    const endSession = () => {
+      const sid = sessionIdRef.current;
+      if (!sid) return;
+      // Prefer sendBeacon-style fire-and-forget; fall back to fetch.
+      api.endAnalyticsSession(sid).catch(() => undefined);
+      sessionIdRef.current = null;
+      saveSessionId(null);
     };
 
     const interval = window.setInterval(() => {
       flush();
-      heartbeat();
+      if (!sessionIdRef.current) void ensureSession();
+      else heartbeat();
     }, FLUSH_INTERVAL_MS);
 
     const onVisibility = () => {
-      if (document.visibilityState === 'hidden') flush();
+      if (document.visibilityState === 'hidden') {
+        flush();
+        endSession();
+      } else if (document.visibilityState === 'visible') {
+        void ensureSession();
+      }
     };
     document.addEventListener('visibilitychange', onVisibility);
-    const onBeforeUnload = () => flush();
+    const onBeforeUnload = () => {
+      flush();
+      endSession();
+    };
     window.addEventListener('beforeunload', onBeforeUnload);
+    window.addEventListener('pagehide', onBeforeUnload);
 
     return () => {
       document.removeEventListener('click', onClick, true);
       document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('beforeunload', onBeforeUnload);
+      window.removeEventListener('pagehide', onBeforeUnload);
       window.clearInterval(interval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -123,6 +123,7 @@ model User {
   evaluationsRecv GameEvaluation[]  @relation("EvaluationEvaluatee")
   analytics       AnalyticsEvent[]
   activity        UserActivityStats?
+  appSessions     AppSession[]
 
   @@index([city])
   @@index([role])
@@ -363,4 +364,20 @@ model UserActivityStats {
   lastActiveAt       DateTime?
   avgSessionsPerWeek Float    @default(0)
   updatedAt          DateTime @updatedAt
+}
+
+/// One Mini App open → close cycle. Used for admin activity trackers
+/// (entries per day/week/month + average time spent in app).
+model AppSession {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startedAt  DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
+  endedAt    DateTime?
+  /// Accumulated active time from heartbeats (ms).
+  durationMs Int       @default(0)
+
+  @@index([userId, startedAt])
+  @@index([userId])
 }

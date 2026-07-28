@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 import {
   AdminUpdateGameDto,
   AdminUpdateUserDto,
@@ -20,7 +21,10 @@ function publicUser<T extends { telegramId: bigint }>(u: T) {
 export class AdminService {
   private readonly logger = new Logger(AdminService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly analytics: AnalyticsService,
+  ) {}
 
   // ---------- Stats ----------
   async getStats() {
@@ -142,7 +146,7 @@ export class AdminService {
         this.prisma.gamePayment.count({ where: { userId: id, isPaid: true } }),
       ]);
 
-    const activity = await this.prisma.userActivityStats.findUnique({ where: { userId: id } });
+    const activity = await this.analytics.activitySummary(id);
 
     const { telegramId, ...rest } = user;
     return {
@@ -156,8 +160,12 @@ export class AdminService {
         evaluationsReceived,
         reportsAgainst,
         paymentsMade,
-        avgSessionsPerWeek: activity?.avgSessionsPerWeek ?? 0,
-        lastActiveAt: activity?.lastActiveAt ?? null,
+        avgSessionsPerWeek: activity.avgSessionsPerWeek,
+        lastActiveAt: activity.lastActiveAt,
+        entriesDay: activity.entriesDay,
+        entriesWeek: activity.entriesWeek,
+        entriesMonth: activity.entriesMonth,
+        avgSessionMs: activity.avgSessionMs,
       },
     };
   }
@@ -230,6 +238,7 @@ export class AdminService {
         data: { reviewedBy: null },
       }),
       this.prisma.analyticsEvent.deleteMany({ where: { userId: id } }),
+      this.prisma.appSession.deleteMany({ where: { userId: id } }),
       this.prisma.userActivityStats.deleteMany({ where: { userId: id } }),
       this.prisma.auditLog.deleteMany({ where: { actorId: id } }),
       this.prisma.game.deleteMany({ where: { hostId: id } }),

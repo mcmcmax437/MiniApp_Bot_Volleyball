@@ -31,6 +31,19 @@ class BatchDto {
   events!: EventDto[];
 }
 
+class HeartbeatDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  sessionId?: string;
+}
+
+class EndSessionDto {
+  @IsString()
+  @MaxLength(64)
+  sessionId!: string;
+}
+
 @UseGuards(JwtAuthGuard)
 @Controller('analytics')
 export class AnalyticsController {
@@ -41,9 +54,21 @@ export class AnalyticsController {
     return this.analytics.ingest(me, dto.events);
   }
 
-  @Post('heartbeat')
-  heartbeat(@CurrentUser() me: User | null) {
+  @Post('session/start')
+  startSession(@CurrentUser() me: User | null) {
     if (!me) throw new UnauthorizedException('User not found');
-    return this.analytics.heartbeat(me);
+    return this.analytics.startSession(me);
+  }
+
+  @Post('heartbeat')
+  heartbeat(@CurrentUser() me: User | null, @Body() dto: HeartbeatDto) {
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.analytics.heartbeat(me, dto.sessionId);
+  }
+
+  @Post('session/end')
+  endSession(@CurrentUser() me: User | null, @Body() dto: EndSessionDto) {
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.analytics.endSession(me, dto.sessionId);
   }
 }
