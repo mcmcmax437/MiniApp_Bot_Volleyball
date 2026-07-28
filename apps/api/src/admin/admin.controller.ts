@@ -52,6 +52,16 @@ export class AdminController {
     });
   }
 
+  /** Must be registered before `users/:id` so "activity" is not treated as an id. */
+  @Get('users/activity')
+  listUserActivity(@Query() q: AdminListQuery) {
+    return this.admin.listUserActivity({
+      take: q.take ?? 100,
+      skip: q.skip ?? 0,
+      q: q.q,
+    });
+  }
+
   @Get('users/:id')
   getUser(@Param('id') id: string) {
     return this.admin.getUser(id);

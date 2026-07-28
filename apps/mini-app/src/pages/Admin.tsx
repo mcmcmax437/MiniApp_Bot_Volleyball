@@ -4,24 +4,26 @@ import { useI18n } from "../i18n";
 import { AdminIndexPage } from "./AdminIndex";
 import { AdminStatsPage } from "./AdminStats";
 import { AdminUsersPage } from "./AdminUsers";
+import { AdminActivityPage } from "./AdminActivity";
 import { AdminGamesPage } from "./AdminGames";
 import { AdminVenuesPage } from "./AdminVenues";
 import { AdminReportsPage } from "./AdminReports";
 import "./Admin.css";
 
-type SubPage = "stats" | "users" | "games" | "venues" | "reports";
+type SubPage = "stats" | "users" | "activity" | "games" | "venues" | "reports";
 
 const SUB_PAGE_META: Record<SubPage, { labelKey: string; icon: IconName }> = {
-  stats:   { labelKey: "admin.stats",   icon: "chart-line-data-01" },
-  users:   { labelKey: "admin.users",   icon: "user-account" },
-  games:   { labelKey: "admin.games",   icon: "tennis-ball" },
-  venues:  { labelKey: "admin.venues",  icon: "building-01" },
-  reports: { labelKey: "admin.reports", icon: "flag-01" },
+  stats:    { labelKey: "admin.stats",    icon: "chart-line-data-01" },
+  users:    { labelKey: "admin.users",    icon: "user-account" },
+  activity: { labelKey: "admin.activity", icon: "clock-01" },
+  games:    { labelKey: "admin.games",    icon: "tennis-ball" },
+  venues:   { labelKey: "admin.venues",   icon: "building-01" },
+  reports:  { labelKey: "admin.reports",  icon: "flag-01" },
 };
 
 /**
  * /admin landing page. With no `subPage` prop it shows the index of cards
- * linking to the 5 admin sub-pages. With a `subPage` prop it shows the
+ * linking to the admin sub-pages. With a `subPage` prop it shows the
  * matching sub-page (and a "back to admin" link in the header).
  */
 export function AdminPage({ subPage }: { subPage?: SubPage }) {
@@ -52,11 +54,12 @@ export function AdminPage({ subPage }: { subPage?: SubPage }) {
             <p className="page-header-sub">{t('admin.subtitleSection', { section: label })}</p>
           </div>
         </header>
-        {subPage === "stats"   && <AdminStatsPage />}
-        {subPage === "users"   && <AdminUsersPage />}
-        {subPage === "games"   && <AdminGamesPage />}
-        {subPage === "venues"  && <AdminVenuesPage />}
-        {subPage === "reports" && <AdminReportsPage />}
+        {subPage === "stats"    && <AdminStatsPage />}
+        {subPage === "users"    && <AdminUsersPage />}
+        {subPage === "activity" && <AdminActivityPage />}
+        {subPage === "games"    && <AdminGamesPage />}
+        {subPage === "venues"   && <AdminVenuesPage />}
+        {subPage === "reports"  && <AdminReportsPage />}
       </div>
     );
   }

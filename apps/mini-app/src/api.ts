@@ -260,6 +260,30 @@ export interface AdminUserListItem {
   total: number;
 }
 
+export interface AdminUserActivityList {
+  items: Array<{
+    id: string;
+    firstName: string;
+    lastName: string | null;
+    username: string | null;
+    photoUrl: string | null;
+    city: string;
+    role: UserRole;
+    isBanned: boolean;
+    activity: {
+      entriesDay: number;
+      entriesWeek: number;
+      entriesMonth: number;
+      avgSessionMs: number;
+      avgSessionsPerWeek: number;
+      lastActiveAt: string | null;
+    };
+  }>;
+  total: number;
+  take: number;
+  skip: number;
+}
+
 export interface AdminGameListItem {
   items: Array<{
     id: string;
@@ -614,6 +638,20 @@ export function useApi() {
     },
     adminGetUser: (id: string) =>
       http<AdminUserDetail>(`/admin/users/${id}`, { method: 'GET' }, initData),
+    adminListUserActivity: (
+      q: { take?: number; skip?: number; q?: string } = {},
+    ) => {
+      const params = new URLSearchParams();
+      if (q.take) params.set('take', String(q.take));
+      if (q.skip) params.set('skip', String(q.skip));
+      if (q.q) params.set('q', q.q);
+      const qs = params.toString();
+      return http<AdminUserActivityList>(
+        `/admin/users/activity${qs ? `?${qs}` : ''}`,
+        { method: 'GET' },
+        initData,
+      );
+    },
     adminUpdateUser: (id: string, patch: Record<string, unknown>) =>
       http<ApiUser>(`/admin/users/${id}`, {
         method: 'PATCH',

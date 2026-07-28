@@ -109,52 +109,103 @@ export class AnalyticsService {
    * average time spent per session over the last 28 days.
    */
   async activitySummary(userId: string) {
+    const map = await this.activitySummaryForUsers([userId]);
+    return (
+      map.get(userId) ?? {
+        entriesDay: 0,
+        entriesWeek: 0,
+        entriesMonth: 0,
+        avgSessionMs: 0,
+        avgSessionsPerWeek: 0,
+        lastActiveAt: null as Date | null,
+      }
+    );
+  }
+
+  /** Batch version for the admin activity list page. */
+  async activitySummaryForUsers(userIds: string[]) {
+    const result = new Map<
+      string,
+      {
+        entriesDay: number;
+        entriesWeek: number;
+        entriesMonth: number;
+        avgSessionMs: number;
+        avgSessionsPerWeek: number;
+        lastActiveAt: Date | null;
+      }
+    >();
+    for (const id of userIds) {
+      result.set(id, {
+        entriesDay: 0,
+        entriesWeek: 0,
+        entriesMonth: 0,
+        avgSessionMs: 0,
+        avgSessionsPerWeek: 0,
+        lastActiveAt: null,
+      });
+    }
+    if (!userIds.length) return result;
+
     const now = Date.now();
     const dayAgo = new Date(now - 24 * 60 * 60 * 1000);
     const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
     const monthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
     const rolling28 = new Date(now - 28 * 24 * 60 * 60 * 1000);
 
-    const [entriesDay, entriesWeek, entriesMonth, recentSessions, activity] =
-      await Promise.all([
-        this.prisma.appSession.count({
-          where: { userId, startedAt: { gte: dayAgo } },
-        }),
-        this.prisma.appSession.count({
-          where: { userId, startedAt: { gte: weekAgo } },
-        }),
-        this.prisma.appSession.count({
-          where: { userId, startedAt: { gte: monthAgo } },
-        }),
-        this.prisma.appSession.findMany({
-          where: { userId, startedAt: { gte: rolling28 } },
-          select: { durationMs: true, startedAt: true, lastSeenAt: true, endedAt: true },
-        }),
-        this.prisma.userActivityStats.findUnique({ where: { userId } }),
-      ]);
+    const [sessions, activities] = await Promise.all([
+      this.prisma.appSession.findMany({
+        where: { userId: { in: userIds }, startedAt: { gte: monthAgo } },
+        select: {
+          userId: true,
+          startedAt: true,
+          durationMs: true,
+          lastSeenAt: true,
+        },
+      }),
+      this.prisma.userActivityStats.findMany({
+        where: { userId: { in: userIds } },
+        select: { userId: true, lastActiveAt: true, avgSessionsPerWeek: true },
+      }),
+    ]);
 
-    let totalMs = 0;
-    let counted = 0;
-    for (const s of recentSessions) {
-      const ms =
-        s.durationMs > 0
-          ? s.durationMs
-          : Math.max(0, s.lastSeenAt.getTime() - s.startedAt.getTime());
-      // Ignore empty blinks (< 2s) so avg isn't dragged down by failed opens.
-      if (ms < 2_000) continue;
-      totalMs += ms;
-      counted += 1;
+    for (const a of activities) {
+      const row = result.get(a.userId);
+      if (!row) continue;
+      row.lastActiveAt = a.lastActiveAt;
+      row.avgSessionsPerWeek = a.avgSessionsPerWeek;
     }
-    const avgSessionMs = counted > 0 ? Math.round(totalMs / counted) : 0;
 
-    return {
-      entriesDay,
-      entriesWeek,
-      entriesMonth,
-      avgSessionMs,
-      avgSessionsPerWeek: activity?.avgSessionsPerWeek ?? entriesWeek / 7,
-      lastActiveAt: activity?.lastActiveAt ?? null,
-    };
+    const avgAcc = new Map<string, { totalMs: number; counted: number }>();
+
+    for (const s of sessions) {
+      const row = result.get(s.userId);
+      if (!row) continue;
+      if (s.startedAt >= dayAgo) row.entriesDay += 1;
+      if (s.startedAt >= weekAgo) row.entriesWeek += 1;
+      row.entriesMonth += 1;
+
+      if (s.startedAt >= rolling28) {
+        const ms =
+          s.durationMs > 0
+            ? s.durationMs
+            : Math.max(0, s.lastSeenAt.getTime() - s.startedAt.getTime());
+        if (ms < 2_000) continue;
+        const acc = avgAcc.get(s.userId) ?? { totalMs: 0, counted: 0 };
+        acc.totalMs += ms;
+        acc.counted += 1;
+        avgAcc.set(s.userId, acc);
+      }
+    }
+
+    for (const [userId, acc] of avgAcc) {
+      const row = result.get(userId);
+      if (!row) continue;
+      row.avgSessionMs = Math.round(acc.totalMs / acc.counted);
+      if (!row.avgSessionsPerWeek) row.avgSessionsPerWeek = row.entriesWeek;
+    }
+
+    return result;
   }
 
   private async bumpLastActive(userId: string, now: Date) {

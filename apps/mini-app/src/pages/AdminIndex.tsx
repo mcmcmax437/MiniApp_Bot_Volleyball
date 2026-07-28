@@ -5,6 +5,7 @@ import { useI18n } from "../i18n";
 const SUB_PAGES: { to: string; titleKey: string; icon: IconName; descKey: string }[] = [
   { to: "/admin/stats", titleKey: "admin.stats", icon: "chart-line-data-01", descKey: "admin.index.stats" },
   { to: "/admin/users", titleKey: "admin.users", icon: "user-account", descKey: "admin.index.users" },
+  { to: "/admin/activity", titleKey: "admin.activity", icon: "clock-01", descKey: "admin.index.activity" },
   { to: "/admin/games", titleKey: "admin.games", icon: "tennis-ball", descKey: "admin.index.games" },
   { to: "/admin/venues", titleKey: "admin.venues", icon: "building-01", descKey: "admin.index.venues" },
   { to: "/admin/reports", titleKey: "admin.reports", icon: "flag-01", descKey: "admin.index.reports" },

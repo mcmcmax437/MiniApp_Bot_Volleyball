@@ -111,6 +111,79 @@ export class AdminService {
     };
   }
 
+  /**
+   * Admin-only roster of every user with app-usage trackers
+   * (entries day/week/month + avg time in app).
+   */
+  async listUserActivity(params: { take: number; skip: number; q?: string }) {
+    const where: any = {};
+    if (params.q) {
+      where.OR = [
+        { firstName: { contains: params.q } },
+        { lastName: { contains: params.q } },
+        { username: { contains: params.q } },
+      ];
+    }
+
+    const [items, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: params.take,
+        skip: params.skip,
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          username: true,
+          photoUrl: true,
+          city: true,
+          role: true,
+          isBanned: true,
+        },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    const activityMap = await this.analytics.activitySummaryForUsers(
+      items.map((u) => u.id),
+    );
+
+    const withStats = items.map((u) => {
+      const a = activityMap.get(u.id);
+      return {
+        ...u,
+        activity: {
+          entriesDay: a?.entriesDay ?? 0,
+          entriesWeek: a?.entriesWeek ?? 0,
+          entriesMonth: a?.entriesMonth ?? 0,
+          avgSessionMs: a?.avgSessionMs ?? 0,
+          avgSessionsPerWeek: a?.avgSessionsPerWeek ?? 0,
+          lastActiveAt: a?.lastActiveAt?.toISOString() ?? null,
+        },
+      };
+    });
+
+    // Most recently active users first.
+    withStats.sort((a, b) => {
+      const ta = a.activity.lastActiveAt
+        ? new Date(a.activity.lastActiveAt).getTime()
+        : 0;
+      const tb = b.activity.lastActiveAt
+        ? new Date(b.activity.lastActiveAt).getTime()
+        : 0;
+      if (tb !== ta) return tb - ta;
+      return b.activity.entriesWeek - a.activity.entriesWeek;
+    });
+
+    return {
+      items: withStats,
+      total,
+      take: params.take,
+      skip: params.skip,
+    };
+  }
+
   async getUser(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
