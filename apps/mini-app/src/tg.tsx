@@ -34,6 +34,8 @@ interface TelegramWebApp {
     /** From t.me/<bot>?startapp=<param> when the Mini App is opened. */
     start_param?: string;
   };
+  /** Telegram client platform: ios, android, tdesktop, web, … */
+  platform?: string;
   colorScheme: 'light' | 'dark';
   ready: () => void;
   expand: () => void;

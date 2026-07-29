@@ -1,13 +1,15 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useQuery } from 'react-query';
 import { useApi } from '../api';
+import { useTelegram } from '../tg';
+import {
+  setAnalyticsEnqueue,
+  trackAnalytics,
+  type AnalyticsEventPayload,
+} from '../lib/analytics-bus';
 
-type Event = {
-  type: string;
-  screen?: string;
-  target?: string;
-  meta?: Record<string, unknown>;
-};
+type Event = AnalyticsEventPayload;
 
 const QUEUE_KEY = 'volley:analytics:queue:v1';
 const SESSION_KEY = 'volley:analytics:session:v1';
@@ -56,11 +58,28 @@ function saveSessionId(id: string | null) {
  */
 export function useAnalytics() {
   const api = useApi();
+  const { webApp, user } = useTelegram();
   const queueRef = useRef<Event[]>(loadQueue());
   const screenRef = useRef<string>('');
   const sessionIdRef = useRef<string | null>(loadSessionId());
   const startingRef = useRef(false);
   const location = useLocation();
+
+  const meQ = useQuery(['me'], () => api.me(), {
+    retry: false,
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    setAnalyticsEnqueue((event) => {
+      queueRef.current.push({
+        ...event,
+        screen: event.screen ?? screenRef.current,
+      });
+      saveQueue(queueRef.current);
+    });
+    return () => setAnalyticsEnqueue(null);
+  }, []);
 
   useEffect(() => {
     // 1. Screen view on route change
@@ -100,12 +119,24 @@ export function useAnalytics() {
     }
     document.addEventListener('click', onClick, true);
 
-    // 3. Session start (once per Mini App open / tab)
+    // 3. Session start (once per Mini App open / tab) with device context
     const ensureSession = async () => {
       if (sessionIdRef.current || startingRef.current) return;
       startingRef.current = true;
       try {
-        const res = await api.startAnalyticsSession();
+        const platform =
+          (webApp as { platform?: string } | null)?.platform ??
+          (typeof navigator !== 'undefined' ? navigator.platform : undefined);
+        const language =
+          meQ.data?.language ??
+          user?.language_code ??
+          (typeof navigator !== 'undefined' ? navigator.language : undefined);
+        const city = meQ.data?.city;
+        const res = await api.startAnalyticsSession({
+          platform: platform || undefined,
+          language: language || undefined,
+          city: city || undefined,
+        });
         sessionIdRef.current = res.sessionId;
         saveSessionId(res.sessionId);
       } catch {
@@ -175,5 +206,7 @@ export function useAnalytics() {
       window.clearInterval(interval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
+  }, [location.pathname, meQ.data?.city, meQ.data?.language]);
 }
+
+export { trackAnalytics };

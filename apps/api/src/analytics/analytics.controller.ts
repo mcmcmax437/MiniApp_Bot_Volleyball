@@ -44,6 +44,23 @@ class EndSessionDto {
   sessionId!: string;
 }
 
+class StartSessionDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  platform?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(16)
+  language?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  city?: string;
+}
+
 @UseGuards(JwtAuthGuard)
 @Controller('analytics')
 export class AnalyticsController {
@@ -55,9 +72,13 @@ export class AnalyticsController {
   }
 
   @Post('session/start')
-  startSession(@CurrentUser() me: User | null) {
+  startSession(@CurrentUser() me: User | null, @Body() dto: StartSessionDto) {
     if (!me) throw new UnauthorizedException('User not found');
-    return this.analytics.startSession(me);
+    return this.analytics.startSession(me, {
+      platform: dto.platform,
+      language: dto.language,
+      city: dto.city,
+    });
   }
 
   @Post('heartbeat')

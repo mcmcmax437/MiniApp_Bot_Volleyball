@@ -14,12 +14,16 @@ import {
   computeWeightedSkillLevel,
   skillLevelToNumber,
 } from './skill-aggregator';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 @Injectable()
 export class EvaluationsService implements OnApplicationBootstrap {
   private readonly logger = new Logger(EvaluationsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly analytics: AnalyticsService,
+  ) {}
 
   /**
    * One-shot backfill on app start: any user who already has a self-declared
@@ -132,6 +136,12 @@ export class EvaluationsService implements OnApplicationBootstrap {
       }
 
       return upserts;
+    });
+
+    void this.analytics.trackEvent(me.id, 'evaluation_submit', {
+      screen: `/games/${gameId}`,
+      target: gameId,
+      meta: { count: txResults.length },
     });
 
     return { count: txResults.length };

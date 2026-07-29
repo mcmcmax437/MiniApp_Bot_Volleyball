@@ -377,7 +377,15 @@ model AppSession {
   endedAt    DateTime?
   /// Accumulated active time from heartbeats (ms).
   durationMs Int       @default(0)
+  /// Telegram WebApp.platform (ios / android / tdesktop / web / …).
+  platform   String?
+  /// App / Telegram language at session start.
+  language   String?
+  /// User city snapshot at session start.
+  city       String?
 
   @@index([userId, startedAt])
   @@index([userId])
+  @@index([platform])
+  @@index([language])
 }

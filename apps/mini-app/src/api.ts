@@ -320,6 +320,18 @@ export interface AdminStats {
   bannedUsers: number;
   pendingReports: number;
   finishedGames: number;
+  /** Distinct users with a session in the last 24h / 7d / 30d. */
+  dau: number;
+  wau: number;
+  mau: number;
+  sessionsToday: number;
+  /** Average session length (ms) over the last 28 days. */
+  avgSessionMs: number;
+  topScreens: Array<{ screen: string; count: number }>;
+  topActions: Array<{ type: string; count: number }>;
+  topClicks: Array<{ target: string; count: number }>;
+  platforms: Array<{ platform: string; count: number }>;
+  languages: Array<{ language: string; count: number }>;
 }
 
 export interface AdminUserDetail {
@@ -868,8 +880,16 @@ export function useApi() {
         method: 'POST',
         body: JSON.stringify({ events }),
       }, initData),
-    startAnalyticsSession: () =>
-      http<{ sessionId: string }>(`/analytics/session/start`, { method: 'POST', body: '{}' }, initData),
+    startAnalyticsSession: (ctx?: {
+      platform?: string;
+      language?: string;
+      city?: string;
+    }) =>
+      http<{ sessionId: string }>(
+        `/analytics/session/start`,
+        { method: 'POST', body: JSON.stringify(ctx ?? {}) },
+        initData,
+      ),
     heartbeat: (sessionId?: string) =>
       http<{ ok: boolean }>(`/analytics/heartbeat`, {
         method: 'POST',

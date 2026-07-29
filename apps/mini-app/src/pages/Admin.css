@@ -485,3 +485,140 @@
   flex-shrink: 0;
 }
 
+/* ============================================================
+   Admin stats — engagement ranks + heatmap
+   ============================================================ */
+.adminStats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.adminStats-ranks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.adminRank {
+  padding: 12px 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.adminRank-title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.adminRank-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.adminRank-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.adminRank-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.adminRank-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.adminRank-label {
+  color: var(--text-primary);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.adminRank-count {
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.adminRank-barTrack {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.adminRank-barFill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--gradient-brand);
+}
+
+.adminHeatmap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.adminHeatmap-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.adminHeatmap-row {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.adminHeatmap-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.adminHeatmap-target {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adminHeatmap-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  font-family: var(--font-display);
+  color: var(--text-primary);
+}
+
+.adminHeatmap-sub {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+

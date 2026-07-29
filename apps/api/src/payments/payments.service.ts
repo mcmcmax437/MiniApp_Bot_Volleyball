@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GamesService } from '../games/games.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 import type { User } from '@prisma/client';
 
 @Injectable()
@@ -8,6 +9,7 @@ export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly games: GamesService,
+    private readonly analytics: AnalyticsService,
   ) {}
 
   /** List payments for a game (host view). */
@@ -88,6 +90,13 @@ export class PaymentsService {
         isPaid,
         paidAt: isPaid ? new Date() : null,
       },
+    }).then((row) => {
+      void this.analytics.trackEvent(me.id, 'payment_mark', {
+        screen: `/games/${gameId}`,
+        target: userId,
+        meta: { isPaid, gameId },
+      });
+      return row;
     });
   }
 

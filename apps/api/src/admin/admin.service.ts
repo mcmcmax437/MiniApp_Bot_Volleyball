@@ -28,22 +28,31 @@ export class AdminService {
 
   // ---------- Stats ----------
   async getStats() {
-    const [users, games, venues, todaySignups, bannedUsers, pendingReports, finishedGames] =
-      await Promise.all([
-        this.prisma.user.count(),
-        this.prisma.game.count(),
-        this.prisma.venue.count(),
-        this.prisma.user.count({
-          where: {
-            createdAt: {
-              gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
-            },
+    const [
+      users,
+      games,
+      venues,
+      todaySignups,
+      bannedUsers,
+      pendingReports,
+      finishedGames,
+      engagement,
+    ] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.game.count(),
+      this.prisma.venue.count(),
+      this.prisma.user.count({
+        where: {
+          createdAt: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
           },
-        }),
-        this.prisma.user.count({ where: { isBanned: true } }),
-        this.prisma.report.count({ where: { status: 'OPEN' } }),
-        this.prisma.game.count({ where: { status: 'FINISHED' } }),
-      ]);
+        },
+      }),
+      this.prisma.user.count({ where: { isBanned: true } }),
+      this.prisma.report.count({ where: { status: 'OPEN' } }),
+      this.prisma.game.count({ where: { status: 'FINISHED' } }),
+      this.analytics.engagementOverview(),
+    ]);
     return {
       users,
       games,
@@ -52,6 +61,7 @@ export class AdminService {
       bannedUsers,
       pendingReports,
       finishedGames,
+      ...engagement,
     };
   }
 

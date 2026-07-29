@@ -1,9 +1,29 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import type { User } from '@prisma/client';
 
 /** Cap one heartbeat tick so a backgrounded tab can't inflate time. */
 const MAX_HEARTBEAT_DELTA_MS = 20_000;
+
+const PRODUCT_EVENT_TYPES = [
+  'game_create',
+  'game_join',
+  'game_join_request',
+  'game_leave',
+  'game_cancel',
+  'game_finish',
+  'invite_send',
+  'invite_accept',
+  'invite_decline',
+  'evaluation_submit',
+  'payment_mark',
+  'game_share',
+] as const;
+
+export type ProductEventType = (typeof PRODUCT_EVENT_TYPES)[number];
+
+export type GameStatField = 'gamesHosted' | 'gamesAttended' | 'gamesCancelled';
 
 @Injectable()
 export class AnalyticsService {
@@ -13,7 +33,7 @@ export class AnalyticsService {
 
   /**
    * Ingest a batch of analytics events from the client. Events are stored
-   * raw and aggregated later by the admin heatmap endpoint.
+   * raw and aggregated later by the admin heatmap / engagement endpoints.
    */
   async ingest(
     me: User | null,
@@ -35,8 +55,50 @@ export class AnalyticsService {
     return { count: res.count };
   }
 
-  /** Open a new Mini App session (one "entry"). */
-  async startSession(me: User) {
+  /**
+   * Best-effort product / feature event (server-side). Never throws to callers.
+   */
+  async trackEvent(
+    userId: string | null,
+    type: string,
+    opts?: { screen?: string; target?: string; meta?: Record<string, unknown> },
+  ) {
+    try {
+      await this.prisma.analyticsEvent.create({
+        data: {
+          userId,
+          type: type.slice(0, 64),
+          screen: opts?.screen?.slice(0, 64) ?? null,
+          target: opts?.target?.slice(0, 64) ?? null,
+          meta:
+            opts?.meta === undefined
+              ? undefined
+              : (opts.meta as Prisma.InputJsonValue),
+        },
+      });
+    } catch (err) {
+      this.logger.warn(`trackEvent(${type}) failed: ${(err as Error).message}`);
+    }
+  }
+
+  /** Increment cached game counters on UserActivityStats. */
+  async bumpGameStat(userId: string, field: GameStatField, by = 1) {
+    try {
+      await this.prisma.userActivityStats.upsert({
+        where: { userId },
+        create: { userId, [field]: Math.max(0, by) },
+        update: { [field]: { increment: by } },
+      });
+    } catch (err) {
+      this.logger.warn(`bumpGameStat(${field}) failed: ${(err as Error).message}`);
+    }
+  }
+
+  /** Open a new Mini App session (one "entry"), with optional device context. */
+  async startSession(
+    me: User,
+    ctx?: { platform?: string; language?: string; city?: string },
+  ) {
     const now = new Date();
     const session = await this.prisma.appSession.create({
       data: {
@@ -44,6 +106,9 @@ export class AnalyticsService {
         startedAt: now,
         lastSeenAt: now,
         durationMs: 0,
+        platform: ctx?.platform?.slice(0, 64) || null,
+        language: ctx?.language?.slice(0, 16) || me.language || null,
+        city: ctx?.city?.slice(0, 64) || me.city || null,
       },
       select: { id: true },
     });
@@ -206,6 +271,131 @@ export class AnalyticsService {
     }
 
     return result;
+  }
+
+  /**
+   * Platform-wide engagement aggregates for the admin Stats page.
+   * Distinct active users (DAU/WAU/MAU), avg session length, top screens /
+   * product actions, and session context breakdowns.
+   */
+  async engagementOverview() {
+    const now = Date.now();
+    const dayAgo = new Date(now - 24 * 60 * 60 * 1000);
+    const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+    const rolling28 = new Date(now - 28 * 24 * 60 * 60 * 1000);
+
+    const [
+      dauRows,
+      wauRows,
+      mauRows,
+      sessionsToday,
+      recentSessions,
+      screenEvents,
+      actionEvents,
+      clickEvents,
+      platformSessions,
+      languageSessions,
+    ] = await Promise.all([
+      this.prisma.appSession.groupBy({
+        by: ['userId'],
+        where: { startedAt: { gte: dayAgo } },
+      }),
+      this.prisma.appSession.groupBy({
+        by: ['userId'],
+        where: { startedAt: { gte: weekAgo } },
+      }),
+      this.prisma.appSession.groupBy({
+        by: ['userId'],
+        where: { startedAt: { gte: monthAgo } },
+      }),
+      this.prisma.appSession.count({ where: { startedAt: { gte: dayAgo } } }),
+      this.prisma.appSession.findMany({
+        where: { startedAt: { gte: rolling28 }, durationMs: { gte: 2000 } },
+        select: { durationMs: true },
+      }),
+      this.prisma.analyticsEvent.groupBy({
+        by: ['screen'],
+        where: {
+          type: 'screen_view',
+          createdAt: { gte: weekAgo },
+          screen: { not: null },
+        },
+        _count: { _all: true },
+        orderBy: { _count: { screen: 'desc' } },
+        take: 10,
+      }),
+      this.prisma.analyticsEvent.groupBy({
+        by: ['type'],
+        where: {
+          type: { in: [...PRODUCT_EVENT_TYPES] },
+          createdAt: { gte: weekAgo },
+        },
+        _count: { _all: true },
+        orderBy: { _count: { type: 'desc' } },
+        take: 15,
+      }),
+      this.prisma.analyticsEvent.groupBy({
+        by: ['target'],
+        where: {
+          type: 'click',
+          createdAt: { gte: weekAgo },
+          target: { not: null },
+        },
+        _count: { _all: true },
+        orderBy: { _count: { target: 'desc' } },
+        take: 10,
+      }),
+      this.prisma.appSession.groupBy({
+        by: ['platform'],
+        where: { startedAt: { gte: weekAgo } },
+        _count: { _all: true },
+        orderBy: { _count: { platform: 'desc' } },
+        take: 10,
+      }),
+      this.prisma.appSession.groupBy({
+        by: ['language'],
+        where: { startedAt: { gte: weekAgo } },
+        _count: { _all: true },
+        orderBy: { _count: { language: 'desc' } },
+        take: 10,
+      }),
+    ]);
+
+    const avgSessionMs = recentSessions.length
+      ? Math.round(
+          recentSessions.reduce((s, r) => s + r.durationMs, 0) /
+            recentSessions.length,
+        )
+      : 0;
+
+    return {
+      dau: dauRows.length,
+      wau: wauRows.length,
+      mau: mauRows.length,
+      sessionsToday,
+      avgSessionMs,
+      topScreens: screenEvents.map((r) => ({
+        screen: r.screen ?? '/',
+        count: r._count._all,
+      })),
+      topActions: actionEvents.map((r) => ({
+        type: r.type,
+        count: r._count._all,
+      })),
+      topClicks: clickEvents.map((r) => ({
+        target: r.target ?? '_',
+        count: r._count._all,
+      })),
+      platforms: platformSessions.map((r) => ({
+        platform: r.platform ?? 'unknown',
+        count: r._count._all,
+      })),
+      languages: languageSessions.map((r) => ({
+        language: r.language ?? 'unknown',
+        count: r._count._all,
+      })),
+    };
   }
 
   private async bumpLastActive(userId: string, now: Date) {

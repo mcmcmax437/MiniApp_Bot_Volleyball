@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TelegramSender } from '../bot/telegram-sender';
 import { inviteMessage, inviteResponseMessage } from '../bot/notify-messages';
 import { InvitationsRealtimeService } from './invitations-realtime.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 import type { User } from '@prisma/client';
 
 type InviteOutcome = 'accepted' | 'declined' | 'ignored';
@@ -13,6 +14,7 @@ export class InvitationsService {
     private readonly prisma: PrismaService,
     private readonly bot: TelegramSender,
     private readonly realtime: InvitationsRealtimeService,
+    private readonly analytics: AnalyticsService,
   ) {}
 
   /** Host invites a player to their game. */
@@ -90,6 +92,12 @@ export class InvitationsService {
         { replyMarkup: this.bot.openAppButton('Open invite', `g_${gameId}`) },
       )
       .catch(() => undefined);
+
+    void this.analytics.trackEvent(me.id, 'invite_send', {
+      screen: `/games/${gameId}`,
+      target: inviteeId,
+      meta: { gameId, invitationId: invitation.id },
+    });
 
     return invitation;
   }
@@ -224,6 +232,10 @@ export class InvitationsService {
         venueAddress: inv.game.venue.address,
         startAt: inv.game.startAt,
       });
+      void this.analytics.trackEvent(me.id, 'invite_decline', {
+        screen: `/games/${updated.gameId}`,
+        target: updated.id,
+      });
       return { ok: true };
     }
 
@@ -299,6 +311,12 @@ export class InvitationsService {
       venueAddress: inv.game.venue.address,
       startAt: inv.game.startAt,
     });
+
+    void this.analytics.trackEvent(me.id, 'invite_accept', {
+      screen: `/games/${inv.gameId}`,
+      target: invitationId,
+    });
+    void this.analytics.bumpGameStat(me.id, 'gamesAttended');
 
     const after = await this.prisma.game.findUnique({
       where: { id: inv.gameId },

@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { SchedulerService } from '../scheduler/scheduler.service';
 import { InvitationsService } from '../invitations/invitations.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 import { CreateGameDto, ListGamesQuery } from './dto';
 import { SKILL_BUCKETS, SKILL_LEVELS } from '../shared/skill-levels';
 import { canonicalizeCity, expandCityFilter, foldCity } from '../shared/city';
@@ -23,6 +24,7 @@ export class GamesService {
     private readonly scheduler: SchedulerService,
     private readonly config: ConfigService,
     private readonly invitations: InvitationsService,
+    private readonly analytics: AnalyticsService,
   ) {}
 
   /**
@@ -91,6 +93,13 @@ export class GamesService {
       },
       include: { participants: true },
     });
+
+    void this.analytics.trackEvent(me.id, 'game_create', {
+      screen: `/games/${game.id}`,
+      target: game.id,
+      meta: { playType: game.playType, spotsTotal: game.spotsTotal },
+    });
+    void this.analytics.bumpGameStat(me.id, 'gamesHosted');
 
     return this.findOne(game.id);
   }
@@ -394,6 +403,8 @@ export class GamesService {
   }
 
   async join(me: User, gameId: string) {
+    let tracked: 'join' | 'join_request' | null = null;
+
     const joined = await this.prisma.$transaction(async (tx) => {
       const game = await tx.game.findUnique({
         where: { id: gameId },
@@ -422,6 +433,7 @@ export class GamesService {
         await tx.gameJoinRequest.create({
           data: { gameId, userId: me.id, status: 'PENDING' },
         });
+        tracked = 'join_request';
         return this.findOne(gameId);
       }
 
@@ -430,6 +442,7 @@ export class GamesService {
       }
 
       await tx.gameParticipant.create({ data: { gameId, userId: me.id } });
+      tracked = 'join';
 
       const updated = await tx.game.findUnique({
         where: { id: gameId },
@@ -451,6 +464,19 @@ export class GamesService {
 
       return this.findOne(gameId);
     });
+
+    if (tracked === 'join') {
+      void this.analytics.trackEvent(me.id, 'game_join', {
+        screen: `/games/${gameId}`,
+        target: gameId,
+      });
+      void this.analytics.bumpGameStat(me.id, 'gamesAttended');
+    } else if (tracked === 'join_request') {
+      void this.analytics.trackEvent(me.id, 'game_join_request', {
+        screen: `/games/${gameId}`,
+        target: gameId,
+      });
+    }
 
     if (joined.status === 'FULL') {
       await this.invitations.refreshPendingInvitees(gameId).catch(() => undefined);
@@ -493,6 +519,17 @@ export class GamesService {
     if (result.wasHost) {
       await this.invitations.deactivatePendingForGame(gameId).catch(() => undefined);
       await this.scheduler.notifyCancelled(gameId).catch(() => undefined);
+      void this.analytics.trackEvent(me.id, 'game_cancel', {
+        screen: `/games/${gameId}`,
+        target: gameId,
+        meta: { via: 'host_leave' },
+      });
+      void this.analytics.bumpGameStat(me.id, 'gamesCancelled');
+    } else {
+      void this.analytics.trackEvent(me.id, 'game_leave', {
+        screen: `/games/${gameId}`,
+        target: gameId,
+      });
     }
     return this.findOne(gameId);
   }
@@ -504,6 +541,11 @@ export class GamesService {
     await this.prisma.game.update({ where: { id: gameId }, data: { status: 'CANCELLED' } });
     await this.invitations.deactivatePendingForGame(gameId).catch(() => undefined);
     await this.scheduler.notifyCancelled(gameId).catch(() => undefined);
+    void this.analytics.trackEvent(me.id, 'game_cancel', {
+      screen: `/games/${gameId}`,
+      target: gameId,
+    });
+    void this.analytics.bumpGameStat(me.id, 'gamesCancelled');
     return this.findOne(gameId);
   }
 
@@ -571,6 +613,10 @@ export class GamesService {
       data: { status: 'FINISHED' },
     });
     await this.invitations.deactivatePendingForGame(gameId).catch(() => undefined);
+    void this.analytics.trackEvent(me.id, 'game_finish', {
+      screen: `/games/${gameId}`,
+      target: gameId,
+    });
     return this.findOne(gameId);
   }
 
@@ -684,6 +730,20 @@ export class GamesService {
 
       return { ok: true, status: 'APPROVED' };
     }).then(async (result) => {
+      if (result.status === 'APPROVED') {
+        const req = await this.prisma.gameJoinRequest.findUnique({
+          where: { id: requestId },
+          select: { userId: true },
+        });
+        if (req) {
+          void this.analytics.trackEvent(req.userId, 'game_join', {
+            screen: `/games/${gameId}`,
+            target: gameId,
+            meta: { via: 'join_request' },
+          });
+          void this.analytics.bumpGameStat(req.userId, 'gamesAttended');
+        }
+      }
       // Refresh so the host client sees the new roster.
       const game = await this.findOne(gameId);
       if (game.status === 'FULL') {

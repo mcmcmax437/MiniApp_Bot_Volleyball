@@ -286,6 +286,7 @@ export function App() {
           <Route path="/admin/stats" element={<AdminGate><AdminPage subPage="stats" /></AdminGate>} />
           <Route path="/admin/users" element={<AdminGate><AdminPage subPage="users" /></AdminGate>} />
           <Route path="/admin/activity" element={<AdminGate><AdminPage subPage="activity" /></AdminGate>} />
+          <Route path="/admin/heatmap" element={<AdminGate><AdminPage subPage="heatmap" /></AdminGate>} />
           <Route path="/admin/games" element={<AdminGate><AdminPage subPage="games" /></AdminGate>} />
           <Route path="/admin/venues" element={<AdminGate><AdminPage subPage="venues" /></AdminGate>} />
           <Route path="/admin/reports" element={<AdminGate><AdminPage subPage="reports" /></AdminGate>} />
@@ -311,25 +312,42 @@ export function App() {
       </div>
 
       <nav className="bottom-nav" aria-label="Main navigation">
-        <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>
+        <NavLink
+          to="/"
+          end
+          className={({ isActive }) => (isActive ? 'active' : '')}
+          data-analytics-label="nav-home"
+        >
           <span className="nav-icon">
             <Icon name="home-01" size={20} />
           </span>
           <span>{t('nav.home')}</span>
         </NavLink>
-        <NavLink to="/games" className={({ isActive }) => (isActive ? 'active' : '')}>
+        <NavLink
+          to="/games"
+          className={({ isActive }) => (isActive ? 'active' : '')}
+          data-analytics-label="nav-games"
+        >
           <span className="nav-icon">
             <Icon name="tennis-ball" size={20} />
           </span>
           <span>{t('nav.games')}</span>
         </NavLink>
-        <NavLink to="/create" className={({ isActive }) => (isActive ? 'active' : '')}>
+        <NavLink
+          to="/create"
+          className={({ isActive }) => (isActive ? 'active' : '')}
+          data-analytics-label="nav-create"
+        >
           <span className="nav-icon">
             <Icon name="plus-sign" size={20} />
           </span>
           <span>{t('nav.create')}</span>
         </NavLink>
-        <NavLink to="/profile" className={({ isActive }) => (isActive ? 'active' : '')}>
+        <NavLink
+          to="/profile"
+          className={({ isActive }) => (isActive ? 'active' : '')}
+          data-analytics-label="nav-profile"
+        >
           <span className="nav-icon">
             <Icon name="user-account" size={20} />
           </span>

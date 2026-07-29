@@ -8,9 +8,17 @@ import { AdminActivityPage } from "./AdminActivity";
 import { AdminGamesPage } from "./AdminGames";
 import { AdminVenuesPage } from "./AdminVenues";
 import { AdminReportsPage } from "./AdminReports";
+import { AdminHeatmapPage } from "./AdminHeatmap";
 import "./Admin.css";
 
-type SubPage = "stats" | "users" | "activity" | "games" | "venues" | "reports";
+type SubPage =
+  | "stats"
+  | "users"
+  | "activity"
+  | "games"
+  | "venues"
+  | "reports"
+  | "heatmap";
 
 const SUB_PAGE_META: Record<SubPage, { labelKey: string; icon: IconName }> = {
   stats:    { labelKey: "admin.stats",    icon: "chart-line-data-01" },
@@ -19,6 +27,7 @@ const SUB_PAGE_META: Record<SubPage, { labelKey: string; icon: IconName }> = {
   games:    { labelKey: "admin.games",    icon: "tennis-ball" },
   venues:   { labelKey: "admin.venues",   icon: "building-01" },
   reports:  { labelKey: "admin.reports",  icon: "flag-01" },
+  heatmap:  { labelKey: "admin.heatmap",  icon: "chart-bar" },
 };
 
 /**
@@ -60,6 +69,7 @@ export function AdminPage({ subPage }: { subPage?: SubPage }) {
         {subPage === "games"    && <AdminGamesPage />}
         {subPage === "venues"   && <AdminVenuesPage />}
         {subPage === "reports"  && <AdminReportsPage />}
+        {subPage === "heatmap"  && <AdminHeatmapPage />}
       </div>
     );
   }

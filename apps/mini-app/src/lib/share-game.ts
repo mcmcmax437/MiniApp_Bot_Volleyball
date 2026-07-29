@@ -8,6 +8,8 @@
  * is required as `url`; we put the eye-catching copy in `text`.
  */
 
+import { trackAnalytics } from './analytics-bus';
+
 export const GAME_START_PREFIX = 'g_';
 
 export function gameStartParam(gameId: string): string {
@@ -92,9 +94,21 @@ export function shareGameToTelegram(opts: {
 
   if (tg && typeof tg.openTelegramLink === 'function') {
     tg.openTelegramLink(shareUrl);
+    trackAnalytics({
+      type: 'game_share',
+      screen: `/games/${opts.gameId}`,
+      target: opts.gameId,
+      meta: { via: 'telegram_link' },
+    });
     return true;
   }
 
   window.open(shareUrl, '_blank', 'noopener,noreferrer');
+  trackAnalytics({
+    type: 'game_share',
+    screen: `/games/${opts.gameId}`,
+    target: opts.gameId,
+    meta: { via: 'window_open' },
+  });
   return true;
 }
