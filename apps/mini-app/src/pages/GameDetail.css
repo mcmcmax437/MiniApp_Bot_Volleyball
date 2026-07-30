@@ -291,9 +291,21 @@
 .detailActions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: 8px;
   align-items: stretch;
   margin-top: 4px;
+}
+
+.detailActions > .btn {
+  width: 100%;
+  min-height: 40px;
+  height: 40px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
 }
 
 .detailActions-full {
@@ -301,14 +313,12 @@
 }
 
 .detailActions-primary {
-  height: 100%;
   background: var(--brand) !important;
   color: var(--text-inverse) !important;
   box-shadow: none !important;
 }
 
 .detailActions-secondary {
-  height: 100%;
   border: 1px solid var(--border-strong) !important;
   background: transparent !important;
   color: var(--text-primary) !important;
@@ -320,7 +330,6 @@
 }
 
 .detailActions-danger {
-  height: 100%;
   background: transparent !important;
   color: #ef4444 !important;
   border: 1px solid rgba(239, 68, 68, 0.3) !important;
@@ -329,21 +338,6 @@
 
 .detailActions-danger:hover {
   background: rgba(239, 68, 68, 0.08) !important;
-}
-
-.detailWaitlist {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-}
-
-.detailWaitlist-hint {
-  margin: 0;
-  font-size: 11px;
-  color: var(--text-tertiary);
-  text-align: center;
-  line-height: 1.35;
 }
 
 /* ------------------------------------------------------------
@@ -399,7 +393,7 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 18px 20px;
+  padding: 18px 16px 16px;
   color: var(--text-inverse);
 }
 
@@ -445,7 +439,16 @@
   letter-spacing: 0.02em;
 }
 
+.detailHero-bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .detailHero-meta {
+  min-width: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -458,10 +461,112 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
 }
 
 .detailHero-meta i {
   color: rgba(255, 255, 255, 0.7);
+  flex-shrink: 0;
+}
+
+/* Opt-in waitlist chip — bottom-right of the hero (non-participants on full games). */
+.detailHero-notify {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #0f172a;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.detailHero-notify:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.detailHero-notify:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.detailHero-notify.isOn {
+  background: rgba(15, 23, 42, 0.72);
+  color: #fff;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+}
+
+.detailHero-notify.isPulse {
+  animation: detailNotifyPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes detailNotifyPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.35),
+      0 0 0 0 rgba(255, 255, 255, 0.45);
+  }
+  50% {
+    transform: scale(1.045);
+    box-shadow:
+      0 6px 20px rgba(0, 0, 0, 0.4),
+      0 0 0 8px rgba(255, 255, 255, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .detailHero-notify.isPulse {
+    animation: none;
+  }
+}
+
+.detailHero-toast {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 3;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: rgba(15, 23, 42, 0.92);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  animation: detailToastIn 0.25s var(--ease-out);
+  pointer-events: none;
+}
+
+@keyframes detailToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ------------------------------------------------------------

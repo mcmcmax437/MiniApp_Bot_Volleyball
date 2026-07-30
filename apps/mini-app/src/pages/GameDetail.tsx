@@ -243,7 +243,15 @@ export function GameDetailPage() {
   const waitlistMut = useMutation(
     (subscribe: boolean) =>
       subscribe ? api.joinWaitlist(id!) : api.leaveWaitlist(id!),
-    { onSuccess: () => qc.invalidateQueries(['game-waitlist', id]) },
+    {
+      onSuccess: (_data, subscribe) => {
+        qc.invalidateQueries(['game-waitlist', id]);
+        setWaitlistToast(
+          subscribe ? t('game.waitlistToast') : t('game.waitlistToastOff'),
+        );
+        window.setTimeout(() => setWaitlistToast(null), 4200);
+      },
+    },
   );
 
   const [reportTarget, setReportTarget] = useState<{ id: string; name: string } | null>(null);
@@ -252,6 +260,7 @@ export function GameDetailPage() {
   const [showInvite, setShowInvite] = useState(false);
   const [showPayments, setShowPayments] = useState(false);
   const [activeTab, setActiveTab] = useState<'players' | 'info'>('players');
+  const [waitlistToast, setWaitlistToast] = useState<string | null>(null);
 
   // Check for blacklisted players in the game
   const participantIds = useMemo(() => {
@@ -347,16 +356,45 @@ export function GameDetailPage() {
               {g.participantsCount}/{g.spotsTotal}
             </span>
           </div>
-          <div className="detailHero-meta">
-            <span>
-              <Icon name="calendar-01" size={14} /> {formatGameDateTime(g.startAt, { locale: lang })}
-            </span>
-            <span>
-              <Icon name="map-pin" size={14} /> {g.venue.address}
-              {g.addressHint ? ` · ${g.addressHint}` : ''}
-            </span>
+          <div className="detailHero-bottom">
+            <div className="detailHero-meta">
+              <span>
+                <Icon name="calendar-01" size={14} /> {formatGameDateTime(g.startAt, { locale: lang })}
+              </span>
+              <span>
+                <Icon name="map-pin" size={14} /> {g.venue.address}
+                {g.addressHint ? ` · ${g.addressHint}` : ''}
+              </span>
+            </div>
+            {!isJoined && isFull && !isClosed && (
+              <button
+                type="button"
+                className={`detailHero-notify${waitlistQ.data?.onWaitlist ? ' isOn' : ' isPulse'}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  waitlistMut.mutate(!waitlistQ.data?.onWaitlist);
+                }}
+                disabled={waitlistMut.isLoading || waitlistQ.isLoading}
+                aria-pressed={!!waitlistQ.data?.onWaitlist}
+                data-analytics-label={
+                  waitlistQ.data?.onWaitlist ? 'game-waitlist-stop' : 'game-waitlist-join'
+                }
+              >
+                <Icon name="bell-dot" size={15} />
+                <span>
+                  {waitlistQ.data?.onWaitlist
+                    ? t('game.waitlistSubscribed')
+                    : t('game.waitlistNotify')}
+                </span>
+              </button>
+            )}
           </div>
         </div>
+        {waitlistToast && (
+          <div className="detailHero-toast" role="status">
+            {waitlistToast}
+          </div>
+        )}
       </div>
 
       {/* Tab strip — Players / Info */}
@@ -732,30 +770,9 @@ export function GameDetailPage() {
               <Icon name="clock-01" size={14} /> {t('game.requestPending')}
             </button>
           ) : isFull ? (
-            <div className="detailWaitlist">
-              <button
-                className={`btn btn-sm detailActions-full ${
-                  waitlistQ.data?.onWaitlist
-                    ? 'detailActions-secondary'
-                    : 'detailActions-primary'
-                }`}
-                onClick={() => waitlistMut.mutate(!waitlistQ.data?.onWaitlist)}
-                disabled={waitlistMut.isLoading || waitlistQ.isLoading}
-                data-analytics-label={
-                  waitlistQ.data?.onWaitlist ? 'game-waitlist-stop' : 'game-waitlist-join'
-                }
-              >
-                <Icon name="bell-dot" size={14} />
-                {waitlistQ.data?.onWaitlist
-                  ? t('game.waitlistStop')
-                  : t('game.waitlistNotify')}
-              </button>
-              <p className="detailWaitlist-hint">
-                {waitlistQ.data?.onWaitlist
-                  ? t('game.waitlistSubscribed')
-                  : t('game.waitlistHint')}
-              </p>
-            </div>
+            <button className="btn btn-sm detailActions-primary detailActions-full" disabled>
+              <Icon name="user-group" size={14} /> {t('game.spotsFull')}
+            </button>
           ) : (
             <button
               className="btn btn-sm detailActions-primary detailActions-full"
