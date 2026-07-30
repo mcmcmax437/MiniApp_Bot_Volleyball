@@ -6,6 +6,7 @@ import {
   cancelledMessage,
   reminderMessage,
   spotOpenedMessage,
+  timeChangedMessage,
 } from '../bot/notify-messages';
 
 /** Look far enough ahead to cover Profile's "24h + 2h + 30m" preset (1440m). */
@@ -228,6 +229,44 @@ export class SchedulerService {
           data: { lastNotifiedAt: new Date() },
         });
       }
+    }
+  }
+
+  /**
+   * Notify seated players that the host moved kickoff. Skips the actor
+   * (they already know). Clears nothing — caller clears reminder sends.
+   */
+  async notifyTimeChanged(
+    gameId: string,
+    opts: { oldStartAt: Date; newStartAt: Date; actorId: string },
+  ) {
+    if (!this.sender.isReady()) return;
+    if (opts.oldStartAt.getTime() === opts.newStartAt.getTime()) return;
+
+    const game = await this.prisma.game.findUnique({
+      where: { id: gameId },
+      include: {
+        venue: true,
+        participants: { include: { user: true } },
+      },
+    });
+    if (!game) return;
+    if (game.status === 'CANCELLED' || game.status === 'FINISHED') return;
+
+    const openBtn = this.sender.openAppButton('Open game', `g_${game.id}`);
+    for (const p of game.participants) {
+      if (p.userId === opts.actorId) continue;
+      if (p.user.isBanned) continue;
+      const text = timeChangedMessage({
+        venueName: game.venue.name,
+        venueAddress: game.venue.address,
+        oldStartAt: opts.oldStartAt,
+        newStartAt: opts.newStartAt,
+        locale: p.user.language ?? 'en',
+      });
+      await this.sender.sendToTelegramId(p.user.telegramId, text, {
+        replyMarkup: openBtn,
+      });
     }
   }
 

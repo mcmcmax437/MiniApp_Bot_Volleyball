@@ -178,6 +178,36 @@ export function spotOpenedMessage(opts: {
   ]);
 }
 
+/**
+ * High-visibility reschedule alert — deliberately louder than invite/reminder
+ * DMs so players don't skim past it in the chat list.
+ */
+export function timeChangedMessage(opts: {
+  venueName: string;
+  venueAddress?: string | null;
+  oldStartAt: Date;
+  newStartAt: Date;
+  locale?: string;
+}): string {
+  const oldWhen = formatGameWhen(opts.oldStartAt, opts.locale);
+  const newWhen = formatGameWhen(opts.newStartAt, opts.locale);
+  return card([
+    `⚡️⚡️⚡️`,
+    `<b>⏰ GAME TIME CHANGED</b>`,
+    `⚡️⚡️⚡️`,
+    ``,
+    `⚠️ <b>The host moved this game — check the new time!</b>`,
+    ``,
+    placeLine(opts.venueName, opts.venueAddress),
+    ``,
+    `❌ <b>Was:</b> <s>${esc(oldWhen)}</s>`,
+    `✅ <b>Now:</b> <u>${esc(newWhen)}</u>`,
+    ``,
+    `━━━━━━━━━━━━`,
+    `<i>Open the app if you can’t make the new time.</i>`,
+  ]);
+}
+
 export function welcomeMessage(opts: { firstName: string; hasWebApp: boolean }): string {
   const name = esc(opts.firstName || 'friend');
   if (opts.hasWebApp) {

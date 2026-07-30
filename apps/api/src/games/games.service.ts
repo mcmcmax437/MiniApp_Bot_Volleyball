@@ -573,6 +573,9 @@ export class GamesService {
     if (game.hostId !== me.id && me.role !== 'ADMIN') {
       throw new ForbiddenException('Only the host or an admin can edit');
     }
+    if (game.status === 'CANCELLED' || game.status === 'FINISHED') {
+      throw new BadRequestException(`Cannot edit a ${game.status.toLowerCase()} game`);
+    }
 
     const data: any = {};
     if (patch.startAt) data.startAt = new Date(patch.startAt);
@@ -593,11 +596,49 @@ export class GamesService {
     if (patch.addressHint !== undefined) data.addressHint = patch.addressHint;
     if (patch.playType) data.playType = patch.playType;
 
-    if (data.startAt && data.endAt && !(data.startAt < data.endAt)) {
-      throw new BadRequestException('startAt must be before endAt');
+    // Host typically only sends a new start — keep the same duration.
+    if (data.startAt && !data.endAt) {
+      const durationMs = game.endAt.getTime() - game.startAt.getTime();
+      data.endAt = new Date(data.startAt.getTime() + Math.max(durationMs, 60 * 60 * 1000));
     }
 
+    const newStart: Date = data.startAt ?? game.startAt;
+    const newEnd: Date = data.endAt ?? game.endAt;
+    if (!(newStart < newEnd)) {
+      throw new BadRequestException('startAt must be before endAt');
+    }
+    if (data.startAt && data.startAt.getTime() < Date.now() - 60_000) {
+      throw new BadRequestException('startAt must be in the future');
+    }
+
+    const timeChanged =
+      !!data.startAt && data.startAt.getTime() !== game.startAt.getTime();
+    const oldStartAt = game.startAt;
+
     await this.prisma.game.update({ where: { id: gameId }, data });
+
+    if (timeChanged) {
+      // Old reminder offsets no longer apply — let the cron fire again for the new kickoff.
+      await this.prisma.gameReminderSent
+        .deleteMany({ where: { gameId } })
+        .catch(() => undefined);
+      await this.scheduler
+        .notifyTimeChanged(gameId, {
+          oldStartAt,
+          newStartAt: data.startAt,
+          actorId: me.id,
+        })
+        .catch(() => undefined);
+      void this.analytics.trackEvent(me.id, 'game_reschedule', {
+        screen: `/games/${gameId}`,
+        target: gameId,
+        meta: {
+          oldStartAt: oldStartAt.toISOString(),
+          newStartAt: (data.startAt as Date).toISOString(),
+        },
+      });
+    }
+
     return this.findOne(gameId);
   }
 

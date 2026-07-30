@@ -22,7 +22,7 @@ import { ReportUserModal } from './ReportUserModal';
 import { EvaluatePlayersModal } from './EvaluatePlayersModal';
 import { InvitePlayerModal } from './InvitePlayerModal';
 import { confirmDialog } from '../lib/confirm';
-import { formatGameDateTime } from '../lib/datetime';
+import { formatGameDateTime, utcIsoToWallClock, wallClockToUtcIso, getAppTimeZone } from '../lib/datetime';
 import { buildGameShareText, shareGameToTelegram } from '../lib/share-game';
 import './GameDetail.css';
 
@@ -220,6 +220,22 @@ export function GameDetailPage() {
     },
   });
 
+  const changeTimeMut = useMutation(
+    (startAtIso: string) => api.updateGame(id!, { startAt: startAtIso }),
+    {
+      onSuccess: () => {
+        refreshGameLists();
+        setShowChangeTime(false);
+        setChangeTimeError(null);
+        setChangeTimeBanner(t('game.changeTimeDone'));
+        window.setTimeout(() => setChangeTimeBanner(null), 4500);
+      },
+      onError: (err) => {
+        setChangeTimeError((err as Error).message || t('error.unknown'));
+      },
+    },
+  );
+
   const decideJoinMut = useMutation(
     ({ requestId, accept }: { requestId: string; accept: boolean }) =>
       api.decideJoinRequest(id!, requestId, accept),
@@ -259,6 +275,10 @@ export function GameDetailPage() {
   const [showEvaluate, setShowEvaluate] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [showPayments, setShowPayments] = useState(false);
+  const [showChangeTime, setShowChangeTime] = useState(false);
+  const [changeTimeWall, setChangeTimeWall] = useState('');
+  const [changeTimeError, setChangeTimeError] = useState<string | null>(null);
+  const [changeTimeBanner, setChangeTimeBanner] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'players' | 'info'>('players');
   const [waitlistToast, setWaitlistToast] = useState<string | null>(null);
 
@@ -715,6 +735,17 @@ export function GameDetailPage() {
               >
                 <Icon name="mail-01" size={14} /> {t('game.invitePlayers')}
               </button>
+              <button
+                className="btn btn-sm btn-ghost detailActions-secondary"
+                onClick={() => {
+                  setChangeTimeError(null);
+                  setChangeTimeWall(utcIsoToWallClock(g.startAt, getAppTimeZone()));
+                  setShowChangeTime(true);
+                }}
+                data-analytics-label="game-change-time"
+              >
+                <Icon name="clock-01" size={14} /> {t('game.changeTime')}
+              </button>
               {g.isPaid && (
                 <button
                   className="btn btn-sm btn-ghost detailActions-secondary"
@@ -808,6 +839,12 @@ export function GameDetailPage() {
         </div>
       )}
 
+      {changeTimeBanner && (
+        <div className="detailBanner" role="status">
+          {changeTimeBanner}
+        </div>
+      )}
+
       <button className="btn secondary" style={{ marginTop: 12 }} onClick={() => navigate(-1)}>
         <Icon name="arrow-left-01" size={16} /> {t('common.close')}
       </button>
@@ -856,6 +893,68 @@ export function GameDetailPage() {
         gameId={g.id}
         onClose={() => setShowInvite(false)}
       />
+
+      <Modal
+        open={showChangeTime}
+        onClose={() => {
+          if (!changeTimeMut.isLoading) setShowChangeTime(false);
+        }}
+        title={t('game.changeTimeTitle')}
+      >
+        <p className="detailChangeTime-current">
+          {t('game.changeTimeCurrent', {
+            when: formatGameDateTime(g.startAt, { locale: lang }),
+          })}
+        </p>
+        <p className="detailChangeTime-hint">{t('game.changeTimeHint')}</p>
+        <div className="field">
+          <label className="field-label" htmlFor="change-time-start">
+            <Icon name="calendar-01" size={12} className="icon-inline" />
+            {t('create.field.start')}
+          </label>
+          <input
+            id="change-time-start"
+            type="datetime-local"
+            value={changeTimeWall}
+            onChange={(e) => {
+              setChangeTimeWall(e.target.value);
+              setChangeTimeError(null);
+            }}
+          />
+        </div>
+        {changeTimeError && <div className="error">{changeTimeError}</div>}
+        <div className="modal-actions">
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => setShowChangeTime(false)}
+            disabled={changeTimeMut.isLoading}
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            type="button"
+            className="btn"
+            disabled={changeTimeMut.isLoading || !changeTimeWall}
+            onClick={() => {
+              const iso = wallClockToUtcIso(changeTimeWall, getAppTimeZone());
+              const next = new Date(iso).getTime();
+              if (!Number.isFinite(next) || next < Date.now() - 60_000) {
+                setChangeTimeError(t('game.changeTimeInvalid'));
+                return;
+              }
+              if (Math.abs(next - new Date(g.startAt).getTime()) < 60_000) {
+                setChangeTimeError(t('game.changeTimeSame'));
+                return;
+              }
+              changeTimeMut.mutate(iso);
+            }}
+            data-analytics-label="game-change-time-save"
+          >
+            {t('game.changeTimeSave')}
+          </button>
+        </div>
+      </Modal>
 
       <PaymentsModal
         open={showPayments}
