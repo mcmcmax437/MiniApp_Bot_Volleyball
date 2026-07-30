@@ -471,6 +471,9 @@ export class GamesService {
         target: gameId,
       });
       void this.analytics.bumpGameStat(me.id, 'gamesAttended');
+      await this.prisma.gameWaitlist
+        .deleteMany({ where: { gameId, userId: me.id } })
+        .catch(() => undefined);
     } else if (tracked === 'join_request') {
       void this.analytics.trackEvent(me.id, 'game_join_request', {
         screen: `/games/${gameId}`,
@@ -480,6 +483,7 @@ export class GamesService {
 
     if (joined.status === 'FULL') {
       await this.invitations.refreshPendingInvitees(gameId).catch(() => undefined);
+      await this.scheduler.resetWaitlistNotifyFlags(gameId).catch(() => undefined);
     }
     return joined;
   }
@@ -530,6 +534,7 @@ export class GamesService {
         screen: `/games/${gameId}`,
         target: gameId,
       });
+      await this.scheduler.notifyWaitlistSpotOpen(gameId).catch(() => undefined);
     }
     return this.findOne(gameId);
   }
@@ -613,6 +618,7 @@ export class GamesService {
       data: { status: 'FINISHED' },
     });
     await this.invitations.deactivatePendingForGame(gameId).catch(() => undefined);
+    await this.prisma.gameWaitlist.deleteMany({ where: { gameId } }).catch(() => undefined);
     void this.analytics.trackEvent(me.id, 'game_finish', {
       screen: `/games/${gameId}`,
       target: gameId,
@@ -742,14 +748,66 @@ export class GamesService {
             meta: { via: 'join_request' },
           });
           void this.analytics.bumpGameStat(req.userId, 'gamesAttended');
+          await this.prisma.gameWaitlist
+            .deleteMany({ where: { gameId, userId: req.userId } })
+            .catch(() => undefined);
         }
       }
       // Refresh so the host client sees the new roster.
       const game = await this.findOne(gameId);
       if (game.status === 'FULL') {
         await this.invitations.refreshPendingInvitees(gameId).catch(() => undefined);
+        await this.scheduler.resetWaitlistNotifyFlags(gameId).catch(() => undefined);
       }
       return result;
     });
+  }
+
+  /** Subscribe for a Telegram ping when a FULL game has a free spot. */
+  async joinWaitlist(me: User, gameId: string) {
+    const game = await this.prisma.game.findUnique({
+      where: { id: gameId },
+      include: { participants: { select: { userId: true } } },
+    });
+    if (!game) throw new NotFoundException('Game not found');
+    if (game.status === 'CANCELLED' || game.status === 'FINISHED') {
+      throw new BadRequestException('Game is no longer joinable');
+    }
+    if (game.participants.some((p) => p.userId === me.id)) {
+      throw new BadRequestException('You are already in this game');
+    }
+    if (game.participants.length < game.spotsTotal && game.status === 'OPEN') {
+      throw new BadRequestException('Game already has free spots — join directly');
+    }
+
+    await this.prisma.gameWaitlist.upsert({
+      where: { gameId_userId: { gameId, userId: me.id } },
+      create: { gameId, userId: me.id },
+      update: {},
+    });
+    void this.analytics.trackEvent(me.id, 'waitlist_join', {
+      screen: `/games/${gameId}`,
+      target: gameId,
+    });
+    return { onWaitlist: true };
+  }
+
+  async leaveWaitlist(me: User, gameId: string) {
+    await this.prisma.gameWaitlist.deleteMany({
+      where: { gameId, userId: me.id },
+    });
+    void this.analytics.trackEvent(me.id, 'waitlist_leave', {
+      screen: `/games/${gameId}`,
+      target: gameId,
+    });
+    return { onWaitlist: false };
+  }
+
+  async getWaitlistMe(me: User, gameId: string) {
+    const row = await this.prisma.gameWaitlist.findUnique({
+      where: { gameId_userId: { gameId, userId: me.id } },
+      select: { id: true },
+    });
+    return { onWaitlist: !!row };
   }
 }

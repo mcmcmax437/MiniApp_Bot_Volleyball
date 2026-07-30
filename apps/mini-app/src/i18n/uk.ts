@@ -125,6 +125,10 @@ export const uk: Record<string, string> = {
 
   'game.spots': '{count} / {total} місць',
   'game.spotsFull': 'Все зайнято',
+  'game.waitlistNotify': 'Повідомити мене',
+  'game.waitlistSubscribed': 'Стежу за місцем',
+  'game.waitlistStop': 'Припинити стеження',
+  'game.waitlistHint': 'Надішлемо повідомлення в Telegram, коли хтось вийде.',
   'game.spotsOneLeft': 'Залишилось 1 місце',
   'game.spotsLeft': 'Залишилось {n} місць',
   'game.perPlayer': '{amount} / гравець',

@@ -331,6 +331,21 @@
   background: rgba(239, 68, 68, 0.08) !important;
 }
 
+.detailWaitlist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.detailWaitlist-hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-align: center;
+  line-height: 1.35;
+}
+
 /* ------------------------------------------------------------
    Hero card — venue image with gradient overlay, big title,
    green capacity pill, date + location at bottom. Modeled on

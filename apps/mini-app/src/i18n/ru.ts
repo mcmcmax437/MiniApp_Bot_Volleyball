@@ -118,6 +118,10 @@ export const ru: Record<string, string> = {
 
   'game.spots': '{count} / {total} мест',
   'game.spotsFull': 'Все занято',
+  'game.waitlistNotify': 'Уведомить меня',
+  'game.waitlistSubscribed': 'Жду место',
+  'game.waitlistStop': 'Перестать следить',
+  'game.waitlistHint': 'Пришлём сообщение в Telegram, когда кто-то выйдет.',
   'game.spotsOneLeft': 'Осталось 1 место',
   'game.spotsLeft': 'Осталось {n} мест',
   'game.perPlayer': '{amount} / игрок',

@@ -226,6 +226,26 @@ export function GameDetailPage() {
     { onSuccess: () => qc.invalidateQueries(['game', id]) },
   );
 
+  const waitlistQ = useQuery(
+    ['game-waitlist', id],
+    () => api.getWaitlistMe(id!),
+    {
+      enabled:
+        !!id &&
+        !!meQ.data &&
+        !!gameQ.data &&
+        !gameQ.data.participants.some((p) => p.userId === meQ.data!.id) &&
+        (gameQ.data.status === 'FULL' ||
+          gameQ.data.participantsCount >= gameQ.data.spotsTotal),
+    },
+  );
+
+  const waitlistMut = useMutation(
+    (subscribe: boolean) =>
+      subscribe ? api.joinWaitlist(id!) : api.leaveWaitlist(id!),
+    { onSuccess: () => qc.invalidateQueries(['game-waitlist', id]) },
+  );
+
   const [reportTarget, setReportTarget] = useState<{ id: string; name: string } | null>(null);
   const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
   const [showEvaluate, setShowEvaluate] = useState(false);
@@ -711,14 +731,39 @@ export function GameDetailPage() {
             <button className="btn btn-sm detailActions-primary detailActions-full" disabled>
               <Icon name="clock-01" size={14} /> {t('game.requestPending')}
             </button>
+          ) : isFull ? (
+            <div className="detailWaitlist">
+              <button
+                className={`btn btn-sm detailActions-full ${
+                  waitlistQ.data?.onWaitlist
+                    ? 'detailActions-secondary'
+                    : 'detailActions-primary'
+                }`}
+                onClick={() => waitlistMut.mutate(!waitlistQ.data?.onWaitlist)}
+                disabled={waitlistMut.isLoading || waitlistQ.isLoading}
+                data-analytics-label={
+                  waitlistQ.data?.onWaitlist ? 'game-waitlist-stop' : 'game-waitlist-join'
+                }
+              >
+                <Icon name="bell-dot" size={14} />
+                {waitlistQ.data?.onWaitlist
+                  ? t('game.waitlistStop')
+                  : t('game.waitlistNotify')}
+              </button>
+              <p className="detailWaitlist-hint">
+                {waitlistQ.data?.onWaitlist
+                  ? t('game.waitlistSubscribed')
+                  : t('game.waitlistHint')}
+              </p>
+            </div>
           ) : (
             <button
               className="btn btn-sm detailActions-primary detailActions-full"
               onClick={handleJoinClick}
-              disabled={isFull || joinMut.isLoading}
+              disabled={joinMut.isLoading}
               data-analytics-label="game-join"
             >
-              {isFull ? t('game.spotsFull') : t('game.join')}
+              {t('game.join')}
             </button>
           )}
         </div>

@@ -2,13 +2,18 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { TelegramSender } from '../bot/telegram-sender';
-import { cancelledMessage, reminderMessage } from '../bot/notify-messages';
+import {
+  cancelledMessage,
+  reminderMessage,
+  spotOpenedMessage,
+} from '../bot/notify-messages';
+
+/** Look far enough ahead to cover Profile's "24h + 2h + 30m" preset (1440m). */
+const REMINDER_HORIZON_MS = 26 * 60 * 60 * 1000;
 
 @Injectable()
 export class SchedulerService {
   private readonly logger = new Logger(SchedulerService.name);
-  // in-memory dedupe so we don't double-notify if the cron runs twice near the boundary
-  private readonly sentKeys = new Set<string>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -23,39 +28,71 @@ export class SchedulerService {
 
     if (!this.sender.isReady()) return; // bot not configured -> nothing to do
 
+    await this.sendDueReminders();
+  }
+
+  /**
+   * Fire each participant's reminderOffsets once the fire time has passed
+   * and the game has not started yet. Dedupe is durable (GameReminderSent)
+   * so a missed cron minute or a deploy restart still delivers the ping
+   * on the next tick — including the 24h reminder (previously broken
+   * because the look-ahead window was only 6 hours).
+   */
+  private async sendDueReminders() {
     const now = Date.now();
-    // Look 6 hours ahead to cover all reasonable user reminder offsets.
-    const horizon = new Date(now + 6 * 60 * 60 * 1000);
+    const horizon = new Date(now + REMINDER_HORIZON_MS);
 
     const games = await this.prisma.game.findMany({
       where: {
         status: { in: ['OPEN', 'FULL'] },
-        startAt: { gte: new Date(now - 60_000), lte: horizon },
+        startAt: { gt: new Date(now), lte: horizon },
       },
       include: {
         venue: true,
         participants: { include: { user: true } },
+        remindersSent: {
+          select: { userId: true, offsetMinutes: true },
+        },
       },
-      take: 200,
+      take: 300,
     });
 
     for (const g of games) {
       const start = g.startAt.getTime();
-      const minutesUntil = (start - now) / 60_000;
       const openBtn = this.sender.openAppButton('Open game', `g_${g.id}`);
+      const already = new Set(
+        g.remindersSent.map((r) => `${r.userId}:${r.offsetMinutes}`),
+      );
 
       for (const p of g.participants) {
+        if (p.user.isBanned) continue;
         const offsets = this.normalizeOffsets(p.user.reminderOffsets);
         if (!offsets.length) continue;
 
         for (const offset of offsets) {
-          // Fire when we cross the offset boundary (within the last 60s of that point).
-          if (minutesUntil > offset) continue;
-          if (minutesUntil < offset - 1) continue;
+          const fireAt = start - offset * 60_000;
+          // Not due yet.
+          if (now < fireAt) continue;
+          // Game already started — skip (startAt filter usually excludes these).
+          if (now >= start) continue;
 
-          const key = `${g.id}:${p.userId}:${offset}`;
-          if (this.sentKeys.has(key)) continue;
-          this.sentKeys.add(key);
+          const key = `${p.userId}:${offset}`;
+          if (already.has(key)) continue;
+
+          // Claim the send slot first so parallel ticks don't double-send.
+          try {
+            await this.prisma.gameReminderSent.create({
+              data: {
+                gameId: g.id,
+                userId: p.userId,
+                offsetMinutes: offset,
+              },
+            });
+          } catch {
+            // Unique constraint → already claimed.
+            continue;
+          }
+          already.add(key);
 
           const text = reminderMessage({
             venueName: g.venue.name,
@@ -67,19 +104,15 @@ export class SchedulerService {
             locale: p.user.language ?? 'en',
           });
 
-          await this.sender.sendToTelegramId(p.user.telegramId, text, {
+          const ok = await this.sender.sendToTelegramId(p.user.telegramId, text, {
             replyMarkup: openBtn,
           });
+          if (!ok) {
+            this.logger.warn(
+              `Reminder ${offset}m failed for user ${p.userId} game ${g.id}`,
+            );
+          }
         }
-      }
-    }
-
-    if (this.sentKeys.size > 5000) {
-      const drop = Math.floor(this.sentKeys.size / 2);
-      const it = this.sentKeys.values();
-      for (let i = 0; i < drop; i++) {
-        const v = it.next().value;
-        if (v) this.sentKeys.delete(v);
       }
     }
   }
@@ -112,6 +145,7 @@ export class SchedulerService {
         where: { gameId: { in: ids }, status: 'PENDING' },
         data: { status: 'IGNORED', respondedAt: new Date() },
       });
+      await this.prisma.gameWaitlist.deleteMany({ where: { gameId: { in: ids } } });
       if (result.count > 0) {
         this.logger.log(`Auto-finished ${result.count} ended game(s)`);
       }
@@ -128,6 +162,7 @@ export class SchedulerService {
       include: { venue: true, participants: { include: { user: true } } },
     });
     if (!game) return;
+    await this.prisma.gameWaitlist.deleteMany({ where: { gameId } });
     const openBtn = this.sender.openAppButton('Open app');
     for (const p of game.participants) {
       const text = cancelledMessage({
@@ -140,6 +175,68 @@ export class SchedulerService {
         replyMarkup: openBtn,
       });
     }
+  }
+
+  /**
+   * Telegram only users who opted in via "Notify me" on this game
+   * (`GameWaitlist` rows). Never broadcasts to all users.
+   * Skips entries already notified for the current opening
+   * (`lastNotifiedAt` set; cleared when the lobby fills again).
+   */
+  async notifyWaitlistSpotOpen(gameId: string) {
+    if (!this.sender.isReady()) return;
+
+    const game = await this.prisma.game.findUnique({
+      where: { id: gameId },
+      include: {
+        venue: true,
+        participants: { select: { userId: true } },
+        waitlist: {
+          where: { lastNotifiedAt: null },
+          include: { user: true },
+        },
+      },
+    });
+    if (!game) return;
+    if (game.status === 'CANCELLED' || game.status === 'FINISHED') return;
+    if (game.participants.length >= game.spotsTotal) return;
+
+    const seated = new Set(game.participants.map((p) => p.userId));
+    const openBtn = this.sender.openAppButton('Open game', `g_${game.id}`);
+    const spotsLeft = game.spotsTotal - game.participants.length;
+
+    for (const w of game.waitlist) {
+      if (seated.has(w.userId) || w.user.isBanned) {
+        await this.prisma.gameWaitlist.delete({ where: { id: w.id } }).catch(() => undefined);
+        continue;
+      }
+
+      const text = spotOpenedMessage({
+        venueName: game.venue.name,
+        venueAddress: game.venue.address,
+        startAt: game.startAt,
+        spotsLeft,
+        spotsTotal: game.spotsTotal,
+        locale: w.user.language ?? 'en',
+      });
+      const ok = await this.sender.sendToTelegramId(w.user.telegramId, text, {
+        replyMarkup: openBtn,
+      });
+      if (ok) {
+        await this.prisma.gameWaitlist.update({
+          where: { id: w.id },
+          data: { lastNotifiedAt: new Date() },
+        });
+      }
+    }
+  }
+
+  /** Allow another notify cycle after the lobby fills again. */
+  async resetWaitlistNotifyFlags(gameId: string) {
+    await this.prisma.gameWaitlist.updateMany({
+      where: { gameId, lastNotifiedAt: { not: null } },
+      data: { lastNotifiedAt: null },
+    });
   }
 
   /** Coerce whatever shape the JSON column has into a sorted unique number array. */

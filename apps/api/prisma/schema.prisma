@@ -124,6 +124,8 @@ model User {
   analytics       AnalyticsEvent[]
   activity        UserActivityStats?
   appSessions     AppSession[]
+  waitlistEntries GameWaitlist[]
+  remindersSent   GameReminderSent[]
 
   @@index([city])
   @@index([role])
@@ -188,6 +190,8 @@ model Game {
   payments       GamePayment[]
   evaluations    GameEvaluation[]
   reports        Report[]
+  waitlist       GameWaitlist[]
+  remindersSent  GameReminderSent[]
 
   @@index([startAt])
   @@index([status, startAt])
@@ -300,6 +304,37 @@ model GameJoinRequest {
   @@index([gameId])
   @@index([userId])
   @@index([status])
+}
+
+/// Users who want a Telegram ping when a FULL game has a free spot again.
+model GameWaitlist {
+  id             String    @id @default(cuid())
+  gameId         String
+  game           Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime  @default(now())
+  /// Set when we notify about an opening; cleared when the game becomes FULL again.
+  lastNotifiedAt DateTime?
+
+  @@unique([gameId, userId])
+  @@index([gameId])
+  @@index([userId])
+}
+
+/// Durable dedupe for pre-game reminder Telegram messages (24h / 2h / 30m).
+model GameReminderSent {
+  id            String   @id @default(cuid())
+  gameId        String
+  game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  offsetMinutes Int
+  sentAt        DateTime @default(now())
+
+  @@unique([gameId, userId, offsetMinutes])
+  @@index([gameId])
+  @@index([userId])
 }
 
 model GamePayment {

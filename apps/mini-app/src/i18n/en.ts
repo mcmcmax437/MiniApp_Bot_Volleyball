@@ -132,6 +132,10 @@ export const en: Record<string, string> = {
   // ===== Game card =====
   'game.spots': '{count} / {total} spots',
   'game.spotsFull': 'Full',
+  'game.waitlistNotify': 'Notify me',
+  'game.waitlistSubscribed': 'Watching for a spot',
+  'game.waitlistStop': 'Stop watching',
+  'game.waitlistHint': 'We’ll message you in Telegram when someone leaves.',
   'game.spotsOneLeft': '1 spot left',
   'game.spotsLeft': '{n} spots left',
   'game.perPlayer': '{amount} / player',

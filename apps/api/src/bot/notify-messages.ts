@@ -154,6 +154,30 @@ export function cancelledMessage(opts: {
   ]);
 }
 
+export function spotOpenedMessage(opts: {
+  venueName: string;
+  venueAddress?: string | null;
+  startAt: Date;
+  spotsLeft: number;
+  spotsTotal: number;
+  locale?: string;
+}): string {
+  const when = formatGameWhen(opts.startAt, opts.locale);
+  const spots =
+    opts.spotsLeft === 1
+      ? `1 spot free`
+      : `${opts.spotsLeft} spots free`;
+  return card([
+    `🔔 <b>Spot opened!</b>`,
+    ``,
+    placeLine(opts.venueName, opts.venueAddress),
+    `🗓 ${esc(when)}`,
+    `👥 ${spots} · ${opts.spotsTotal - opts.spotsLeft}/${opts.spotsTotal}`,
+    ``,
+    `<i>Join now before it fills again.</i>`,
+  ]);
+}
+
 export function welcomeMessage(opts: { firstName: string; hasWebApp: boolean }): string {
   const name = esc(opts.firstName || 'friend');
   if (opts.hasWebApp) {

@@ -125,4 +125,25 @@ export class GamesController {
     if (!me) throw new UnauthorizedException('User not found');
     return this.games.decideJoinRequest(me, id, requestId, dto.accept);
   }
+
+  @Get(':id/waitlist/me')
+  @UseGuards(JwtAuthGuard, NotBannedGuard)
+  waitlistMe(@CurrentUser() me: User | null, @Param('id') id: string) {
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.games.getWaitlistMe(me, id);
+  }
+
+  @Post(':id/waitlist')
+  @UseGuards(JwtAuthGuard, NotBannedGuard)
+  joinWaitlist(@CurrentUser() me: User | null, @Param('id') id: string) {
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.games.joinWaitlist(me, id);
+  }
+
+  @Post(':id/waitlist/leave')
+  @UseGuards(JwtAuthGuard, NotBannedGuard)
+  leaveWaitlist(@CurrentUser() me: User | null, @Param('id') id: string) {
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.games.leaveWaitlist(me, id);
+  }
 }
