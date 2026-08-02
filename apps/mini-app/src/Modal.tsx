@@ -6,13 +6,15 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: ReactNode;
+  /** Extra class on the sheet (e.g. `modal-compact` for invite). */
+  className?: string;
 }
 
 /**
  * Bottom-sheet style modal with a backdrop. Used for confirmation dialogs,
  * report forms, evaluation pickers, and the host's invite/payments panels.
  */
-export function Modal({ open, onClose, title, children }: ModalProps) {
+export function Modal({ open, onClose, title, children, className }: ModalProps) {
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
@@ -26,7 +28,12 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
 
   return (
     <div className="modalBackdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal" role="dialog" aria-modal="true" aria-label={title}>
+      <div
+        className={['modal', className].filter(Boolean).join(' ')}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+      >
         <div className="modal-header">
           <h3 className="modal-title">{title}</h3>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">

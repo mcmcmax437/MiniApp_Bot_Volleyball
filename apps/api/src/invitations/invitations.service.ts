@@ -53,6 +53,26 @@ export class InvitationsService {
       throw new ConflictException('User already joined this game');
     }
 
+    const existing = await this.prisma.gameInvitation.findUnique({
+      where: { gameId_inviteeId: { gameId, inviteeId } },
+    });
+    if (existing) {
+      if (existing.status === 'ACCEPTED') {
+        throw new ConflictException('Invitation already accepted');
+      }
+      if (existing.status === 'PENDING') {
+        const unread24h =
+          !existing.readAt &&
+          Date.now() - existing.createdAt.getTime() >= 24 * 60 * 60 * 1000;
+        if (!unread24h) {
+          throw new BadRequestException(
+            'Invite already pending — resend after 24h if still unread',
+          );
+        }
+      }
+      // DECLINED / IGNORED → allow resend.
+    }
+
     const invitation = await this.prisma.gameInvitation.upsert({
       where: { gameId_inviteeId: { gameId, inviteeId } },
       create: {
@@ -67,6 +87,7 @@ export class InvitationsService {
         inviterId: me.id,
         readAt: null,
         respondedAt: null,
+        createdAt: new Date(),
       },
     });
 

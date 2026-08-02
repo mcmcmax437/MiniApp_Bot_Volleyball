@@ -26,7 +26,8 @@
   outline: none;
   color: var(--text-primary);
   font-family: var(--font-display);
-  font-size: 15px;
+  /* ≥16px avoids iOS Safari auto-zoom on focus */
+  font-size: 16px;
   min-width: 0;
 }
 
@@ -81,14 +82,15 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 360px;
+  max-height: min(42vh, 260px);
   overflow-y: auto;
   /* leave room above the action footer so the bottom row isn't covered */
   padding: 2px 2px 8px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .inviteSent {
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .inviteSent-title {
@@ -101,11 +103,63 @@
 }
 
 .inviteList-sent {
-  max-height: 180px;
+  max-height: min(28vh, 160px);
 }
 
 .inviteRow-sent {
-  grid-template-columns: 32px minmax(0, 1fr);
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+}
+
+.inviteResend {
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.inviteResend:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.inviteRow-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--surface-3);
+  color: var(--text-secondary);
+}
+
+.inviteRow-badge-pending {
+  background: rgba(56, 189, 248, 0.14);
+  color: var(--accent, #38bdf8);
+}
+
+.inviteRow-badge-pending.isRead {
+  background: rgba(56, 189, 248, 0.22);
+}
+
+.inviteRow-badge-accepted {
+  background: rgba(16, 185, 129, 0.16);
+  color: var(--success, #34d399);
+}
+
+.inviteRow-badge-declined,
+.inviteRow-badge-ignored {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--danger, #f87171);
 }
 
 .inviteTicks {
@@ -200,7 +254,7 @@
 }
 
 .inviteRow-status {
-  color: var(--success, #34d399);
+  color: var(--text-secondary);
   font-weight: 700;
   font-size: 11px;
   text-transform: uppercase;

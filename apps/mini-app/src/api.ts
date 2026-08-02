@@ -224,6 +224,9 @@ export interface UpdateGamePayload {
   coverImageUrl?: string | null;
   addressHint?: string | null;
   playType?: PlayType;
+  venueId?: string;
+  venueName?: string;
+  venueAddress?: string;
 }
 
 export interface CreateVenuePayload {

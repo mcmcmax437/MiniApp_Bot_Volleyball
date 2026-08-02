@@ -21,10 +21,17 @@ import { Modal } from '../Modal';
 import { ReportUserModal } from './ReportUserModal';
 import { EvaluatePlayersModal } from './EvaluatePlayersModal';
 import { InvitePlayerModal } from './InvitePlayerModal';
+import { EditGameModal } from './EditGameModal';
 import { confirmDialog } from '../lib/confirm';
-import { formatGameDateTime, utcIsoToWallClock, wallClockToUtcIso, getAppTimeZone } from '../lib/datetime';
+import { formatGameDateTime } from '../lib/datetime';
 import { buildGameShareText, shareGameToTelegram } from '../lib/share-game';
 import './GameDetail.css';
+
+function gameReadyForEval(game: { status: string; endAt: string }): boolean {
+  if (game.status === 'CANCELLED') return false;
+  if (game.status === 'FINISHED') return true;
+  return new Date(game.endAt).getTime() <= Date.now();
+}
 
 function formatMoney(minor: number, currency: string): string {
   return `${CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] ?? currency}${(minor / 100).toFixed(2)}`;
@@ -220,22 +227,6 @@ export function GameDetailPage() {
     },
   });
 
-  const changeTimeMut = useMutation(
-    (startAtIso: string) => api.updateGame(id!, { startAt: startAtIso }),
-    {
-      onSuccess: () => {
-        refreshGameLists();
-        setShowChangeTime(false);
-        setChangeTimeError(null);
-        setChangeTimeBanner(t('game.changeTimeDone'));
-        window.setTimeout(() => setChangeTimeBanner(null), 4500);
-      },
-      onError: (err) => {
-        setChangeTimeError((err as Error).message || t('error.unknown'));
-      },
-    },
-  );
-
   const decideJoinMut = useMutation(
     ({ requestId, accept }: { requestId: string; accept: boolean }) =>
       api.decideJoinRequest(id!, requestId, accept),
@@ -275,10 +266,8 @@ export function GameDetailPage() {
   const [showEvaluate, setShowEvaluate] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [showPayments, setShowPayments] = useState(false);
-  const [showChangeTime, setShowChangeTime] = useState(false);
-  const [changeTimeWall, setChangeTimeWall] = useState('');
-  const [changeTimeError, setChangeTimeError] = useState<string | null>(null);
-  const [changeTimeBanner, setChangeTimeBanner] = useState<string | null>(null);
+  const [showEditGame, setShowEditGame] = useState(false);
+  const [editBanner, setEditBanner] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'players' | 'info'>('players');
   const [waitlistToast, setWaitlistToast] = useState<string | null>(null);
 
@@ -319,14 +308,11 @@ export function GameDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [blockedInThisGame.length]);
 
-  // Auto-offer post-game ratings to every participant who opens a finished
-  // game they played in (and haven't dismissed/submitted yet). The host
-  // already gets this from finishMut; this covers everyone else — and the
-  // host if they leave and come back without rating.
+  // Auto-offer post-game ratings once the game is finished or past endAt.
   useEffect(() => {
     const g = gameQ.data;
     if (!g || !meQ.data) return;
-    if (g.status !== 'FINISHED') return;
+    if (!gameReadyForEval(g)) return;
     const joined = g.participants.some((p) => p.userId === meQ.data!.id);
     if (!joined) return;
     if (isEvalDone(g.id)) return;
@@ -344,7 +330,7 @@ export function GameDetailPage() {
   const isJoined = !!g.participants.find((p) => p.userId === myId);
   const isFull = g.participantsCount >= g.spotsTotal;
   const isClosed = g.status === 'CANCELLED' || g.status === 'FINISHED';
-  const isFinished = g.status === 'FINISHED';
+  const canEvaluate = gameReadyForEval(g);
 
   const handleJoinClick = () => {
     if (blockedInThisGame.length > 0) {
@@ -737,14 +723,10 @@ export function GameDetailPage() {
               </button>
               <button
                 className="btn btn-sm btn-ghost detailActions-secondary"
-                onClick={() => {
-                  setChangeTimeError(null);
-                  setChangeTimeWall(utcIsoToWallClock(g.startAt, getAppTimeZone()));
-                  setShowChangeTime(true);
-                }}
-                data-analytics-label="game-change-time"
+                onClick={() => setShowEditGame(true)}
+                data-analytics-label="game-edit"
               >
-                <Icon name="clock-01" size={14} /> {t('game.changeTime')}
+                <Icon name="edit-01" size={14} /> {t('game.edit')}
               </button>
               {g.isPaid && (
                 <button
@@ -820,7 +802,7 @@ export function GameDetailPage() {
       {/* Evaluate — every participant of a finished game, not only the
           host, and independent of whether the lobby was invite-only
           (`isClosed`). Hidden once they skip/submit (local markEvalDone). */}
-      {isJoined && isFinished && id && !isEvalDone(id) && (
+      {isJoined && canEvaluate && id && !isEvalDone(id) && (
         <button
           className="btn btn-sm detailActions-primary detailActions-full"
           style={{ marginTop: 10 }}
@@ -839,9 +821,9 @@ export function GameDetailPage() {
         </div>
       )}
 
-      {changeTimeBanner && (
+      {editBanner && (
         <div className="detailBanner" role="status">
-          {changeTimeBanner}
+          {editBanner}
         </div>
       )}
 
@@ -894,67 +876,15 @@ export function GameDetailPage() {
         onClose={() => setShowInvite(false)}
       />
 
-      <Modal
-        open={showChangeTime}
-        onClose={() => {
-          if (!changeTimeMut.isLoading) setShowChangeTime(false);
+      <EditGameModal
+        open={showEditGame}
+        game={g}
+        onClose={() => setShowEditGame(false)}
+        onSaved={(message) => {
+          setEditBanner(message);
+          window.setTimeout(() => setEditBanner(null), 4500);
         }}
-        title={t('game.changeTimeTitle')}
-      >
-        <p className="detailChangeTime-current">
-          {t('game.changeTimeCurrent', {
-            when: formatGameDateTime(g.startAt, { locale: lang }),
-          })}
-        </p>
-        <p className="detailChangeTime-hint">{t('game.changeTimeHint')}</p>
-        <div className="field">
-          <label className="field-label" htmlFor="change-time-start">
-            <Icon name="calendar-01" size={12} className="icon-inline" />
-            {t('create.field.start')}
-          </label>
-          <input
-            id="change-time-start"
-            type="datetime-local"
-            value={changeTimeWall}
-            onChange={(e) => {
-              setChangeTimeWall(e.target.value);
-              setChangeTimeError(null);
-            }}
-          />
-        </div>
-        {changeTimeError && <div className="error">{changeTimeError}</div>}
-        <div className="modal-actions">
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => setShowChangeTime(false)}
-            disabled={changeTimeMut.isLoading}
-          >
-            {t('common.cancel')}
-          </button>
-          <button
-            type="button"
-            className="btn"
-            disabled={changeTimeMut.isLoading || !changeTimeWall}
-            onClick={() => {
-              const iso = wallClockToUtcIso(changeTimeWall, getAppTimeZone());
-              const next = new Date(iso).getTime();
-              if (!Number.isFinite(next) || next < Date.now() - 60_000) {
-                setChangeTimeError(t('game.changeTimeInvalid'));
-                return;
-              }
-              if (Math.abs(next - new Date(g.startAt).getTime()) < 60_000) {
-                setChangeTimeError(t('game.changeTimeSame'));
-                return;
-              }
-              changeTimeMut.mutate(iso);
-            }}
-            data-analytics-label="game-change-time-save"
-          >
-            {t('game.changeTimeSave')}
-          </button>
-        </div>
-      </Modal>
+      />
 
       <PaymentsModal
         open={showPayments}

@@ -567,6 +567,9 @@ export class GamesService {
     coverImageUrl?: string | null;
     addressHint?: string | null;
     playType?: 'INDOOR' | 'OUTDOOR' | 'BEACH';
+    venueId?: string;
+    venueName?: string;
+    venueAddress?: string;
   }) {
     const game = await this.prisma.game.findUnique({ where: { id: gameId } });
     if (!game) throw new NotFoundException('Game not found');
@@ -583,8 +586,14 @@ export class GamesService {
     if (patch.notes !== undefined) data.notes = patch.notes;
     if (patch.skillLevel) data.skillLevel = patch.skillLevel;
     if (typeof patch.spotsTotal === 'number') {
-      if (patch.spotsTotal < game.spotsTotal && patch.spotsTotal < 2) {
+      const seated = await this.prisma.gameParticipant.count({ where: { gameId } });
+      if (patch.spotsTotal < 2) {
         throw new BadRequestException('spotsTotal must be at least 2');
+      }
+      if (patch.spotsTotal < seated) {
+        throw new BadRequestException(
+          `spotsTotal cannot be below current players (${seated})`,
+        );
       }
       data.spotsTotal = patch.spotsTotal;
     }
@@ -595,6 +604,16 @@ export class GamesService {
     if (patch.coverImageUrl !== undefined) data.coverImageUrl = patch.coverImageUrl;
     if (patch.addressHint !== undefined) data.addressHint = patch.addressHint;
     if (patch.playType) data.playType = patch.playType;
+
+    if (patch.venueId || (patch.venueAddress && patch.venueAddress.trim())) {
+      const venue = await this.resolveVenue(me, {
+        venueId: patch.venueId,
+        venueName: patch.venueName,
+        venueAddress: patch.venueAddress?.trim() || '',
+        spotsTotal: typeof patch.spotsTotal === 'number' ? patch.spotsTotal : game.spotsTotal,
+      } as any);
+      data.venueId = venue.id;
+    }
 
     // Host typically only sends a new start — keep the same duration.
     if (data.startAt && !data.endAt) {
@@ -617,6 +636,26 @@ export class GamesService {
 
     await this.prisma.game.update({ where: { id: gameId }, data });
 
+    // If capacity grew past current roster while FULL, reopen.
+    if (typeof data.spotsTotal === 'number' || data.venueId) {
+      const seated = await this.prisma.gameParticipant.count({ where: { gameId } });
+      const spots =
+        typeof data.spotsTotal === 'number' ? data.spotsTotal : game.spotsTotal;
+      if (game.status === 'FULL' && seated < spots) {
+        await this.prisma.game.update({
+          where: { id: gameId },
+          data: { status: 'OPEN' },
+        });
+        await this.scheduler.notifyWaitlistSpotOpen(gameId).catch(() => undefined);
+      } else if (game.status === 'OPEN' && seated >= spots) {
+        await this.prisma.game.update({
+          where: { id: gameId },
+          data: { status: 'FULL' },
+        });
+        await this.scheduler.resetWaitlistNotifyFlags(gameId).catch(() => undefined);
+      }
+    }
+
     if (timeChanged) {
       // Old reminder offsets no longer apply — let the cron fire again for the new kickoff.
       await this.prisma.gameReminderSent
@@ -636,6 +675,12 @@ export class GamesService {
           oldStartAt: oldStartAt.toISOString(),
           newStartAt: (data.startAt as Date).toISOString(),
         },
+      });
+    } else if (Object.keys(data).length > 0) {
+      void this.analytics.trackEvent(me.id, 'game_edit', {
+        screen: `/games/${gameId}`,
+        target: gameId,
+        meta: { fields: Object.keys(data) },
       });
     }
 

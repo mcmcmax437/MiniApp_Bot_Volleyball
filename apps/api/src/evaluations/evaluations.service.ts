@@ -63,6 +63,13 @@ export class EvaluationsService implements OnApplicationBootstrap {
     }
   }
 
+  /** True when the game is officially finished or its scheduled end has passed. */
+  private isReadyForEval(game: { status: string; endAt: Date }): boolean {
+    if (game.status === 'CANCELLED') return false;
+    if (game.status === 'FINISHED') return true;
+    return game.endAt.getTime() <= Date.now();
+  }
+
   /** Submit evaluations for one or more co-players from a finished game. */
   async submitMany(
     me: User,
@@ -76,8 +83,8 @@ export class EvaluationsService implements OnApplicationBootstrap {
       include: { participants: true },
     });
     if (!game) throw new NotFoundException('Game not found');
-    if (game.status !== 'FINISHED') {
-      throw new BadRequestException('Game must be FINISHED to evaluate');
+    if (!this.isReadyForEval(game)) {
+      throw new BadRequestException('Game must be finished (or past end time) to evaluate');
     }
     if (!game.participants.some((p) => p.userId === me.id)) {
       throw new ForbiddenException('Only participants can submit evaluations');
@@ -165,10 +172,12 @@ export class EvaluationsService implements OnApplicationBootstrap {
    * (Skip / X) so a player who declines is never asked again for that game.
    */
   async listPending(me: User) {
+    const now = new Date();
     const games = await this.prisma.game.findMany({
       where: {
-        status: 'FINISHED',
         participants: { some: { userId: me.id } },
+        status: { not: 'CANCELLED' },
+        OR: [{ status: 'FINISHED' }, { endAt: { lte: now } }],
       },
       orderBy: { endAt: 'desc' },
       take: 30,
@@ -271,8 +280,8 @@ export class EvaluationsService implements OnApplicationBootstrap {
       },
     });
     if (!game) throw new NotFoundException('Game not found');
-    if (game.status !== 'FINISHED') {
-      throw new BadRequestException('Game must be FINISHED');
+    if (!this.isReadyForEval(game)) {
+      throw new BadRequestException('Game must be finished (or past end time)');
     }
     if (!game.participants.some((p) => p.userId === me.id)) {
       throw new ForbiddenException('Only participants can list evaluators');

@@ -2,10 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=yes, maximum-scale=5" />
-    <!-- user-scalable=yes + maximum-scale=5 restores native double-tap / pinch
-         zoom for users who need it (e.g. accessibility). iOS Safari's
-         "auto-zoom-on-input" relies on this being allowed. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1" />
+    <!-- Telegram Mini Apps feel broken when pinch/double-tap zoom is allowed.
+         Inputs use font-size ≥16px so iOS still won't auto-zoom on focus. -->
     <meta name="HandheldFriendly" content="true" />
     <meta name="theme-color" content="#0e0e0e" />
     <meta name="description" content="VolleyBot — find and organize volleyball games in your city" />

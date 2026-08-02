@@ -122,6 +122,8 @@ body {
   text-rendering: optimizeLegibility;
   letter-spacing: -0.005em;
   overscroll-behavior-y: none;
+  /* Prefer taps over double-tap zoom in the Mini App shell */
+  touch-action: manipulation;
 }
 
 h1, h2, h3, h4, h5 {
@@ -1162,6 +1164,23 @@ button.btn[type="submit"],
   max-height: 85vh;
   overflow-y: auto;
   animation: modal-slide-up 220ms var(--ease-out);
+}
+
+/* Phone-sized sheets (invite / edit) — avoid a desktop-width panel feel. */
+.modal.modal-compact {
+  max-width: min(100%, 420px);
+  max-height: 72vh;
+  padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+}
+
+.modal.modal-compact .modal-title {
+  font-size: 16px;
+}
+
+.modal.modal-compact .modal-header {
+  margin-bottom: 10px;
 }
 @keyframes modal-slide-up {
   from { transform: translateY(20px); opacity: 0; }

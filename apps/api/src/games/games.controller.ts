@@ -31,6 +31,9 @@ class UpdateGameDto {
   @IsOptional() @IsString() @MaxLength(500) coverImageUrl?: string | null;
   @IsOptional() @IsString() @MaxLength(280) addressHint?: string | null;
   @IsOptional() @IsIn(PLAY_TYPES as unknown as string[]) playType?: PlayType;
+  @IsOptional() @IsString() venueId?: string;
+  @IsOptional() @IsString() @MaxLength(120) venueName?: string;
+  @IsOptional() @IsString() @MaxLength(240) venueAddress?: string;
 }
 
 class FinishGameDto {

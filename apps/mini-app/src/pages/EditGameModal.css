@@ -1,0 +1,79 @@
+/* ------------------------------------------------------------
+   EditGameModal — host edits place / type / time / spots.
+------------------------------------------------------------ */
+
+.editGame-current {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.editGame-hint {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+}
+
+.editGameModal .field {
+  margin-bottom: 10px;
+}
+
+.editGame-skillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.editGame-skillChip {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.editGame-skillChip.isActive {
+  background: var(--gradient-brand, #fff);
+  color: var(--text-inverse, #0e0e0e);
+  border-color: transparent;
+}
+
+.editGameModal input[type='text'],
+.editGameModal input[type='number'],
+.editGameModal input[type='datetime-local'] {
+  font-size: 16px;
+}
+
+.editGameModal .playTypePicker {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.editGameModal .playTypePicker-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 6px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.editGameModal .playTypePicker-option.isActive {
+  background: var(--gradient-brand, #fff);
+  color: var(--text-inverse, #0e0e0e);
+  border-color: transparent;
+}
