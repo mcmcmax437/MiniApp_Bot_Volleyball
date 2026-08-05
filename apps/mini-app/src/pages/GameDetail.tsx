@@ -24,7 +24,7 @@ import { InvitePlayerModal } from './InvitePlayerModal';
 import { EditGameModal } from './EditGameModal';
 import { confirmDialog } from '../lib/confirm';
 import { formatGameDateTime } from '../lib/datetime';
-import { buildGameShareText, shareGameToTelegram } from '../lib/share-game';
+import { buildGameShareText, gameDeepLink, shareGameToTelegram } from '../lib/share-game';
 import './GameDetail.css';
 
 function gameReadyForEval(game: { status: string; endAt: string }): boolean {
@@ -689,9 +689,11 @@ export function GameDetailPage() {
                     amount: formatMoney(g.perPlayerCost ?? 0, g.currency),
                   })
                 : t('game.shareFree');
+              const link = gameDeepLink(bot, g.id);
               const text = buildGameShareText({
                 headline: t('game.shareHeadline'),
                 cta: t('game.shareCta'),
+                link,
                 venueName: g.venue.name,
                 address: g.venue.address,
                 when,

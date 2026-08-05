@@ -5,7 +5,8 @@
  * The Mini App reads `start_param` on launch and opens /games/:id.
  *
  * Note: t.me/share/url only supports plain text (no HTML). The deep link
- * is required as `url`; we put the eye-catching copy in `text`.
+ * is required as `url` (Telegram shows it above the card); eye-catching
+ * copy goes in `text`.
  */
 
 import { trackAnalytics } from './analytics-bus';
@@ -38,37 +39,48 @@ export type GameShareDetails = {
   priceLabel?: string | null;
   headline: string;
   cta: string;
+  /** Deep link placed on the CTA line (tappable in Telegram chats). */
+  link: string;
+  /** Optional brand line above the headline (e.g. "VolleyBot"). */
+  brand?: string | null;
 };
 
-/** Build a plain-text invite card for Telegram share. */
+/**
+ * Plain-text invite card for Telegram share.
+ * Designed for scanability in a chat bubble: short brand, bold-feeling
+ * headline, airy detail block, then CTA label + tappable game deep link.
+ */
 export function buildGameShareText(d: GameShareDetails): string {
+  const brand = (d.brand ?? 'VolleyBot').trim();
   const lines: string[] = [
-    '━━━━ 🏐 ━━━━',
-    d.headline,
-    '━━━━━━━━━━',
+    `🏐  ${brand}`,
     '',
-    `📍 ${d.venueName}`,
+    d.headline.trim(),
+    '',
+    `📍  ${d.venueName.trim()}`,
   ];
 
   const addr = d.address?.trim();
   if (addr && addr !== d.venueName.trim()) {
-    lines.push(`🗺 ${addr}`);
+    lines.push(`      ${addr}`);
   }
 
-  lines.push(`🗓 ${d.when}`);
-
-  const chips: string[] = [];
-  if (d.playTypeLabel) chips.push(d.playTypeLabel);
-  if (d.skillLabel) chips.push(d.skillLabel);
-  if (d.closed) chips.push('🔒');
-  if (chips.length) lines.push(`🏷 ${chips.join(' · ')}`);
-
-  if (d.spotsLine) lines.push(`👥 ${d.spotsLine}`);
-  if (d.priceLabel) lines.push(`💰 ${d.priceLabel}`);
-
   lines.push('');
-  lines.push(d.cta);
-  lines.push('👇');
+  lines.push(`🗓  ${d.when.trim()}`);
+
+  const meta: string[] = [];
+  if (d.playTypeLabel?.trim()) meta.push(d.playTypeLabel.trim());
+  if (d.skillLabel?.trim()) meta.push(d.skillLabel.trim());
+  if (d.closed) meta.push('🔒');
+  if (meta.length) lines.push(`🏷  ${meta.join('  ·  ')}`);
+
+  if (d.spotsLine?.trim()) lines.push(`👥  ${d.spotsLine.trim()}`);
+  if (d.priceLabel?.trim()) lines.push(`💰  ${d.priceLabel.trim()}`);
+
+  const link = d.link.trim();
+  lines.push('');
+  lines.push(`👉  ${d.cta.trim()}`);
+  if (link) lines.push(link);
 
   return lines.join('\n');
 }

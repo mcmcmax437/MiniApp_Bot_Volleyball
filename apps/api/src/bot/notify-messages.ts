@@ -58,7 +58,7 @@ export function formatGameWhen(
 
 function placeLine(venueName: string, venueAddress?: string | null): string {
   if (venueAddress && venueAddress.trim() && venueAddress.trim() !== venueName.trim()) {
-    return `📍 <b>${esc(venueName)}</b>\n   ${esc(venueAddress.trim())}`;
+    return `📍 <b>${esc(venueName)}</b>\n📌 ${esc(venueAddress.trim())}`;
   }
   return `📍 <b>${esc(venueName)}</b>`;
 }
@@ -76,9 +76,10 @@ export function inviteMessage(opts: {
 }): string {
   const when = formatGameWhen(opts.startAt, opts.locale);
   return card([
-    `🏐 <b>You're invited!</b>`,
+    `🏐 <b>VolleyBot</b>`,
     ``,
-    `<b>${esc(opts.inviterName)}</b> invited you to a volleyball game.`,
+    `<b>You're invited</b>`,
+    `${esc(opts.inviterName)} asked you to play.`,
     ``,
     placeLine(opts.venueName, opts.venueAddress),
     `🗓 ${esc(when)}`,
@@ -86,7 +87,6 @@ export function inviteMessage(opts: {
     `<i>Open the app to accept or decline.</i>`,
   ]);
 }
-
 /** Notify the host when an invitee accepts / declines / ignores. */
 export function inviteResponseMessage(opts: {
   inviteeName: string;

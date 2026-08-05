@@ -188,9 +188,15 @@ export function EvaluatePlayersModal({ open, gameId, onClose }: Props) {
                 const num = effective ? SKILL_LEVELS.indexOf(effective) + 1 : null;
                 const s = status[c.id] ?? 'pending';
                 const isSkipped = s === 'skipped';
-                const showPicker = !isSkipped && !c.alreadyRated && (
-                  !effective || num == null || s === 'changing' || s === 'confirmed'
-                );
+                // Chip grid only when there's no known level yet, or the user
+                // explicitly chose "Suggest a different level". Never after
+                // "Looks right" (`confirmed`) — that was opening the picker
+                // by mistake.
+                const showPicker =
+                  !isSkipped &&
+                  !c.alreadyRated &&
+                  s !== 'confirmed' &&
+                  (!effective || num == null || s === 'changing');
                 // Prefer "Looks right" only when they have a level and haven't
                 // started picking chips yet.
                 const showLooksRight =
@@ -226,11 +232,21 @@ export function EvaluatePlayersModal({ open, gameId, onClose }: Props) {
                         <span className="tag">{t('eval.skipped')}</span>
                       )}
                       {s === 'confirmed' && !c.alreadyRated && selected[c.id] && (
-                        <span className="tag">
-                          {t('eval.levelN', { n: SKILL_LEVELS.indexOf(selected[c.id]) + 1 })}
-                        </span>
+                        <>
+                          <span className="tag">
+                            {t('eval.levelN', { n: SKILL_LEVELS.indexOf(selected[c.id]) + 1 })}
+                          </span>
+                          <button
+                            type="button"
+                            className="evalCard-skip isUndo"
+                            onClick={() => toggleChange(c.id, selected[c.id] ?? effective)}
+                            data-analytics-label="eval-change-after-confirm"
+                          >
+                            {t('eval.suggestDifferent')}
+                          </button>
+                        </>
                       )}
-                      {!c.alreadyRated && !isSkipped && (
+                      {!c.alreadyRated && !isSkipped && s !== 'confirmed' && (
                         <button
                           type="button"
                           className="evalCard-skip"
