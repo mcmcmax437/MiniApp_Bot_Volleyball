@@ -287,14 +287,15 @@ export const en: Record<string, string> = {
 
   // ===== Evaluations =====
   'eval.title': 'Rate players',
-  'eval.subtitle': 'After this game, tell us how strong each player was. You can skip anyone you are unsure about.',
+  'eval.subtitle': 'Rate who you want — tap Skip on anyone you leave out, or just submit the ones you rated.',
   'eval.alreadyRated': 'Already rated',
   'eval.skip': 'Skip',
   'eval.skipAll': 'Skip all',
   'eval.skipPlayer': 'Skip',
   'eval.skipped': 'Skipped',
-  'eval.undoSkip': 'Rate anyway',
+  'eval.undoSkip': 'Rate',
   'eval.done': 'Done',
+  'eval.levelN': 'Lv {n}',
   'eval.noPlayers': 'No co-players to rate.',
   'eval.submit': 'Submit ratings',
   'eval.thanks': 'Thanks — your ratings were submitted.',

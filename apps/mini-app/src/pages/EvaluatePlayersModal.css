@@ -1,0 +1,112 @@
+/* ------------------------------------------------------------
+   EvaluatePlayersModal — per-player skip + sticky footer.
+------------------------------------------------------------ */
+
+.evalModal {
+  display: flex;
+  flex-direction: column;
+  max-height: 78vh;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+}
+
+.evalModal .modal-header {
+  flex-shrink: 0;
+}
+
+.evalModal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+}
+
+.evalModal-hint {
+  margin: 0 0 12px;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.evalModal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.evalModal-thanks {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.evalCard {
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.evalCard.isSkipped {
+  opacity: 0.7;
+  border-style: dashed;
+}
+
+.evalCard.isRated {
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.evalCard-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.evalCard-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Always-visible skip control next to the name — not buried under chips. */
+.evalCard-skip {
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.evalCard-skip:active {
+  transform: scale(0.96);
+}
+
+.evalCard-skip.isUndo {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.evalModal-footer {
+  flex-shrink: 0;
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-2);
+  position: sticky;
+  bottom: 0;
+}
