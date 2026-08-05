@@ -266,9 +266,15 @@ export const pl: Record<string, string> = {
   'report.thanks': 'Dziękujemy — administratorzy rozpatrzą zgłoszenie.',
 
   'eval.title': 'Oceń graczy',
-  'eval.subtitle': 'Po meczu powiedz nam, jak silny był każdy gracz.',
+  'eval.subtitle': 'Po meczu powiedz, jak silny był każdy gracz. Możesz pominąć osoby, co do których nie jesteś pewien.',
   'eval.alreadyRated': 'Już oceniony',
   'eval.skip': 'Pomiń',
+  'eval.skipAll': 'Pomiń wszystkich',
+  'eval.skipPlayer': 'Pomiń',
+  'eval.skipped': 'Pominięty',
+  'eval.undoSkip': 'Jednak oceń',
+  'eval.done': 'Gotowe',
+  'eval.noPlayers': 'Brak współgraczy do oceny.',
   'eval.submit': 'Wyślij oceny',
   'eval.thanks': 'Dziękujemy — Twoje oceny zostały zapisane.',
 

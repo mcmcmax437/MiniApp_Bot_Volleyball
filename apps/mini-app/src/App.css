@@ -530,6 +530,21 @@ button.btn[type="submit"],
   width: 100%;
 }
 
+.evalCard {
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.evalCard.isSkipped {
+  opacity: 0.72;
+  border-style: dashed;
+}
+
 /* ============================================================
    Icons
    ============================================================ */

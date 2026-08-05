@@ -266,9 +266,15 @@ export const ru: Record<string, string> = {
   'report.thanks': 'Спасибо — админы рассмотрят жалобу.',
 
   'eval.title': 'Оценить игроков',
-  'eval.subtitle': 'После игры расскажите, как сыграли другие.',
+  'eval.subtitle': 'После игры расскажите, как сыграли другие. Можно пропустить любого, в ком не уверены.',
   'eval.alreadyRated': 'Уже оценён',
   'eval.skip': 'Пропустить',
+  'eval.skipAll': 'Пропустить всех',
+  'eval.skipPlayer': 'Пропустить',
+  'eval.skipped': 'Пропущен',
+  'eval.undoSkip': 'Всё же оценить',
+  'eval.done': 'Готово',
+  'eval.noPlayers': 'Нет соигроков для оценки.',
   'eval.submit': 'Отправить оценки',
   'eval.thanks': 'Спасибо — ваши оценки сохранены.',
 

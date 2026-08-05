@@ -275,9 +275,15 @@ export const uk: Record<string, string> = {
   'report.thanks': 'Дякуємо — адміни розглянуть скаргу.',
 
   'eval.title': 'Оцінити гравців',
-  'eval.subtitle': 'Після гри розкажіть нам, як зіграли інші.',
+  'eval.subtitle': 'Після гри розкажіть, як зіграли інші. Можна пропустити будь-кого, в кому не впевнені.',
   'eval.alreadyRated': 'Вже оцінено',
   'eval.skip': 'Пропустити',
+  'eval.skipAll': 'Пропустити всіх',
+  'eval.skipPlayer': 'Пропустити',
+  'eval.skipped': 'Пропущено',
+  'eval.undoSkip': 'Все ж оцінити',
+  'eval.done': 'Готово',
+  'eval.noPlayers': 'Немає співгравців для оцінки.',
   'eval.submit': 'Надіслати оцінки',
   'eval.thanks': 'Дякуємо — ваші оцінки збережено.',
   // New "Looks right / Suggest different" UX.
