@@ -233,10 +233,26 @@ body.keyboard-open .app-container {
      That keeps our viewport-stable layout intact while typing. */
   font-size: 16px;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   font-family: inherit;
   transition: border-color var(--dur-fast) var(--ease-out),
     background-color var(--dur-fast) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out);
+}
+
+/* Telegram / Android WebView: native datetime-local ignores width and
+   overflows the right edge unless clipped + min-width reset. */
+.field input[type="datetime-local"] {
+  display: block;
+  overflow: hidden;
+}
+
+.field input[type="datetime-local"]::-webkit-datetime-edit,
+.field input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .field input::placeholder,

@@ -140,29 +140,62 @@
   letter-spacing: 0;
 }
 
-/* Stack Start + Hours on mobile WebViews: native datetime-local often
-   ignores max-width and overlaps a side-by-side Hours field. */
+/* Stack Start + Hours: datetime-local has a large intrinsic min-width in
+   Telegram/Android WebViews and will spill past the right edge if left
+   side-by-side or unconstrained. */
 .field-row {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .field-row .field {
   min-width: 0;
   width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .field-row .field-duration {
-  max-width: 120px;
+  max-width: 140px;
 }
 
+.createForm input[type="datetime-local"],
 .field-row .field input[type="datetime-local"],
 .field-row .field-duration input {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
   box-sizing: border-box;
+  display: block;
+}
+
+/* Shrink the native date/time segments so they fit narrow Mini App widths. */
+.createForm input[type="datetime-local"] {
+  padding-left: 10px;
+  padding-right: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.createForm input[type="datetime-local"]::-webkit-datetime-edit {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0;
+}
+
+.createForm input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper {
+  min-width: 0;
+  padding: 0;
+}
+
+.createForm input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  margin: 0 0 0 4px;
+  padding: 0;
+  flex-shrink: 0;
 }
 
 .field-row .field-duration input {
