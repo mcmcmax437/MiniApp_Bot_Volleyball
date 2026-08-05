@@ -8,17 +8,13 @@ import { isEvalDone, markEvalDone } from '../lib/eval-done';
 /**
  * Global post-game rating prompt.
  *
- * Every participant of a FINISHED game (not just the host) should be asked
- * to rate co-players the next time they open the app. This component lives
- * at the App shell so it fires on Home / Games / Profile / etc., not only
- * when someone happens to open that game's detail page.
+ * Every participant of a finished (or past-endAt) game should be asked to
+ * rate co-players the next time they open the app. Lives at the App shell
+ * so it fires on Home / Games / Profile, not only on GameDetail.
  *
- * Dismiss (X / Skip) or a successful submit marks the game done locally
- * via `markEvalDone`, so we never re-prompt for it.
- *
- * When the user is already on `/games/:id` for the pending game, we stay
- * out of the way — GameDetail owns the modal there (including the host's
- * immediate post-finish prompt).
+ * Waits for `/auth/me` before fetching — a cold start used to hit
+ * `/evaluations/pending` before the auth cookie existed, get 401, and never
+ * retry, so the skill form never appeared.
  */
 export function PendingEvaluationsPrompt() {
   const api = useApi();
@@ -27,12 +23,20 @@ export function PendingEvaluationsPrompt() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [dismissedThisSession, setDismissedThisSession] = useState<string[]>([]);
 
+  const meQ = useQuery(['me'], () => api.me(), {
+    retry: false,
+    staleTime: 60_000,
+  });
+
   const pendingQ = useQuery(
     ['evaluations', 'pending'],
     () => api.listPendingEvaluations(),
     {
-      staleTime: 30_000,
+      enabled: !!meQ.data?.id,
+      staleTime: 15_000,
       refetchOnWindowFocus: true,
+      refetchInterval: 60_000,
+      retry: 2,
     },
   );
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { useApi } from "../api";
@@ -9,6 +9,7 @@ import { SkillBadge } from "../SkillBadge";
 import { useI18n } from "../i18n";
 import { reverseGeocode } from "../geo";
 import { effectiveSkillLevel } from "../lib/skill";
+import { isEvalDone } from "../lib/eval-done";
 import { FILTER_GAMES_BY_CITY } from "../lib/city-filter";
 import { GameCard } from "./GameCard";
 import "./Home.css";
@@ -52,7 +53,7 @@ export function HomePage() {
   // automatically invalidate any cached entries from an older build without
   // requiring a hard reload.
   const gamesQ = useQuery(
-    ["games", FILTER_GAMES_BY_CITY ? filterCity : "ALL", "HOME", "v4"],
+    ["games", FILTER_GAMES_BY_CITY ? filterCity : "ALL", "HOME", "v5"],
     () =>
       api.listGames(
         FILTER_GAMES_BY_CITY && filterCity ? { city: filterCity } : {},
@@ -62,6 +63,20 @@ export function HomePage() {
         ? !!cityQ.data || !!meQ.data?.city
         : !!meQ.data || cityQ.isFetched,
     },
+  );
+  const pendingEvalQ = useQuery(
+    ["evaluations", "pending"],
+    () => api.listPendingEvaluations(),
+    {
+      enabled: !!meQ.data?.id,
+      staleTime: 15_000,
+      refetchOnWindowFocus: true,
+    },
+  );
+  const rateGames = useMemo(
+    () =>
+      (pendingEvalQ.data?.games ?? []).filter((g) => !isEvalDone(g.id)).slice(0, 3),
+    [pendingEvalQ.data],
   );
   const navigate = useNavigate();
 
@@ -266,6 +281,34 @@ export function HomePage() {
         </button>
         <span className="home-cta-hint">{t('home.createGameSub')}</span>
       </div>
+
+      {rateGames.length > 0 && (
+        <section className="section home-rateSection">
+          <div className="section-header">
+            <h2 className="section-title">
+              <span className="section-title-icon">
+                <Icon name="award-01" size={16} />
+              </span>
+              {t('home.ratePlayers')}
+            </h2>
+          </div>
+          {rateGames.map((g) => (
+            <button
+              key={g.id}
+              type="button"
+              className="home-rateCard"
+              onClick={() => navigate(`/games/${g.id}`)}
+              data-analytics-label="home-rate-game"
+            >
+              <div className="home-rateCard-body">
+                <div className="home-rateCard-title">{g.venueName}</div>
+                <div className="home-rateCard-sub">{t('home.ratePlayersSub')}</div>
+              </div>
+              <Icon name="arrow-right-01" size={16} />
+            </button>
+          ))}
+        </section>
+      )}
 
       <div className="stat-strip">
         <div className="stat">

@@ -17,6 +17,9 @@ import type { User } from '@prisma/client';
 
 const SUPPORTED_CURRENCIES = new Set(['UAH', 'PLN', 'EUR', 'USD']);
 
+/** Must match `SchedulerService.autoFinishEndedGames` (startAt + 5h). */
+const AUTO_FINISH_MS = 5 * 60 * 60 * 1000;
+
 @Injectable()
 export class GamesService {
   constructor(
@@ -269,16 +272,36 @@ export class GamesService {
   }
 
   async list(opts: ListGamesQuery) {
-    const where: any = {
-      status: opts.status ? opts.status : { in: ['OPEN', 'FULL'] },
-    };
+    const now = new Date();
+    // Keep games on the feed through the auto-finish window. Filtering with
+    // `startAt >= now` hid lobbies the moment kickoff passed — so a game
+    // "disappeared after ~20 min" while players were still on court, long
+    // before the 5h auto-finish, and they couldn't reopen it to rate.
+    const autoFinishHorizon = new Date(now.getTime() - AUTO_FINISH_MS);
+
+    const where: any = {};
 
     if (opts.from || opts.to) {
+      where.status = opts.status ? opts.status : { in: ['OPEN', 'FULL'] };
       where.startAt = {};
       if (opts.from) where.startAt.gte = new Date(opts.from);
       if (opts.to) where.startAt.lte = new Date(opts.to);
+    } else if (opts.status) {
+      where.status = opts.status;
+      where.startAt = { gte: autoFinishHorizon };
     } else {
-      where.startAt = { gte: new Date() };
+      // Default Home/Games feed: live + upcoming OPEN/FULL, and games that
+      // just finished (so the skill-rating entry point stays reachable).
+      where.OR = [
+        {
+          status: { in: ['OPEN', 'FULL'] },
+          startAt: { gte: autoFinishHorizon },
+        },
+        {
+          status: 'FINISHED',
+          endAt: { gte: autoFinishHorizon },
+        },
+      ];
     }
 
     if (opts.skillLevel) where.skillLevel = opts.skillLevel;

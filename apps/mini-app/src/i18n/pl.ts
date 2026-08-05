@@ -468,6 +468,8 @@ export const pl: Record<string, string> = {
   'welcome.changeMode.successSub':
     'Twój nowy poziom został zapisany. Zostanie zastosowany do przyszłych meczów.',
   'home.tapToChangeLevel': 'Kliknij, aby zmienić swój poziom gry',
+  'home.ratePlayers': 'Oceń graczy',
+  'home.ratePlayersSub': 'Pomóż skorygować poziomy po ostatniej grze',
   'profile.tapToChangeLevel': 'Kliknij, aby zmienić swój poziom gry',
   'eval.looksRight': 'Zgadza się · Poziom {n}',
   'eval.suggestDifferent': 'Zaproponuj inny poziom',

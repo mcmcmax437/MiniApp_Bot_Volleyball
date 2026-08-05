@@ -468,6 +468,8 @@ export const ru: Record<string, string> = {
   'welcome.changeMode.successSub':
     'Новый уровень сохранён. Он будет применён к будущим матчам.',
   'home.tapToChangeLevel': 'Нажмите, чтобы изменить уровень игры',
+  'home.ratePlayers': 'Оцените игроков',
+  'home.ratePlayersSub': 'Помогите скорректировать уровни после последней игры',
   'profile.tapToChangeLevel': 'Нажмите, чтобы изменить уровень игры',
   'eval.looksRight': 'Всё верно · Уровень {n}',
   'eval.suggestDifferent': 'Предложить другой уровень',

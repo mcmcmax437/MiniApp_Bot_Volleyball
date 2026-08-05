@@ -167,6 +167,12 @@ export function EvaluatePlayersModal({ open, gameId, onClose }: Props) {
         <>
           <p style={{ color: 'var(--text-tertiary)', marginBottom: 12 }}>{t('eval.subtitle')}</p>
           {candQ.isLoading && <div className="skeleton" style={{ height: 100, borderRadius: 10 }} />}
+          {candQ.isError && (
+            <div className="error" style={{ marginBottom: 12 }}>
+              <Icon name="bell-dot" size={14} />
+              <span>{(candQ.error as Error).message}</span>
+            </div>
+          )}
           {candQ.data && candQ.data.candidates.length === 0 && (
             <div className="empty-state">
               <div className="empty-state-text">No co-players to rate.</div>

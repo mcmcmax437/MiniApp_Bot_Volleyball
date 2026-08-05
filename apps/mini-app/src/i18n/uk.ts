@@ -77,6 +77,8 @@ export const uk: Record<string, string> = {
   'home.noGamesSub': 'Ігор ще немає - створіть першу.',
   'home.emptyCta': 'Створіть першу волейбольну гру в {city}. Натисніть "Створити гру", щоб почати.',
   'home.tapToChangeLevel': 'Натисніть, щоб змінити рівень гри',
+  'home.ratePlayers': 'Оцініть гравців',
+  'home.ratePlayersSub': 'Допоможіть скоригувати рівні після останньої гри',
 
   'profile.title': 'Профіль',
   'profile.about': 'Про вас',

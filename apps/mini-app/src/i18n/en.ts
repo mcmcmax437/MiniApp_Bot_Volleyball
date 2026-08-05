@@ -81,6 +81,8 @@ export const en: Record<string, string> = {
   'home.noGamesSub': 'No games yet - be the first to organize one.',
   'home.emptyCta': 'Be the first to organize a volleyball game in {city}. Tap "Create Game" to start.',
   'home.tapToChangeLevel': 'Tap to change your playing level',
+  'home.ratePlayers': 'Rate players',
+  'home.ratePlayersSub': 'Help correct skill levels from your last game',
 
   // ===== Profile =====
   'profile.title': 'Profile',

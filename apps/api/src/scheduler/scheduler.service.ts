@@ -23,8 +23,8 @@ export class SchedulerService {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async tick() {
-    // Auto-finish games five hours after start so they drop out of
-    // upcoming lists and can no longer be joined.
+    // Auto-finish OPEN/FULL games five hours after kickoff. The games list
+    // uses the same 5h horizon so lobbies stay visible until then.
     await this.autoFinishEndedGames();
 
     if (!this.sender.isReady()) return; // bot not configured -> nothing to do
