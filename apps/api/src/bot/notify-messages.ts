@@ -154,6 +154,41 @@ export function cancelledMessage(opts: {
   ]);
 }
 
+/** Ask every participant to open the Mini App and rate co-players. */
+export function ratePlayersMessage(opts: {
+  venueName: string;
+  venueAddress?: string | null;
+  startAt: Date;
+  locale?: string;
+}): string {
+  const when = formatGameWhen(opts.startAt, opts.locale);
+  const locale = (opts.locale ?? 'en').slice(0, 2);
+  const headline =
+    locale === 'uk'
+      ? '⭐ <b>Гру завершено</b> — оціни гравців'
+      : locale === 'ru'
+        ? '⭐ <b>Игра завершена</b> — оцени игроков'
+        : locale === 'pl'
+          ? '⭐ <b>Gra zakończona</b> — oceń graczy'
+          : '⭐ <b>Game finished</b> — rate your co-players';
+  const footer =
+    locale === 'uk'
+      ? '<i>Відкрий додаток і постав рівні тим, з ким грав.</i>'
+      : locale === 'ru'
+        ? '<i>Открой приложение и поставь уровни тем, с кем играл.</i>'
+        : locale === 'pl'
+          ? '<i>Otwórz aplikację i oceń poziom graczy z meczu.</i>'
+          : '<i>Open the app and rate the players from this game.</i>';
+  return card([
+    headline,
+    ``,
+    placeLine(opts.venueName, opts.venueAddress),
+    `🗓 ${esc(when)}`,
+    ``,
+    footer,
+  ]);
+}
+
 export function spotOpenedMessage(opts: {
   venueName: string;
   venueAddress?: string | null;

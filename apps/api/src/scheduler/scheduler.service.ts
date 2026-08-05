@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TelegramSender } from '../bot/telegram-sender';
 import {
   cancelledMessage,
+  ratePlayersMessage,
   reminderMessage,
   spotOpenedMessage,
   timeChangedMessage,
@@ -149,9 +150,51 @@ export class SchedulerService {
       await this.prisma.gameWaitlist.deleteMany({ where: { gameId: { in: ids } } });
       if (result.count > 0) {
         this.logger.log(`Auto-finished ${result.count} ended game(s)`);
+        // Nudge every participant to open the app and rate co-players.
+        for (const id of ids) {
+          await this.notifyRatePlayers(id).catch(() => undefined);
+        }
       }
     } catch (e) {
       this.logger.warn(`autoFinishEndedGames failed: ${(e as Error).message}`);
+    }
+  }
+
+  /**
+   * After a game becomes FINISHED (host Finish or auto-finish), Telegram
+   * every participant so the rating form can show when they open the app.
+   */
+  async notifyRatePlayers(gameId: string) {
+    if (!this.sender.isReady()) return;
+    const game = await this.prisma.game.findUnique({
+      where: { id: gameId },
+      include: {
+        venue: true,
+        participants: { include: { user: true } },
+      },
+    });
+    if (!game || game.status !== 'FINISHED') return;
+    if (game.participants.length < 2) return;
+
+    for (const p of game.participants) {
+      if (p.user.isBanned) continue;
+      const text = ratePlayersMessage({
+        venueName: game.venue.name,
+        venueAddress: game.venue.address,
+        startAt: game.startAt,
+        locale: p.user.language ?? 'en',
+      });
+      const label =
+        (p.user.language ?? 'en').startsWith('uk')
+          ? 'Оцінити гравців'
+          : (p.user.language ?? 'en').startsWith('ru')
+            ? 'Оценить игроков'
+            : (p.user.language ?? 'en').startsWith('pl')
+              ? 'Oceń graczy'
+              : 'Rate players';
+      await this.sender.sendToTelegramId(p.user.telegramId, text, {
+        replyMarkup: this.sender.openAppButton(label, `g_${game.id}`),
+      });
     }
   }
 

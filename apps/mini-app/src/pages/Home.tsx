@@ -11,6 +11,7 @@ import { reverseGeocode } from "../geo";
 import { effectiveSkillLevel } from "../lib/skill";
 import { isEvalDone } from "../lib/eval-done";
 import { FILTER_GAMES_BY_CITY } from "../lib/city-filter";
+import { isGameLive } from "../lib/game-status";
 import { GameCard } from "./GameCard";
 import "./Home.css";
 
@@ -90,7 +91,26 @@ export function HomePage() {
     cityQ.data?.city ??
     "your city";
   const openGames = (gamesQ.data ?? []).filter((g) => g.status === "OPEN");
-  const nextGames = (gamesQ.data ?? []).slice(0, 3);
+  // Upcoming section: only joinable/live lobbies — never FINISHED.
+  // Live games (kickoff passed) float to the top.
+  const nextGames = useMemo(() => {
+    const list = (gamesQ.data ?? []).filter(
+      (g) => g.status === "OPEN" || g.status === "FULL",
+    );
+    const now = Date.now();
+    return [...list]
+      .sort((a, b) => {
+        const aLive = isGameLive(a) ? 0 : 1;
+        const bLive = isGameLive(b) ? 0 : 1;
+        if (aLive !== bLive) return aLive - bLive;
+        return new Date(a.startAt).getTime() - new Date(b.startAt).getTime();
+      })
+      .filter((g) => {
+        // Drop anything past the auto-finish horizon just in case.
+        return new Date(g.startAt).getTime() >= now - 5 * 60 * 60 * 1000;
+      })
+      .slice(0, 3);
+  }, [gamesQ.data]);
   const needsOnboarding =
     meQ.data != null &&
     effectiveSkillLevel(meQ.data) == null &&
@@ -360,7 +380,7 @@ export function HomePage() {
           </div>
         )}
 
-        {gamesQ.data && gamesQ.data.length === 0 && (
+        {!gamesQ.isLoading && nextGames.length === 0 && (
           <div className="empty-state">
             <div className="empty-state-icon">
               <Icon name="tennis-ball" size={24} />

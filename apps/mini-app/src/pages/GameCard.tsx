@@ -9,14 +9,16 @@ import { useI18n } from "../i18n";
 import { effectiveSkillLevel } from "../lib/skill";
 import { coverForPlayType } from "../lib/play-type";
 import { formatGameDateOnly, formatGameTimeOnly } from "../lib/datetime";
+import { gameDisplayStatus, type GameDisplayStatus } from "../lib/game-status";
 import "./GameCard.css";
 
-function statusToBadgeClass(status: ApiGame["status"]): string {
+function statusToBadgeClass(status: GameDisplayStatus): string {
   return `badge badge-${status.toLowerCase()}`;
 }
 
-function statusLabel(status: ApiGame["status"], t: (key: string) => string): string {
+function statusLabel(status: GameDisplayStatus, t: (key: string) => string): string {
   switch (status) {
+    case "LIVE": return t('status.going');
     case "OPEN": return t('status.open');
     case "FULL": return t('status.full');
     case "CANCELLED": return t('status.cancelled');
@@ -75,6 +77,7 @@ export function GameCard({ game }: GameCardProps) {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
   const spotsLeft = game.spotsTotal - game.participantsCount;
+  const displayStatus = gameDisplayStatus(game);
 
   return (
     <Link to={`/games/${game.id}`} className="gameCard-link">
@@ -98,9 +101,9 @@ export function GameCard({ game }: GameCardProps) {
           {/* Top row: status badge (left) + capacity pill (right) */}
           <div className="gameCard-heroTop">
             <div className="gameCard-heroStatus">
-              <div className={statusToBadgeClass(game.status)}>
+              <div className={statusToBadgeClass(displayStatus)}>
                 <span className="badge-dot" />
-                {statusLabel(game.status, t)}
+                {statusLabel(displayStatus, t)}
               </div>
               {game.isClosed && (
                 <span className="closedPill" title={t('game.closed')}>

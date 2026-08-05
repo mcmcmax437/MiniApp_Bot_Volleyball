@@ -16,6 +16,7 @@ export const en: Record<string, string> = {
   'nav.test': 'Test',
   'status.open': 'Open',
   'status.full': 'Full',
+  'status.going': 'Going',
   'status.cancelled': 'Cancelled',
   'status.finished': 'Finished',
 

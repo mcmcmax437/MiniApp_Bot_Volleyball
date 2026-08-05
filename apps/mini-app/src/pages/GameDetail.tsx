@@ -24,13 +24,13 @@ import { InvitePlayerModal } from './InvitePlayerModal';
 import { EditGameModal } from './EditGameModal';
 import { confirmDialog } from '../lib/confirm';
 import { formatGameDateTime } from '../lib/datetime';
+import { isGameLive } from '../lib/game-status';
 import { buildGameShareText, gameDeepLink, shareGameToTelegram } from '../lib/share-game';
 import './GameDetail.css';
 
-function gameReadyForEval(game: { status: string; endAt: string }): boolean {
-  if (game.status === 'CANCELLED') return false;
-  if (game.status === 'FINISHED') return true;
-  return new Date(game.endAt).getTime() <= Date.now();
+/** Rating form unlocks only when status is FINISHED (host or auto +5h). */
+function gameReadyForEval(game: { status: string }): boolean {
+  return game.status === 'FINISHED';
 }
 
 function formatMoney(minor: number, currency: string): string {
@@ -645,8 +645,11 @@ export function GameDetailPage() {
                 <Icon name="lock" size={10} /> {t('game.closed')}
               </span>
             )}
+            {isGameLive(g) && <span className="tag warn">{t('status.going')}</span>}
             {g.status === 'CANCELLED' && <span className="tag warn">{t('game.cancel')}</span>}
-            {g.status === 'FULL' && <span className="tag warn">{t('game.spotsFull')}</span>}
+            {g.status === 'FULL' && !isGameLive(g) && (
+              <span className="tag warn">{t('game.spotsFull')}</span>
+            )}
             {g.status === 'FINISHED' && <span className="tag">{t('game.finish')}</span>}
           </div>
           {g.notes && (

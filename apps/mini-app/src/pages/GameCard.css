@@ -229,6 +229,16 @@
 .badge-full {
   color: #fbbf24;
 }
+.badge-live {
+  color: #fb7185;
+}
+.badge-live .badge-dot {
+  animation: badge-live-pulse 1.2s ease-in-out infinite;
+}
+@keyframes badge-live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.85); }
+}
 .badge-cancelled {
   color: #f87171;
 }

@@ -290,18 +290,13 @@ export class GamesService {
       where.status = opts.status;
       where.startAt = { gte: autoFinishHorizon };
     } else {
-      // Default Home/Games feed: live + upcoming OPEN/FULL, and games that
-      // just finished (so the skill-rating entry point stays reachable).
-      where.OR = [
-        {
-          status: { in: ['OPEN', 'FULL'] },
-          startAt: { gte: autoFinishHorizon },
-        },
-        {
-          status: 'FINISHED',
-          endAt: { gte: autoFinishHorizon },
-        },
-      ];
+      // Default Home/Games feed: upcoming + in-progress OPEN/FULL games.
+      // Keep lobbies visible from kickoff through the 5h auto-finish window
+      // (so a game doesn't vanish mid-match). Finished games are NOT listed
+      // here — rating uses `/evaluations/pending` + the Home "Rate players"
+      // section instead of polluting "Upcoming".
+      where.status = { in: ['OPEN', 'FULL'] };
+      where.startAt = { gte: autoFinishHorizon };
     }
 
     if (opts.skillLevel) where.skillLevel = opts.skillLevel;
@@ -728,6 +723,8 @@ export class GamesService {
     });
     await this.invitations.deactivatePendingForGame(gameId).catch(() => undefined);
     await this.prisma.gameWaitlist.deleteMany({ where: { gameId } }).catch(() => undefined);
+    // Telegram every participant so the rating form appears when they open the app.
+    await this.scheduler.notifyRatePlayers(gameId).catch(() => undefined);
     void this.analytics.trackEvent(me.id, 'game_finish', {
       screen: `/games/${gameId}`,
       target: gameId,

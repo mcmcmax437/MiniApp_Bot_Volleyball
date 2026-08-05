@@ -8,13 +8,12 @@ import { isEvalDone, markEvalDone } from '../lib/eval-done';
 /**
  * Global post-game rating prompt.
  *
- * Every participant of a finished (or past-endAt) game should be asked to
- * rate co-players the next time they open the app. Lives at the App shell
- * so it fires on Home / Games / Profile, not only on GameDetail.
+ * Opens automatically for every participant of a FINISHED game (host Finish
+ * or auto-finish at startAt + 5h) the next time they open the Mini App —
+ * on Home / Games / Profile, not only on GameDetail.
  *
  * Waits for `/auth/me` before fetching — a cold start used to hit
- * `/evaluations/pending` before the auth cookie existed, get 401, and never
- * retry, so the skill form never appeared.
+ * `/evaluations/pending` before the JWT existed, get 401, and never retry.
  */
 export function PendingEvaluationsPrompt() {
   const api = useApi();
@@ -33,9 +32,10 @@ export function PendingEvaluationsPrompt() {
     () => api.listPendingEvaluations(),
     {
       enabled: !!meQ.data?.id,
-      staleTime: 15_000,
+      staleTime: 0,
+      refetchOnMount: 'always',
       refetchOnWindowFocus: true,
-      refetchInterval: 60_000,
+      refetchInterval: 30_000,
       retry: 2,
     },
   );

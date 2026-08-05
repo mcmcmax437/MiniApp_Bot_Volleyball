@@ -13,6 +13,7 @@ export const uk: Record<string, string> = {
   'nav.test': 'Тест',
   'status.open': 'Відкрита',
   'status.full': 'Заповнена',
+  'status.going': 'Йде зараз',
   'status.cancelled': 'Скасована',
   'status.finished': 'Завершена',
 
