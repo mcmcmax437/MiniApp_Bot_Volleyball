@@ -13,7 +13,8 @@ import { AnalyticsService } from '../analytics/analytics.service';
 import { CreateGameDto, ListGamesQuery } from './dto';
 import { SKILL_BUCKETS, SKILL_LEVELS } from '../shared/skill-levels';
 import { canonicalizeCity, expandCityFilter, foldCity } from '../shared/city';
-import type { User } from '@prisma/client';
+import type { User, Prisma } from '@prisma/client';
+import { GameCoverService } from './game-cover.service';
 
 const SUPPORTED_CURRENCIES = new Set(['UAH', 'PLN', 'EUR', 'USD']);
 
@@ -28,7 +29,19 @@ export class GamesService {
     private readonly config: ConfigService,
     private readonly invitations: InvitationsService,
     private readonly analytics: AnalyticsService,
+    private readonly covers: GameCoverService,
   ) {}
+
+  private async recordActivity(
+    db: Prisma.TransactionClient | PrismaService,
+    gameId: string,
+    userId: string,
+    kind: 'JOINED' | 'LEFT',
+  ) {
+    await db.gameActivity.create({
+      data: { gameId, userId, kind },
+    });
+  }
 
   /**
    * Per-player cost for a game given the *current* number of participants.
@@ -103,6 +116,7 @@ export class GamesService {
       meta: { playType: game.playType, spotsTotal: game.spotsTotal },
     });
     void this.analytics.bumpGameStat(me.id, 'gamesHosted');
+    await this.recordActivity(this.prisma, game.id, me.id, 'JOINED').catch(() => undefined);
 
     return this.findOne(game.id);
   }
@@ -460,6 +474,9 @@ export class GamesService {
       }
 
       await tx.gameParticipant.create({ data: { gameId, userId: me.id } });
+      await tx.gameActivity.create({
+        data: { gameId, userId: me.id, kind: 'JOINED' },
+      });
       tracked = 'join';
 
       const updated = await tx.game.findUnique({
@@ -517,6 +534,12 @@ export class GamesService {
       const isHost = game.hostId === me.id;
       const isParticipant = game.participants.some((p) => p.userId === me.id);
       if (!isHost && !isParticipant) throw new ForbiddenException('Not a participant');
+
+      if (isParticipant) {
+        await tx.gameActivity.create({
+          data: { gameId, userId: me.id, kind: 'LEFT' },
+        });
+      }
 
       await tx.gameParticipant.deleteMany({ where: { gameId, userId: me.id } });
       // Drop the payment record so it doesn't pollute the host's tracker.
@@ -583,6 +606,7 @@ export class GamesService {
     isPaid?: boolean;
     isClosed?: boolean;
     coverImageUrl?: string | null;
+    coverImageUrl2?: string | null;
     addressHint?: string | null;
     playType?: 'INDOOR' | 'OUTDOOR' | 'BEACH';
     venueId?: string;
@@ -620,6 +644,7 @@ export class GamesService {
     if (typeof patch.isPaid === 'boolean') data.isPaid = patch.isPaid;
     if (typeof patch.isClosed === 'boolean') data.isClosed = patch.isClosed;
     if (patch.coverImageUrl !== undefined) data.coverImageUrl = patch.coverImageUrl;
+    if (patch.coverImageUrl2 !== undefined) data.coverImageUrl2 = patch.coverImageUrl2;
     if (patch.addressHint !== undefined) data.addressHint = patch.addressHint;
     if (patch.playType) data.playType = patch.playType;
 
@@ -807,6 +832,9 @@ export class GamesService {
         await tx.gameParticipant.create({
           data: { gameId, userId: req.userId },
         });
+        await tx.gameActivity.create({
+          data: { gameId, userId: req.userId, kind: 'JOINED' },
+        });
       }
 
       const updated = await tx.game.findUnique({
@@ -915,5 +943,104 @@ export class GamesService {
       select: { id: true },
     });
     return { onWaitlist: !!row };
+  }
+
+  /** Admin-only join/leave timeline for a game. */
+  async listActivity(me: User, gameId: string) {
+    if (me.role !== 'ADMIN') {
+      throw new ForbiddenException('Admin only');
+    }
+    const game = await this.prisma.game.findUnique({
+      where: { id: gameId },
+      select: { id: true },
+    });
+    if (!game) throw new NotFoundException('Game not found');
+
+    const rows = await this.prisma.gameActivity.findMany({
+      where: { gameId },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+            photoUrl: true,
+          },
+        },
+      },
+      take: 200,
+    });
+
+    return {
+      items: rows.map((r) => ({
+        id: r.id,
+        kind: r.kind as 'JOINED' | 'LEFT',
+        createdAt: r.createdAt.toISOString(),
+        user: r.user,
+      })),
+    };
+  }
+
+  /**
+   * Host/admin uploads 1–2 field photos (base64). Replaces existing covers
+   * in order: images[0] → coverImageUrl, images[1] → coverImageUrl2.
+   */
+  async setCovers(
+    me: User,
+    gameId: string,
+    images: Array<{ base64: string; mime?: string }>,
+  ) {
+    const game = await this.prisma.game.findUnique({ where: { id: gameId } });
+    if (!game) throw new NotFoundException('Game not found');
+    if (game.hostId !== me.id && me.role !== 'ADMIN') {
+      throw new ForbiddenException('Only the host or an admin can set covers');
+    }
+    if (game.status === 'CANCELLED' || game.status === 'FINISHED') {
+      throw new BadRequestException(`Cannot edit a ${game.status.toLowerCase()} game`);
+    }
+    if (!images.length || images.length > 2) {
+      throw new BadRequestException('Provide 1 or 2 images');
+    }
+
+    const url1 = await this.covers.saveSlot(gameId, 1, images[0].base64, images[0].mime);
+    let url2: string | null = null;
+    if (images[1]) {
+      url2 = await this.covers.saveSlot(gameId, 2, images[1].base64, images[1].mime);
+    } else {
+      await this.covers.deleteSlotFiles(gameId, 2);
+    }
+
+    await this.prisma.game.update({
+      where: { id: gameId },
+      data: {
+        coverImageUrl: url1,
+        coverImageUrl2: url2,
+      },
+    });
+
+    void this.analytics.trackEvent(me.id, 'game_covers_set', {
+      screen: `/games/${gameId}`,
+      target: gameId,
+      meta: { count: images.length },
+    });
+
+    return this.findOne(gameId);
+  }
+
+  async clearCovers(me: User, gameId: string) {
+    const game = await this.prisma.game.findUnique({ where: { id: gameId } });
+    if (!game) throw new NotFoundException('Game not found');
+    if (game.hostId !== me.id && me.role !== 'ADMIN') {
+      throw new ForbiddenException('Only the host or an admin can clear covers');
+    }
+    await this.covers.deleteSlotFiles(gameId, 1);
+    await this.covers.deleteSlotFiles(gameId, 2);
+    await this.prisma.game.update({
+      where: { id: gameId },
+      data: { coverImageUrl: null, coverImageUrl2: null },
+    });
+    return this.findOne(gameId);
   }
 }

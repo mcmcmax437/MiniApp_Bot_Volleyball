@@ -321,6 +321,10 @@ export class InvitationsService {
           readAt: inv.readAt ?? new Date(),
         },
       });
+
+      await tx.gameActivity.create({
+        data: { gameId: inv.gameId, userId: me.id, kind: 'JOINED' },
+      });
     });
 
     await this.notifyInviterOfResponse(inv.inviterId, {

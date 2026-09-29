@@ -136,6 +136,8 @@ export interface ApiGame {
   isPaid: boolean;
   currency: Currency;
   coverImageUrl: string | null;
+  /** Optional second custom field photo. */
+  coverImageUrl2: string | null;
   addressHint: string | null;
   // v4: where the game is being played (indoor court / outdoor court / beach).
   playType: PlayType;
@@ -222,11 +224,25 @@ export interface UpdateGamePayload {
   isPaid?: boolean;
   isClosed?: boolean;
   coverImageUrl?: string | null;
+  coverImageUrl2?: string | null;
   addressHint?: string | null;
   playType?: PlayType;
   venueId?: string;
   venueName?: string;
   venueAddress?: string;
+}
+
+export interface GameActivityItem {
+  id: string;
+  kind: 'JOINED' | 'LEFT';
+  createdAt: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string | null;
+    username: string | null;
+    photoUrl: string | null;
+  };
 }
 
 export interface CreateVenuePayload {
@@ -626,6 +642,21 @@ export function useApi() {
       http<{ onWaitlist: boolean }>(`/games/${id}/waitlist`, { method: 'POST' }, initData),
     leaveWaitlist: (id: string) =>
       http<{ onWaitlist: boolean }>(`/games/${id}/waitlist/leave`, { method: 'POST' }, initData),
+
+    getGameActivity: (id: string) =>
+      http<{ items: GameActivityItem[] }>(`/games/${id}/activity`, { method: 'GET' }, initData),
+
+    setGameCovers: (
+      id: string,
+      images: Array<{ base64: string; mime?: string }>,
+    ) =>
+      http<ApiGameDetail>(`/games/${id}/covers`, {
+        method: 'POST',
+        body: JSON.stringify({ images }),
+      }, initData),
+
+    clearGameCovers: (id: string) =>
+      http<ApiGameDetail>(`/games/${id}/covers`, { method: 'DELETE' }, initData),
 
     defaultCity: () =>
       http<{

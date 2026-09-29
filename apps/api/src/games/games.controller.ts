@@ -1,16 +1,35 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
   Post,
   Query,
+  Res,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import type { Response } from 'express';
+import { promises as fs } from 'node:fs';
 import { GamesService } from './games.service';
+import { GameCoverService } from './game-cover.service';
 import { CreateGameDto, ListGamesQuery, PLAY_TYPES, PlayType } from './dto';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { NotBannedGuard } from '../auth/not-banned.guard';
@@ -29,6 +48,7 @@ class UpdateGameDto {
   @IsOptional() @IsBoolean() isPaid?: boolean;
   @IsOptional() @IsBoolean() isClosed?: boolean;
   @IsOptional() @IsString() @MaxLength(500) coverImageUrl?: string | null;
+  @IsOptional() @IsString() @MaxLength(500) coverImageUrl2?: string | null;
   @IsOptional() @IsString() @MaxLength(280) addressHint?: string | null;
   @IsOptional() @IsIn(PLAY_TYPES as unknown as string[]) playType?: PlayType;
   @IsOptional() @IsString() venueId?: string;
@@ -43,6 +63,20 @@ class FinishGameDto {
 
 class DecideJoinRequestDto {
   @IsBoolean() accept!: boolean;
+}
+
+class CoverImageDto {
+  @IsString() base64!: string;
+  @IsOptional() @IsString() mime?: string;
+}
+
+class UploadCoversDto {
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(2)
+  @ValidateNested({ each: true })
+  @Type(() => CoverImageDto)
+  images!: CoverImageDto[];
 }
 
 @Controller('games')
@@ -148,5 +182,63 @@ export class GamesController {
   leaveWaitlist(@CurrentUser() me: User | null, @Param('id') id: string) {
     if (!me) throw new UnauthorizedException('User not found');
     return this.games.leaveWaitlist(me, id);
+  }
+
+  /** Admin-only join/leave timeline. */
+  @Get(':id/activity')
+  @UseGuards(JwtAuthGuard, NotBannedGuard)
+  listActivity(@CurrentUser() me: User | null, @Param('id') id: string) {
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.games.listActivity(me, id);
+  }
+
+  /** Host/admin: upload 1–2 custom field photos (base64). */
+  @Post(':id/covers')
+  @UseGuards(JwtAuthGuard, NotBannedGuard)
+  setCovers(
+    @CurrentUser() me: User | null,
+    @Param('id') id: string,
+    @Body() dto: UploadCoversDto,
+  ) {
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.games.setCovers(me, id, dto.images);
+  }
+
+  @Delete(':id/covers')
+  @UseGuards(JwtAuthGuard, NotBannedGuard)
+  clearCovers(@CurrentUser() me: User | null, @Param('id') id: string) {
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.games.clearCovers(me, id);
+  }
+}
+
+/**
+ * Public file server for custom game field photos.
+ * Path: GET /api/v1/game-covers/:file
+ */
+@Controller('game-covers')
+export class GameCoverController {
+  constructor(private readonly covers: GameCoverService) {}
+
+  @Get(':file')
+  async serve(@Param('file') file: string, @Res() res: Response) {
+    if (!this.covers.isSafeFileName(file)) {
+      return res.status(404).end();
+    }
+    const fp = this.covers.absolutePath(file);
+    try {
+      await fs.access(fp);
+    } catch {
+      return res.status(404).end();
+    }
+    const lower = file.toLowerCase();
+    const type = lower.endsWith('.png')
+      ? 'image/png'
+      : lower.endsWith('.webp')
+        ? 'image/webp'
+        : 'image/jpeg';
+    res.setHeader('Content-Type', type);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return res.sendFile(fp);
   }
 }

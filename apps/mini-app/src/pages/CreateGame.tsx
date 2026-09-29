@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -19,6 +19,8 @@ import {
   setAppTimeZone,
   wallClockToUtcIso,
 } from '../lib/datetime';
+import { coverForPlayType } from '../lib/play-type';
+import { readImageAsDataUrl } from '../lib/read-image-file';
 import './CreateGame.css';
 
 const SKILL_ICONS: Record<SkillLevel, IconName> = {
@@ -101,6 +103,11 @@ export function CreateGamePage() {
   // live in `notes` only — so no client-side state is needed here.
   const [isClosed, setIsClosed] = useState(false);
   const [playType, setPlayType] = useState<PlayType>('OUTDOOR');
+  const [cover1, setCover1] = useState<{ base64: string; mime: string; preview: string } | null>(null);
+  const [cover2, setCover2] = useState<{ base64: string; mime: string; preview: string } | null>(null);
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const cover1Ref = useRef<HTMLInputElement>(null);
+  const cover2Ref = useRef<HTMLInputElement>(null);
 
   const selectedVenue = useMemo(
     () => venuesQ.data?.find((v) => v.id === venueId),
@@ -136,8 +143,8 @@ export function CreateGamePage() {
   }, [unlimitedSpots]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const createMut = useMutation(
-    () =>
-      api.createGame({
+    async () => {
+      const g = await api.createGame({
         venueId: venueId || undefined,
         venueName: venueName.trim() || undefined,
         venueAddress: venueAddress.trim(),
@@ -152,7 +159,19 @@ export function CreateGamePage() {
         isClosed,
         coverImageUrl: undefined,
         playType,
-      }),
+      });
+      const images = [cover1, cover2]
+        .filter((c): c is { base64: string; mime: string; preview: string } => !!c)
+        .map((c) => ({ base64: c.base64, mime: c.mime }));
+      if (images.length) {
+        try {
+          await api.setGameCovers(g.id, images);
+        } catch {
+          // Game exists; host can set covers from Edit. Still navigate.
+        }
+      }
+      return g;
+    },
     {
       onSuccess: (g) => {
         qc.invalidateQueries(['games']); // also matches the versioned keys
@@ -161,6 +180,19 @@ export function CreateGamePage() {
       },
     },
   );
+
+  const pickCover = async (slot: 1 | 2, file: File | null) => {
+    if (!file) return;
+    try {
+      const { base64, mime } = await readImageAsDataUrl(file);
+      const draft = { base64, mime, preview: base64 };
+      if (slot === 1) setCover1(draft);
+      else setCover2(draft);
+      setCoverError(null);
+    } catch (err) {
+      setCoverError((err as Error).message || t('error.unknown'));
+    }
+  };
 
   if (venuesQ.isLoading) {
     return (
@@ -558,6 +590,73 @@ export function CreateGamePage() {
       <section className="formSection">
         <h2 className="formSection-title">
           <span className="formSection-num">5</span>
+          {t('create.section.covers')}
+        </h2>
+        <p className="field-hint" style={{ marginTop: 0 }}>
+          {t('game.coversHint')}
+        </p>
+        <div className="createCovers">
+          <button
+            type="button"
+            className="createCovers-slot"
+            onClick={() => cover1Ref.current?.click()}
+          >
+            {cover1 ? (
+              <img src={cover1.preview} alt="" />
+            ) : (
+              <span>
+                <Icon name="plus-sign" size={18} />
+                {t('game.coversAdd', { n: 1 })}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            className="createCovers-slot"
+            onClick={() => cover2Ref.current?.click()}
+          >
+            {cover2 ? (
+              <img src={cover2.preview} alt="" />
+            ) : (
+              <span>
+                <Icon name="plus-sign" size={18} />
+                {t('game.coversAdd', { n: 2 })}
+              </span>
+            )}
+          </button>
+        </div>
+        <input
+          ref={cover1Ref}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          hidden
+          onChange={(e) => {
+            void pickCover(1, e.target.files?.[0] ?? null);
+            e.target.value = '';
+          }}
+        />
+        <input
+          ref={cover2Ref}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          hidden
+          onChange={(e) => {
+            void pickCover(2, e.target.files?.[0] ?? null);
+            e.target.value = '';
+          }}
+        />
+        {!cover1 && !cover2 && (
+          <div className="createCovers-fallback">
+            <img src={coverForPlayType(playType)} alt="" />
+            <span>{t('create.field.coverPreviewHint')}</span>
+          </div>
+        )}
+        {coverError && <div className="error">{coverError}</div>}
+      </section>
+
+      <section className="formSection">
+        <h2 className="formSection-title">
+          <span className="formSection-num">6</span>
           {t('create.section.notes')}
         </h2>
         <div className="field">

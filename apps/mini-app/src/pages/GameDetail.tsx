@@ -15,7 +15,7 @@ import { SkillBadge } from '../SkillBadge';
 import { AdminCrownBadge, isAdminUser } from '../AdminCrownBadge';
 import { useI18n } from '../i18n';
 import { effectiveSkillLevel } from '../lib/skill';
-import { coverForPlayType } from '../lib/play-type';
+import { coverForPlayType, resolveGameCovers } from '../lib/play-type';
 import { isEvalDone, markEvalDone } from '../lib/eval-done';
 import { Modal } from '../Modal';
 import { ReportUserModal } from './ReportUserModal';
@@ -205,6 +205,7 @@ export function GameDetailPage() {
     // after cancel/leave/join or the cancelled game stays visible from cache.
     qc.invalidateQueries(['game', id]);
     qc.invalidateQueries(['games']);
+    qc.invalidateQueries(['game-activity', id]);
   };
 
   const joinMut = useMutation(() => api.joinGame(id!), {
@@ -230,7 +231,12 @@ export function GameDetailPage() {
   const decideJoinMut = useMutation(
     ({ requestId, accept }: { requestId: string; accept: boolean }) =>
       api.decideJoinRequest(id!, requestId, accept),
-    { onSuccess: () => qc.invalidateQueries(['game', id]) },
+    {
+      onSuccess: () => {
+        qc.invalidateQueries(['game', id]);
+        qc.invalidateQueries(['game-activity', id]);
+      },
+    },
   );
 
   const waitlistQ = useQuery(
@@ -261,6 +267,13 @@ export function GameDetailPage() {
     },
   );
 
+  const isAdmin = isAdminUser(meQ.data ?? null);
+  const activityQ = useQuery(
+    ['game-activity', id],
+    () => api.getGameActivity(id!),
+    { enabled: !!id && isAdmin },
+  );
+
   const [reportTarget, setReportTarget] = useState<{ id: string; name: string } | null>(null);
   const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
   const [showEvaluate, setShowEvaluate] = useState(false);
@@ -270,6 +283,7 @@ export function GameDetailPage() {
   const [editBanner, setEditBanner] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'players' | 'info'>('players');
   const [waitlistToast, setWaitlistToast] = useState<string | null>(null);
+  const [heroCoverIdx, setHeroCoverIdx] = useState(0);
 
   // Check for blacklisted players in the game
   const participantIds = useMemo(() => {
@@ -331,6 +345,8 @@ export function GameDetailPage() {
   const isFull = g.participantsCount >= g.spotsTotal;
   const isClosed = g.status === 'CANCELLED' || g.status === 'FINISHED';
   const canEvaluate = gameReadyForEval(g);
+  const heroCovers = resolveGameCovers(g);
+  const heroSrc = heroCovers[Math.min(heroCoverIdx, heroCovers.length - 1)] ?? coverForPlayType(g.playType);
 
   const handleJoinClick = () => {
     if (blockedInThisGame.length > 0) {
@@ -348,13 +364,34 @@ export function GameDetailPage() {
       <div className="detailHero">
         <img
           className="detailHero-img"
-          src={coverForPlayType(g.playType)}
+          src={heroSrc}
           alt=""
           onError={(e) => {
-            (e.currentTarget as HTMLImageElement).classList.add('detailHero-img-fallback');
+            const el = e.currentTarget as HTMLImageElement;
+            // Fall back to stock play-type art if a custom URL 404s.
+            if (el.src !== coverForPlayType(g.playType) && !el.dataset.fallback) {
+              el.dataset.fallback = '1';
+              el.src = coverForPlayType(g.playType);
+              return;
+            }
+            el.classList.add('detailHero-img-fallback');
           }}
         />
         <div className="detailHero-overlay" aria-hidden />
+        {heroCovers.length > 1 && (
+          <div className="detailHero-dots" role="tablist" aria-label={t('gameDetail.cover')}>
+            {heroCovers.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                role="tab"
+                aria-selected={i === heroCoverIdx}
+                className={`detailHero-dot${i === heroCoverIdx ? ' isActive' : ''}`}
+                onClick={() => setHeroCoverIdx(i)}
+              />
+            ))}
+          </div>
+        )}
         <div className="detailHero-body">
           <div className="detailHero-top">
             <h2 className="detailHero-title">{g.venue.name}</h2>
@@ -655,6 +692,44 @@ export function GameDetailPage() {
           {g.notes && (
             <div className="detailInfo-notes">
               <Icon name="note-01" className="icon-inline" /> {g.notes}
+            </div>
+          )}
+
+          {isAdmin && (
+            <div className="detailActivity">
+              <h3 className="detailActivity-title">
+                <Icon name="clock-01" size={14} />
+                {t('gameDetail.activityTitle')}
+              </h3>
+              {activityQ.isLoading && (
+                <p className="detailActivity-empty">{t('common.loading')}</p>
+              )}
+              {activityQ.isError && (
+                <p className="detailActivity-empty">{(activityQ.error as Error).message}</p>
+              )}
+              {activityQ.data && activityQ.data.items.length === 0 && (
+                <p className="detailActivity-empty">{t('gameDetail.activityEmpty')}</p>
+              )}
+              {activityQ.data && activityQ.data.items.length > 0 && (
+                <ul className="detailActivity-list">
+                  {activityQ.data.items.map((row) => {
+                    const name = row.user.lastName
+                      ? `${row.user.firstName} ${row.user.lastName}`
+                      : row.user.firstName;
+                    const nick = row.user.username ? `@${row.user.username}` : name;
+                    const when = formatGameDateTime(row.createdAt, { locale: lang });
+                    return (
+                      <li key={row.id} className="detailActivity-item">
+                        <span className={`detailActivity-kind detailActivity-kind-${row.kind.toLowerCase()}`}>
+                          {row.kind === 'JOINED'
+                            ? t('gameDetail.activityJoined', { name: nick, when })
+                            : t('gameDetail.activityLeft', { name: nick, when })}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
           )}
         </div>

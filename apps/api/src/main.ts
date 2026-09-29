@@ -2,10 +2,14 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
+import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: false });
+  // Custom body limit so host can upload 1–2 field photos as base64 (~2 MB each).
+  const app = await NestFactory.create(AppModule, { cors: false, bodyParser: false });
+  app.use(json({ limit: '6mb' }));
+  app.use(urlencoded({ extended: true, limit: '6mb' }));
 
   app.setGlobalPrefix('api/v1');
   app.use(cookieParser());

@@ -7,7 +7,7 @@ import { SkillBadge } from "../SkillBadge";
 import { AdminCrownBadge, isAdminUser } from "../AdminCrownBadge";
 import { useI18n } from "../i18n";
 import { effectiveSkillLevel } from "../lib/skill";
-import { coverForPlayType } from "../lib/play-type";
+import { resolveGameCover } from "../lib/play-type";
 import { formatGameDateOnly, formatGameTimeOnly } from "../lib/datetime";
 import { gameDisplayStatus, type GameDisplayStatus } from "../lib/game-status";
 import "./GameCard.css";
@@ -89,7 +89,7 @@ export function GameCard({ game }: GameCardProps) {
         <div className="gameCard-hero">
           <img
             className="gameCard-heroImg"
-            src={coverForPlayType(game.playType)}
+            src={resolveGameCover(game)}
             alt=""
             loading="lazy"
             onError={(e) => {
