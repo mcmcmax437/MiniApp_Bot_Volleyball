@@ -55,6 +55,7 @@ export class SchedulerService {
         remindersSent: {
           select: { userId: true, offsetMinutes: true },
         },
+        _count: { select: { reservations: true } },
       },
       take: 300,
     });
@@ -101,7 +102,7 @@ export class SchedulerService {
             venueAddress: g.venue.address,
             startAt: g.startAt,
             minutesUntil: offset,
-            players: g.participants.length,
+            players: g.participants.length + g._count.reservations,
             spotsTotal: g.spotsTotal,
             locale: p.user.language ?? 'en',
           });
@@ -235,6 +236,7 @@ export class SchedulerService {
       include: {
         venue: true,
         participants: { select: { userId: true } },
+        _count: { select: { reservations: true } },
         waitlist: {
           where: { lastNotifiedAt: null },
           include: { user: true },
@@ -243,11 +245,11 @@ export class SchedulerService {
     });
     if (!game) return;
     if (game.status === 'CANCELLED' || game.status === 'FINISHED') return;
-    if (game.participants.length >= game.spotsTotal) return;
+    if (game.participants.length + game._count.reservations >= game.spotsTotal) return;
 
     const seated = new Set(game.participants.map((p) => p.userId));
     const openBtn = this.sender.openAppButton('Open game', `g_${game.id}`);
-    const spotsLeft = game.spotsTotal - game.participants.length;
+    const spotsLeft = game.spotsTotal - game.participants.length - game._count.reservations;
 
     for (const w of game.waitlist) {
       if (seated.has(w.userId) || w.user.isBanned) {

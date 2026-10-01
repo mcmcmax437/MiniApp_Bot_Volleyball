@@ -76,7 +76,8 @@ interface GameCardProps {
 export function GameCard({ game }: GameCardProps) {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
-  const spotsLeft = game.spotsTotal - game.participantsCount;
+  const spotsLeft = game.spotsTotal - game.participantsCount - (game.reservedCount ?? 0);
+  const occupied = game.participantsCount + (game.reservedCount ?? 0);
   const displayStatus = gameDisplayStatus(game);
 
   return (
@@ -111,8 +112,8 @@ export function GameCard({ game }: GameCardProps) {
                 </span>
               )}
             </div>
-            <div className="gameCard-heroPill" aria-label={`${game.participantsCount} of ${game.spotsTotal}`}>
-              {game.participantsCount}/{game.spotsTotal}
+            <div className="gameCard-heroPill" aria-label={`${occupied} of ${game.spotsTotal}`}>
+              {occupied}/{game.spotsTotal}
             </div>
           </div>
 
@@ -229,7 +230,7 @@ export function GameCard({ game }: GameCardProps) {
 
           <div className="gameCard-right">
             <div className="gameCard-hostSub">
-              <strong>{game.participantsCount}</strong>/{game.spotsTotal} {t('game.playersShort')}
+              <strong>{occupied}</strong>/{game.spotsTotal} {t('game.playersShort')}
               {spotsLeft > 0 && (
                 <span className="gameCard-capacityFree"> · {t('game.spotsLeftShort', { count: spotsLeft })}</span>
               )}

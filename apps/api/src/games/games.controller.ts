@@ -79,6 +79,10 @@ class UploadCoversDto {
   images!: CoverImageDto[];
 }
 
+class CreateReservationDto {
+  @IsOptional() @IsString() @MaxLength(80) note?: string;
+}
+
 @Controller('games')
 export class GamesController {
   constructor(private readonly games: GamesService) {}
@@ -209,6 +213,36 @@ export class GamesController {
   clearCovers(@CurrentUser() me: User | null, @Param('id') id: string) {
     if (!me) throw new UnauthorizedException('User not found');
     return this.games.clearCovers(me, id);
+  }
+
+  /** Admin holds one incognito seat. */
+  @Get(':id/reservations')
+  @UseGuards(JwtAuthGuard, NotBannedGuard)
+  listReservations(@CurrentUser() me: User | null, @Param('id') id: string) {
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.games.listReservations(me, id);
+  }
+
+  @Post(':id/reservations')
+  @UseGuards(JwtAuthGuard, NotBannedGuard)
+  addReservation(
+    @CurrentUser() me: User | null,
+    @Param('id') id: string,
+    @Body() dto: CreateReservationDto,
+  ) {
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.games.addReservation(me, id, dto.note);
+  }
+
+  @Delete(':id/reservations/:reservationId')
+  @UseGuards(JwtAuthGuard, NotBannedGuard)
+  removeReservation(
+    @CurrentUser() me: User | null,
+    @Param('id') id: string,
+    @Param('reservationId') reservationId: string,
+  ) {
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.games.removeReservation(me, id, reservationId);
   }
 }
 

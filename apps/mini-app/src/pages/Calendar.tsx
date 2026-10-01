@@ -33,6 +33,7 @@ interface DayBucket {
     skillLevel: SkillLevel;
     spotsTotal: number;
     participantsCount: number;
+    reservedCount?: number;
     isClosed: boolean;
     venue: { name: string; address: string };
   }>;
@@ -184,9 +185,9 @@ export function CalendarPage() {
                           )}
                           <span
                             className="calendarGame-capacity"
-                            aria-label={`${g.participantsCount}/${g.spotsTotal} ${t('game.playersShort')}`}
+                            aria-label={`${g.participantsCount + (g.reservedCount ?? 0)}/${g.spotsTotal} ${t('game.playersShort')}`}
                           >
-                            {g.participantsCount}/{g.spotsTotal}
+                            {g.participantsCount + (g.reservedCount ?? 0)}/{g.spotsTotal}
                           </span>
                         </span>
                       </Link>

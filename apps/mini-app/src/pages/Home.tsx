@@ -337,7 +337,7 @@ export function HomePage() {
         </div>
         <div className="stat">
           <div className="stat-value">
-            {openGames.reduce((sum, g) => sum + (g.spotsTotal - g.participantsCount), 0)}
+            {openGames.reduce((sum, g) => sum + (g.spotsTotal - g.participantsCount - (g.reservedCount ?? 0)), 0)}
           </div>
           <div className="stat-label">{t('home.freeSpots')}</div>
         </div>

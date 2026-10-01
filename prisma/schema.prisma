@@ -132,6 +132,7 @@ model User {
   waitlistEntries GameWaitlist[]
   remindersSent   GameReminderSent[]
   gameActivities  GameActivity[]
+  reservationsCreated GameReservation[] @relation("ReservationCreator")
 
   @@index([city])
   @@index([role])
@@ -201,6 +202,7 @@ model Game {
   waitlist       GameWaitlist[]
   remindersSent  GameReminderSent[]
   activities     GameActivity[]
+  reservations   GameReservation[]
 
   @@index([startAt])
   @@index([status, startAt])
@@ -223,6 +225,21 @@ model GameActivity {
 
   @@index([gameId, createdAt])
   @@index([userId])
+}
+
+/// Anonymous seat hold. Counts toward capacity when someone cannot join yet.
+/// Players see “Incognito”. `note` is for the admin only.
+model GameReservation {
+  id          String   @id @default(cuid())
+  gameId      String
+  game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  createdById String?
+  createdBy   User?    @relation("ReservationCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  note        String?  @db.VarChar(80)
+  createdAt   DateTime @default(now())
+
+  @@index([gameId])
+  @@index([createdById])
 }
 
 model GameParticipant {

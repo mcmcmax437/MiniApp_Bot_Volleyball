@@ -123,7 +123,7 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
     },
   );
 
-  const seated = game.participantsCount;
+  const seated = game.participantsCount + (game.reservedCount ?? 0);
 
   const pickCover = async (slot: 1 | 2, file: File | null) => {
     if (!file) return;

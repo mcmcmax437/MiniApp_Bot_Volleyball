@@ -195,6 +195,14 @@ export const en: Record<string, string> = {
   'game.shareFree': 'Free to join',
   'game.shareSkill': 'Level {n}',
   'game.shareUnavailable': 'Sharing isn’t available yet — try again in a moment.',
+  'game.reserve': 'Hold a spot',
+  'game.reserveHint': 'Saves a seat for someone who can’t join yet. Everyone else only sees “Incognito”.',
+  'game.reserveNote': 'Private note',
+  'game.reserveNotePlaceholder': 'Who is this for? (only you see this)',
+  'game.reserveRemove': 'Release',
+  'game.reservedSpots': 'Reserved ({n})',
+  'game.incognito': 'Incognito',
+  'game.incognitoHint': 'Seat held — not in the app yet',
 
   // ===== Game detail =====
   'gameDetail.players': 'Players',

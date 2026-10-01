@@ -249,7 +249,7 @@ export function GameDetailPage() {
         !!gameQ.data &&
         !gameQ.data.participants.some((p) => p.userId === meQ.data!.id) &&
         (gameQ.data.status === 'FULL' ||
-          gameQ.data.participantsCount >= gameQ.data.spotsTotal),
+          gameQ.data.participantsCount + (gameQ.data.reservedCount ?? 0) >= gameQ.data.spotsTotal),
     },
   );
 
@@ -272,6 +272,33 @@ export function GameDetailPage() {
     ['game-activity', id],
     () => api.getGameActivity(id!),
     { enabled: !!id && isAdmin },
+  );
+  const reservationsQ = useQuery(
+    ['game-reservations', id],
+    () => api.getGameReservations(id!),
+    { enabled: !!id && isAdmin },
+  );
+  const [reserveNote, setReserveNote] = useState('');
+  const addReserveMut = useMutation(
+    () => api.addGameReservation(id!, reserveNote.trim() || undefined),
+    {
+      onSuccess: () => {
+        setReserveNote('');
+        qc.invalidateQueries(['game', id]);
+        qc.invalidateQueries(['games']);
+        qc.invalidateQueries(['game-reservations', id]);
+      },
+    },
+  );
+  const removeReserveMut = useMutation(
+    (reservationId: string) => api.removeGameReservation(id!, reservationId),
+    {
+      onSuccess: () => {
+        qc.invalidateQueries(['game', id]);
+        qc.invalidateQueries(['games']);
+        qc.invalidateQueries(['game-reservations', id]);
+      },
+    },
   );
 
   const [reportTarget, setReportTarget] = useState<{ id: string; name: string } | null>(null);
@@ -342,7 +369,9 @@ export function GameDetailPage() {
   const myId = meQ.data?.id;
   const isHost = myId && g.host.id === myId;
   const isJoined = !!g.participants.find((p) => p.userId === myId);
-  const isFull = g.participantsCount >= g.spotsTotal;
+  const isFull = g.participantsCount + (g.reservedCount ?? 0) >= g.spotsTotal;
+  const occupied = g.participantsCount + (g.reservedCount ?? 0);
+  const spotsLeft = Math.max(0, g.spotsTotal - occupied);
   const isClosed = g.status === 'CANCELLED' || g.status === 'FINISHED';
   const canEvaluate = gameReadyForEval(g);
   const heroCovers = resolveGameCovers(g);
@@ -396,7 +425,7 @@ export function GameDetailPage() {
           <div className="detailHero-top">
             <h2 className="detailHero-title">{g.venue.name}</h2>
             <span className="detailHero-pill">
-              {g.participantsCount}/{g.spotsTotal}
+              {occupied}/{g.spotsTotal}
             </span>
           </div>
           <div className="detailHero-bottom">
@@ -487,7 +516,7 @@ export function GameDetailPage() {
           <div className="detailPlayers-header">
             <h3>{t('gameDetail.confirmedPlayers', { n: g.participantsCount })}</h3>
             <span className="detailPlayers-count">
-              {g.participantsCount}/{g.spotsTotal}
+              {occupied}/{g.spotsTotal}
             </span>
           </div>
 
@@ -621,19 +650,87 @@ export function GameDetailPage() {
             </div>
           )}
 
+          {/* Incognito holds — a seat taken for someone who cannot join yet. */}
+          {(g.reservations?.length ?? 0) > 0 && (
+            <>
+              <div className="detailPlayers-subheader">
+                <span>{t('game.reservedSpots', { n: g.reservations!.length })}</span>
+              </div>
+              <ul className="detailPlayerList">
+                {g.reservations!.map((r) => {
+                  const note = isAdmin
+                    ? reservationsQ.data?.items.find((item) => item.id === r.id)?.note
+                    : null;
+                  return (
+                    <li key={r.id} className="detailPlayer">
+                      <div className="detailPlayer-main detailPlayer-hold">
+                        <Photo src={null} name={t('game.incognito')} size={44} variant="rounded" />
+                        <span className="detailPlayer-body">
+                          <span className="detailPlayer-name">
+                            <span className="detailPlayer-nameText">{t('game.incognito')}</span>
+                          </span>
+                          <span className="detailPlayer-sub">
+                            {note || t('game.incognitoHint')}
+                          </span>
+                        </span>
+                      </div>
+                      {isAdmin && !isClosed && (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-ghost"
+                          disabled={removeReserveMut.isLoading}
+                          onClick={() => removeReserveMut.mutate(r.id)}
+                          data-analytics-label="game-reserve-remove"
+                        >
+                          {t('game.reserveRemove')}
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
+
+          {isAdmin && !isClosed && (
+            <div className="reserveBox">
+              <p className="reserveBox-hint">{t('game.reserveHint')}</p>
+              <input
+                className="reserveBox-note"
+                value={reserveNote}
+                maxLength={80}
+                placeholder={t('game.reserveNotePlaceholder')}
+                onChange={(e) => setReserveNote(e.target.value)}
+                aria-label={t('game.reserveNote')}
+              />
+              <button
+                type="button"
+                className="btn btn-sm"
+                disabled={addReserveMut.isLoading || isFull}
+                onClick={() => addReserveMut.mutate()}
+                data-analytics-label="game-reserve-add"
+              >
+                <Icon name="user-account" size={14} /> {t('game.reserve')}
+              </button>
+              {addReserveMut.isError && (
+                <div className="error">{(addReserveMut.error as Error).message}</div>
+              )}
+            </div>
+          )}
+
           {/* Spots left as filled placeholder avatars */}
-          {g.spotsTotal - g.participantsCount > 0 && (
+          {spotsLeft > 0 && (
             <>
               <div className="detailPlayers-subheader">
                 <span>
-                  {t('game.spotsLeft', { n: g.spotsTotal - g.participantsCount })}
+                  {t('game.spotsLeft', { n: spotsLeft })}
                 </span>
               </div>
               <div
                 className="detailPlayers-spots"
-                aria-label={t('game.spotsLeft', { n: g.spotsTotal - g.participantsCount })}
+                aria-label={t('game.spotsLeft', { n: spotsLeft })}
               >
-                {Array.from({ length: g.spotsTotal - g.participantsCount }).map((_, i) => (
+                {Array.from({ length: spotsLeft }).map((_, i) => (
                   <span key={i} className="detailPlayers-spotSlot">
                     <Icon name="user-account" size={18} />
                   </span>
@@ -750,16 +847,16 @@ export function GameDetailPage() {
               }
               const when = formatGameDateTime(g.startAt, { locale: lang });
               const skillNum = SKILL_LEVELS.indexOf(g.skillLevel) + 1;
-              const left = Math.max(0, g.spotsTotal - g.participantsCount);
+              const left = spotsLeft;
               const spotsLine =
                 left > 0
                   ? t('game.shareSpots', {
-                      filled: g.participantsCount,
+                      filled: occupied,
                       total: g.spotsTotal,
                       left,
                     })
                   : t('game.shareSpotsFull', {
-                      filled: g.participantsCount,
+                      filled: occupied,
                       total: g.spotsTotal,
                     });
               const priceLabel = g.isPaid

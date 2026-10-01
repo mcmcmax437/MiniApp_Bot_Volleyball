@@ -212,12 +212,32 @@
   border: 1px solid var(--border-subtle);
 }
 
-.detailPlayer-empty {
-  padding: 12px 0 4px;
-  text-align: center;
-  font-size: 13px;
+.detailPlayer-hold {
+  cursor: default;
+}
+
+.reserveBox {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reserveBox-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
   color: var(--text-tertiary);
 }
+
+.reserveBox-note {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 16px;
+}
+
 
 /* overflow menu: square trigger (btn-icon) + small popover */
 

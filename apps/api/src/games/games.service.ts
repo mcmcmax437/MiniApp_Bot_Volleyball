@@ -43,6 +43,18 @@ export class GamesService {
     });
   }
 
+  /** Real roster + admin-held incognito seats. */
+  private async occupiedCounts(
+    db: Prisma.TransactionClient | PrismaService,
+    gameId: string,
+  ) {
+    const [players, reserved] = await Promise.all([
+      db.gameParticipant.count({ where: { gameId } }),
+      db.gameReservation.count({ where: { gameId } }),
+    ]);
+    return { players, reserved, occupied: players + reserved };
+  }
+
   /**
    * Per-player cost for a game given the *current* number of participants.
    * This reflects what each existing participant is actually on the hook for
@@ -205,6 +217,10 @@ export class GamesService {
           },
           orderBy: { joinedAt: 'asc' },
         },
+        reservations: {
+          select: { id: true, createdAt: true },
+          orderBy: { createdAt: 'asc' },
+        },
         joinRequests: {
           where: { status: 'PENDING' },
           select: {
@@ -277,6 +293,11 @@ export class GamesService {
         invitee: inv.invitee,
       })),
       participantsCount: game.participants.length,
+      reservedCount: game.reservations.length,
+      reservations: game.reservations.map((r) => ({
+        id: r.id,
+        createdAt: r.createdAt.toISOString(),
+      })),
       // Display the *planned* per-player price (total / spotsTotal) so the card
       // and detail view show the same number regardless of who's currently
       // signed up. The actual share each participant owes is computed in
@@ -396,6 +417,7 @@ export class GamesService {
           },
           orderBy: { joinedAt: 'asc' },
         },
+        _count: { select: { reservations: true } },
       },
       take: 200,
     });
@@ -414,9 +436,10 @@ export class GamesService {
     }
 
     if (typeof opts.hasSpots === 'boolean') {
-      filtered = filtered.filter((g) =>
-        opts.hasSpots ? g.participants.length < g.spotsTotal : g.participants.length >= g.spotsTotal,
-      );
+      filtered = filtered.filter((g) => {
+        const occupied = g.participants.length + g._count.reservations;
+        return opts.hasSpots ? occupied < g.spotsTotal : occupied >= g.spotsTotal;
+      });
     }
 
     if (typeof opts.minSpots === 'number') {
@@ -426,12 +449,16 @@ export class GamesService {
       filtered = filtered.filter((g) => g.spotsTotal <= opts.maxSpots!);
     }
 
-    return filtered.map((g) => ({
-      ...g,
-      participantsCount: g.participants.length,
-      // Planned split (total / spotsTotal) — see note in `getById`.
-      perPlayerCost: this.plannedPerPlayerCost(g.totalCost, g.spotsTotal),
-    }));
+    return filtered.map((g) => {
+      const { _count, ...rest } = g;
+      return {
+        ...rest,
+        participantsCount: g.participants.length,
+        reservedCount: _count.reservations,
+        // Planned split (total / spotsTotal) — see note in `getById`.
+        perPlayerCost: this.plannedPerPlayerCost(g.totalCost, g.spotsTotal),
+      };
+    });
   }
 
   async join(me: User, gameId: string) {
@@ -469,7 +496,7 @@ export class GamesService {
         return this.findOne(gameId);
       }
 
-      if (game.participants.length >= game.spotsTotal) {
+      if (game.participants.length + (await tx.gameReservation.count({ where: { gameId } })) >= game.spotsTotal) {
         throw new ConflictException('Game is full');
       }
 
@@ -481,9 +508,9 @@ export class GamesService {
 
       const updated = await tx.game.findUnique({
         where: { id: gameId },
-        include: { participants: true },
+        include: { participants: true, _count: { select: { reservations: true } } },
       });
-      if (updated && updated.participants.length >= updated.spotsTotal) {
+      if (updated && updated.participants.length + updated._count.reservations >= updated.spotsTotal) {
         await tx.game.update({ where: { id: gameId }, data: { status: 'FULL' } });
       }
 
@@ -549,9 +576,13 @@ export class GamesService {
 
       const updated = await tx.game.findUnique({
         where: { id: gameId },
-        include: { participants: true },
+        include: { participants: true, _count: { select: { reservations: true } } },
       });
-      if (updated && updated.status === 'FULL' && updated.participants.length < updated.spotsTotal) {
+      if (
+        updated &&
+        updated.status === 'FULL' &&
+        updated.participants.length + updated._count.reservations < updated.spotsTotal
+      ) {
         await tx.game.update({ where: { id: gameId }, data: { status: 'OPEN' } });
       }
       if (isHost) {
@@ -629,12 +660,13 @@ export class GamesService {
     if (patch.skillLevel) data.skillLevel = patch.skillLevel;
     if (typeof patch.spotsTotal === 'number') {
       const seated = await this.prisma.gameParticipant.count({ where: { gameId } });
+      const reserved = await this.prisma.gameReservation.count({ where: { gameId } });
       if (patch.spotsTotal < 2) {
         throw new BadRequestException('spotsTotal must be at least 2');
       }
-      if (patch.spotsTotal < seated) {
+      if (patch.spotsTotal < seated + reserved) {
         throw new BadRequestException(
-          `spotsTotal cannot be below current players (${seated})`,
+          `spotsTotal cannot be below current players (${seated + reserved})`,
         );
       }
       data.spotsTotal = patch.spotsTotal;
@@ -681,16 +713,16 @@ export class GamesService {
 
     // If capacity grew past current roster while FULL, reopen.
     if (typeof data.spotsTotal === 'number' || data.venueId) {
-      const seated = await this.prisma.gameParticipant.count({ where: { gameId } });
+      const { occupied } = await this.occupiedCounts(this.prisma, gameId);
       const spots =
         typeof data.spotsTotal === 'number' ? data.spotsTotal : game.spotsTotal;
-      if (game.status === 'FULL' && seated < spots) {
+      if (game.status === 'FULL' && occupied < spots) {
         await this.prisma.game.update({
           where: { id: gameId },
           data: { status: 'OPEN' },
         });
         await this.scheduler.notifyWaitlistSpotOpen(gameId).catch(() => undefined);
-      } else if (game.status === 'OPEN' && seated >= spots) {
+      } else if (game.status === 'OPEN' && occupied >= spots) {
         await this.prisma.game.update({
           where: { id: gameId },
           data: { status: 'FULL' },
@@ -823,7 +855,10 @@ export class GamesService {
       if (game.endAt.getTime() <= Date.now()) {
         throw new BadRequestException('Game has already ended');
       }
-      if (game.participants.length >= game.spotsTotal) {
+      if (
+        game.participants.length + (await tx.gameReservation.count({ where: { gameId } })) >=
+        game.spotsTotal
+      ) {
         throw new ConflictException('Game is full');
       }
 
@@ -839,9 +874,9 @@ export class GamesService {
 
       const updated = await tx.game.findUnique({
         where: { id: gameId },
-        include: { participants: true },
+        include: { participants: true, _count: { select: { reservations: true } } },
       });
-      if (updated && updated.participants.length >= updated.spotsTotal) {
+      if (updated && updated.participants.length + updated._count.reservations >= updated.spotsTotal) {
         await tx.game.update({ where: { id: gameId }, data: { status: 'FULL' } });
       }
 
@@ -910,7 +945,8 @@ export class GamesService {
     if (game.participants.some((p) => p.userId === me.id)) {
       throw new BadRequestException('You are already in this game');
     }
-    if (game.participants.length < game.spotsTotal && game.status === 'OPEN') {
+    const reserved = await this.prisma.gameReservation.count({ where: { gameId } });
+    if (game.participants.length + reserved < game.spotsTotal && game.status === 'OPEN') {
       throw new BadRequestException('Game already has free spots — join directly');
     }
 
@@ -1042,5 +1078,101 @@ export class GamesService {
       data: { coverImageUrl: null, coverImageUrl2: null },
     });
     return this.findOne(gameId);
+  }
+
+  /** Admin holds one anonymous seat. Other players only see “Incognito”. */
+  async addReservation(me: User, gameId: string, note?: string | null) {
+    if (me.role !== 'ADMIN') throw new ForbiddenException('Admin only');
+    const trimmed = note?.trim() ? note.trim().slice(0, 80) : null;
+
+    const becameFull = await this.prisma.$transaction(async (tx) => {
+      const game = await tx.game.findUnique({ where: { id: gameId } });
+      if (!game) throw new NotFoundException('Game not found');
+      if (game.status === 'CANCELLED' || game.status === 'FINISHED') {
+        throw new BadRequestException(`Cannot reserve on a ${game.status.toLowerCase()} game`);
+      }
+      const { occupied } = await this.occupiedCounts(tx, gameId);
+      if (occupied >= game.spotsTotal) {
+        throw new ConflictException('Game is full');
+      }
+      await tx.gameReservation.create({
+        data: { gameId, createdById: me.id, note: trimmed },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorId: me.id,
+          action: 'game.reserve',
+          targetType: 'game',
+          targetId: gameId,
+          meta: { note: trimmed },
+        },
+      });
+      const full = occupied + 1 >= game.spotsTotal;
+      if (full && game.status === 'OPEN') {
+        await tx.game.update({ where: { id: gameId }, data: { status: 'FULL' } });
+      }
+      return full;
+    });
+
+    if (becameFull) {
+      await this.invitations.refreshPendingInvitees(gameId).catch(() => undefined);
+      await this.scheduler.resetWaitlistNotifyFlags(gameId).catch(() => undefined);
+    }
+    return this.findOne(gameId);
+  }
+
+  async removeReservation(me: User, gameId: string, reservationId: string) {
+    if (me.role !== 'ADMIN') throw new ForbiddenException('Admin only');
+
+    const reopened = await this.prisma.$transaction(async (tx) => {
+      const game = await tx.game.findUnique({ where: { id: gameId } });
+      if (!game) throw new NotFoundException('Game not found');
+      const row = await tx.gameReservation.findUnique({ where: { id: reservationId } });
+      if (!row || row.gameId !== gameId) throw new NotFoundException('Reservation not found');
+      await tx.gameReservation.delete({ where: { id: reservationId } });
+      await tx.auditLog.create({
+        data: {
+          actorId: me.id,
+          action: 'game.unreserve',
+          targetType: 'game',
+          targetId: gameId,
+          meta: { reservationId },
+        },
+      });
+      const { occupied } = await this.occupiedCounts(tx, gameId);
+      const openAgain =
+        (game.status === 'FULL' || game.status === 'OPEN') && occupied < game.spotsTotal;
+      if (game.status === 'FULL' && occupied < game.spotsTotal) {
+        await tx.game.update({ where: { id: gameId }, data: { status: 'OPEN' } });
+      }
+      return openAgain && game.status === 'FULL';
+    });
+
+    if (reopened) {
+      await this.scheduler.notifyWaitlistSpotOpen(gameId).catch(() => undefined);
+    }
+    return this.findOne(gameId);
+  }
+
+  /** Notes stay admin-only. The public game payload has ids without notes. */
+  async listReservations(me: User, gameId: string) {
+    if (me.role !== 'ADMIN') throw new ForbiddenException('Admin only');
+    const game = await this.prisma.game.findUnique({
+      where: { id: gameId },
+      select: { id: true },
+    });
+    if (!game) throw new NotFoundException('Game not found');
+    const rows = await this.prisma.gameReservation.findMany({
+      where: { gameId },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, note: true, createdAt: true },
+    });
+    return {
+      items: rows.map((r) => ({
+        id: r.id,
+        note: r.note,
+        createdAt: r.createdAt.toISOString(),
+      })),
+    };
   }
 }

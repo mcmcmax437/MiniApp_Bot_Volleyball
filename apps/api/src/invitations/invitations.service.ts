@@ -274,8 +274,9 @@ export class InvitationsService {
     }
 
     await this.prisma.$transaction(async (tx) => {
+      const reserved = await tx.gameReservation.count({ where: { gameId: inv.gameId } });
       const count = await tx.gameParticipant.count({ where: { gameId: inv.gameId } });
-      if (count >= inv.game.spotsTotal) {
+      if (count + reserved >= inv.game.spotsTotal) {
         throw new ConflictException('Game is full');
       }
 
@@ -286,7 +287,7 @@ export class InvitationsService {
       });
 
       const after = await tx.gameParticipant.count({ where: { gameId: inv.gameId } });
-      if (after >= inv.game.spotsTotal) {
+      if (after + reserved >= inv.game.spotsTotal) {
         await tx.game.update({
           where: { id: inv.gameId },
           data: { status: 'FULL' },
@@ -427,7 +428,7 @@ export class InvitationsService {
         game: {
           include: {
             venue: { select: { id: true, name: true, address: true, city: true } },
-            _count: { select: { participants: true } },
+            _count: { select: { participants: true, reservations: true } },
           },
         },
       },
@@ -435,7 +436,10 @@ export class InvitationsService {
 
     // Hide invites for lobbies that are already at capacity.
     return rows
-      .filter((inv) => inv.game._count.participants < inv.game.spotsTotal)
+      .filter(
+        (inv) =>
+          inv.game._count.participants + inv.game._count.reservations < inv.game.spotsTotal,
+      )
       .map(({ game, ...rest }) => {
         const { _count, ...gameRest } = game;
         return { ...rest, game: gameRest };

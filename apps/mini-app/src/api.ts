@@ -150,6 +150,8 @@ export interface ApiGame {
    */
   participants: ApiGameParticipantUser[];
   participantsCount: number;
+  /** Admin-held anonymous seats. Counts toward capacity. */
+  reservedCount?: number;
   perPlayerCost: number;
 }
 
@@ -166,6 +168,8 @@ export interface ApiGameDetail extends Omit<ApiGame, 'participants'> {
     user: ApiGameParticipantUser;
     joinedAt: string;
   }>;
+  /** Public hold ids. Notes are admin-only via `getGameReservations`. */
+  reservations?: Array<{ id: string; createdAt: string }>;
   joinRequests?: Array<{
     id: string;
     userId: string;
@@ -191,6 +195,12 @@ export interface ApiGameDetail extends Omit<ApiGame, 'participants'> {
     isPaid: boolean;
     paidAt: string | null;
   }>;
+}
+
+export interface GameReservationItem {
+  id: string;
+  note: string | null;
+  createdAt: string;
 }
 
 export interface CreateGamePayload {
@@ -657,6 +667,18 @@ export function useApi() {
 
     clearGameCovers: (id: string) =>
       http<ApiGameDetail>(`/games/${id}/covers`, { method: 'DELETE' }, initData),
+
+    getGameReservations: (id: string) =>
+      http<{ items: GameReservationItem[] }>(`/games/${id}/reservations`, { method: 'GET' }, initData),
+    addGameReservation: (id: string, note?: string) =>
+      http<ApiGameDetail>(`/games/${id}/reservations`, {
+        method: 'POST',
+        body: JSON.stringify({ note: note || undefined }),
+      }, initData),
+    removeGameReservation: (id: string, reservationId: string) =>
+      http<ApiGameDetail>(`/games/${id}/reservations/${reservationId}`, {
+        method: 'DELETE',
+      }, initData),
 
     defaultCity: () =>
       http<{
