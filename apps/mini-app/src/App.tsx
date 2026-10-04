@@ -290,6 +290,7 @@ export function App() {
           <Route path="/admin/games" element={<AdminGate><AdminPage subPage="games" /></AdminGate>} />
           <Route path="/admin/venues" element={<AdminGate><AdminPage subPage="venues" /></AdminGate>} />
           <Route path="/admin/reports" element={<AdminGate><AdminPage subPage="reports" /></AdminGate>} />
+          <Route path="/admin/ratings" element={<AdminGate><AdminPage subPage="ratings" /></AdminGate>} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/blacklist" element={<BlacklistPage />} />
           <Route path="/invitations" element={<InvitationsPage />} />

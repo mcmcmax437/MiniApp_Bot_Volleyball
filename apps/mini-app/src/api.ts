@@ -268,6 +268,30 @@ export interface CreateVenuePayload {
 }
 
 // Admin types (subset of fields used by the admin page)
+export interface AdminRatingsGiven {
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string | null;
+    username: string | null;
+    photoUrl: string | null;
+  };
+  items: Array<{
+    id: string;
+    skillLevel: SkillLevel;
+    note: string | null;
+    createdAt: string;
+    evaluatee: {
+      id: string;
+      firstName: string;
+      lastName: string | null;
+      username: string | null;
+      photoUrl: string | null;
+    };
+    game: { id: string; startAt: string; venueName: string };
+  }>;
+}
+
 export interface AdminUserListItem {
   items: Array<{
     id: string;
@@ -712,6 +736,8 @@ export function useApi() {
     },
     adminGetUser: (id: string) =>
       http<AdminUserDetail>(`/admin/users/${id}`, { method: 'GET' }, initData),
+    adminListRatingsGiven: (userId: string) =>
+      http<AdminRatingsGiven>(`/admin/users/${userId}/ratings-given`, { method: 'GET' }, initData),
     adminListUserActivity: (
       q: { take?: number; skip?: number; q?: string } = {},
     ) => {

@@ -590,6 +590,61 @@ export class AdminService {
       .slice(0, 200);
   }
 
+  /** Exact skill scores one player gave to teammates, newest first. */
+  async listRatingsGiven(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        username: true,
+        photoUrl: true,
+      },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    const rows = await this.prisma.gameEvaluation.findMany({
+      where: { evaluatorId: userId },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      include: {
+        evaluatee: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+            photoUrl: true,
+          },
+        },
+        game: {
+          select: {
+            id: true,
+            startAt: true,
+            venue: { select: { name: true } },
+          },
+        },
+      },
+    });
+
+    return {
+      user,
+      items: rows.map((r) => ({
+        id: r.id,
+        skillLevel: r.skillLevel,
+        note: r.note,
+        createdAt: r.createdAt.toISOString(),
+        evaluatee: r.evaluatee,
+        game: {
+          id: r.game.id,
+          startAt: r.game.startAt.toISOString(),
+          venueName: r.game.venue.name,
+        },
+      })),
+    };
+  }
+
   private async log(
     actorId: string,
     action: string,

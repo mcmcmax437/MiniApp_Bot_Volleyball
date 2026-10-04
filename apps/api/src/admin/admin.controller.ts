@@ -67,6 +67,11 @@ export class AdminController {
     return this.admin.getUser(id);
   }
 
+  @Get('users/:id/ratings-given')
+  ratingsGiven(@Param('id') id: string) {
+    return this.admin.listRatingsGiven(id);
+  }
+
   private requireMe(me: User | null): User {
     if (!me) throw new UnauthorizedException('User not found');
     return me;

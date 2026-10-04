@@ -10,6 +10,7 @@ const SUB_PAGES: { to: string; titleKey: string; icon: IconName; descKey: string
   { to: "/admin/games", titleKey: "admin.games", icon: "tennis-ball", descKey: "admin.index.games" },
   { to: "/admin/venues", titleKey: "admin.venues", icon: "building-01", descKey: "admin.index.venues" },
   { to: "/admin/reports", titleKey: "admin.reports", icon: "flag-01", descKey: "admin.index.reports" },
+  { to: "/admin/ratings", titleKey: "admin.ratings", icon: "award-01", descKey: "admin.index.ratings" },
 ];
 
 export function AdminIndexPage() {

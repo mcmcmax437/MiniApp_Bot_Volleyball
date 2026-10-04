@@ -622,3 +622,30 @@
   color: var(--text-tertiary);
 }
 
+button.adminRatings-pick {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+button.adminRatings-pick.isActive {
+  border-color: var(--brand-300);
+}
+
+.adminRatings-hint {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+}
+
+.adminRatings-who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 10px;
+}
+
+
