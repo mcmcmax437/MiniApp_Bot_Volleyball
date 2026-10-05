@@ -641,6 +641,14 @@ button.adminRatings-pick.isActive {
   line-height: 1.4;
 }
 
+.adminRatings-count {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
 .adminRatings-who {
   display: flex;
   align-items: center;

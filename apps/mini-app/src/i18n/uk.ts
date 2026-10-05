@@ -442,6 +442,7 @@ export const uk: Record<string, string> = {
   'admin.ratingsPick': 'Знайдіть гравця, щоб побачити оцінки, які він поставив.',
   'admin.ratingsFrom': 'Оцінки, які поставив цей гравець',
   'admin.ratingsEmpty': 'Цей гравець ще нікого не оцінював.',
+  'admin.ratingsCount': '{n} оцінок',
   'admin.activityEmpty': 'Немає користувачів за вашим пошуком.',
   'admin.activityShowing': 'Показано {shown} з {total}',
   'admin.stat.entriesDayShort': 'День',

@@ -39,6 +39,12 @@ export class AdminController {
     return this.admin.getStats();
   }
 
+  /** Players ranked by how many scores they gave. */
+  @Get('ratings/givers')
+  ratingGivers(@Query('q') q?: string) {
+    return this.admin.listRatingGivers(q);
+  }
+
   // ---------- Users ----------
   @Get('users')
   listUsers(@Query() q: AdminListQuery) {

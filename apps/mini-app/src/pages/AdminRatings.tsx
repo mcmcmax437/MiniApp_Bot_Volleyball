@@ -20,9 +20,8 @@ export function AdminRatingsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const usersQ = useQuery(
-    ['admin', 'ratings-users', search],
-    () => api.adminListUsers({ take: 20, q: search.trim() }),
-    { enabled: search.trim().length >= 1 },
+    ['admin', 'rating-givers', search],
+    () => api.adminListRatingGivers(search),
   );
 
   const ratingsQ = useQuery(
@@ -45,7 +44,8 @@ export function AdminRatingsPage() {
         />
       </div>
 
-      {search.trim().length >= 1 && usersQ.data && (
+      {usersQ.isLoading && <div className="empty">{t('common.loading')}</div>}
+      {usersQ.data && (
         <div className="adminItems">
           {usersQ.data.items.map((u) => {
             const active = u.id === selectedId;
@@ -60,6 +60,9 @@ export function AdminRatingsPage() {
                 <div className="adminItem-info">
                   <div className="adminItem-title">{displayName(u)}</div>
                 </div>
+                <span className="adminRatings-count">
+                  {t('admin.ratingsCount', { n: u.givenCount })}
+                </span>
               </button>
             );
           })}
@@ -67,10 +70,6 @@ export function AdminRatingsPage() {
             <div className="empty-state-title">{t('admin.activityEmpty')}</div>
           )}
         </div>
-      )}
-
-      {!selectedId && (
-        <p className="adminRatings-hint">{t('admin.ratingsPick')}</p>
       )}
 
       {selectedId && ratingsQ.isLoading && (

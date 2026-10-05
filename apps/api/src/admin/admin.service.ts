@@ -590,6 +590,51 @@ export class AdminService {
       .slice(0, 200);
   }
 
+  /**
+   * Players ordered by how many skill scores they have given.
+   * With no search, only people who gave at least one score.
+   * A search still sorts matches by that count (zeros last).
+   */
+  async listRatingGivers(q?: string) {
+    const grouped = await this.prisma.gameEvaluation.groupBy({
+      by: ['evaluatorId'],
+      _count: { _all: true },
+    });
+    const countByUser = new Map(grouped.map((g) => [g.evaluatorId, g._count._all]));
+
+    const needle = q?.trim();
+    const where: { id?: { in: string[] }; OR?: object[] } = {};
+    if (needle) {
+      where.OR = [
+        { firstName: { contains: needle } },
+        { lastName: { contains: needle } },
+        { username: { contains: needle } },
+      ];
+    } else {
+      const ids = [...countByUser.keys()];
+      if (!ids.length) return { items: [] };
+      where.id = { in: ids };
+    }
+
+    const users = await this.prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        username: true,
+        photoUrl: true,
+      },
+      take: needle ? 50 : 200,
+    });
+
+    const items = users
+      .map((u) => ({ ...u, givenCount: countByUser.get(u.id) ?? 0 }))
+      .sort((a, b) => b.givenCount - a.givenCount || a.firstName.localeCompare(b.firstName));
+
+    return { items };
+  }
+
   /** Exact skill scores one player gave to teammates, newest first. */
   async listRatingsGiven(userId: string) {
     const user = await this.prisma.user.findUnique({

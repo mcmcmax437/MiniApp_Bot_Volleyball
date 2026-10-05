@@ -463,6 +463,7 @@ export const en: Record<string, string> = {
   'admin.ratingsPick': 'Search and pick a player to see the scores they gave.',
   'admin.ratingsFrom': 'Scores this player gave',
   'admin.ratingsEmpty': 'This player has not rated anyone yet.',
+  'admin.ratingsCount': '{n} given',
   'admin.activityEmpty': 'No users match your search.',
   'admin.activityShowing': 'Showing {shown} of {total}',
   'admin.stat.entriesDayShort': 'Day',

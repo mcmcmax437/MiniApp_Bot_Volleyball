@@ -430,6 +430,7 @@ export const pl: Record<string, string> = {
   'admin.ratingsPick': 'Wyszukaj gracza, żeby zobaczyć oceny, które wystawił.',
   'admin.ratingsFrom': 'Oceny wystawione przez tego gracza',
   'admin.ratingsEmpty': 'Ten gracz nikogo jeszcze nie ocenił.',
+  'admin.ratingsCount': '{n} ocen',
   'admin.activityEmpty': 'Brak użytkowników pasujących do wyszukiwania.',
   'admin.activityShowing': 'Pokazano {shown} z {total}',
   'admin.stat.entriesDayShort': 'Dzień',

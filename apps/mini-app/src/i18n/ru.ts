@@ -430,6 +430,7 @@ export const ru: Record<string, string> = {
   'admin.ratingsPick': 'Найдите игрока, чтобы увидеть оценки, которые он поставил.',
   'admin.ratingsFrom': 'Оценки, которые поставил этот игрок',
   'admin.ratingsEmpty': 'Этот игрок ещё никого не оценивал.',
+  'admin.ratingsCount': '{n} оценок',
   'admin.activityEmpty': 'Нет пользователей по вашему поиску.',
   'admin.activityShowing': 'Показано {shown} из {total}',
   'admin.stat.entriesDayShort': 'День',

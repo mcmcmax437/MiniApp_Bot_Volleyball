@@ -738,6 +738,21 @@ export function useApi() {
       http<AdminUserDetail>(`/admin/users/${id}`, { method: 'GET' }, initData),
     adminListRatingsGiven: (userId: string) =>
       http<AdminRatingsGiven>(`/admin/users/${userId}/ratings-given`, { method: 'GET' }, initData),
+    adminListRatingGivers: (q?: string) => {
+      const params = new URLSearchParams();
+      if (q?.trim()) params.set('q', q.trim());
+      const qs = params.toString();
+      return http<{
+        items: Array<{
+          id: string;
+          firstName: string;
+          lastName: string | null;
+          username: string | null;
+          photoUrl: string | null;
+          givenCount: number;
+        }>;
+      }>(`/admin/ratings/givers${qs ? `?${qs}` : ''}`, { method: 'GET' }, initData);
+    },
     adminListUserActivity: (
       q: { take?: number; skip?: number; q?: string } = {},
     ) => {
