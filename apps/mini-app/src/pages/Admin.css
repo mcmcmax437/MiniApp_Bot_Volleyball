@@ -622,6 +622,21 @@
   color: var(--text-tertiary);
 }
 
+.adminRatings-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.adminRatings-scores {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 4px 16px;
+  padding-left: 10px;
+  border-left: 2px solid var(--border);
+}
+
 button.adminRatings-pick {
   width: 100%;
   text-align: left;
