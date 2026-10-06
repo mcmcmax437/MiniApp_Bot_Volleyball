@@ -8,7 +8,7 @@ import { Photo } from "../Photo";
 import { SkillBadge } from "../SkillBadge";
 import { useI18n } from "../i18n";
 import { reverseGeocode } from "../geo";
-import { effectiveSkillLevel } from "../lib/skill";
+import { effectiveSkillLevel, hasSkillBadge } from "../lib/skill";
 import { isEvalDone } from "../lib/eval-done";
 import { FILTER_GAMES_BY_CITY } from "../lib/city-filter";
 import { isGameLive } from "../lib/game-status";
@@ -245,12 +245,13 @@ export function HomePage() {
             )}
           </div>
           <div className="home-hero-meta">
-            {effectiveSkillLevel(meQ.data) ? (
+            {hasSkillBadge(meQ.data) ? (
               // Display-only. Self-level is set once during first onboarding;
               // afterwards peer ratings adjust `evaluatedSkillLevel`.
               <div className="home-hero-skill" aria-label={t('profile.skill')}>
                 <SkillBadge
-                  level={effectiveSkillLevel(meQ.data)!}
+                  level={effectiveSkillLevel(meQ.data)}
+                  wheelchair={!!meQ.data?.showWheelchairBadge}
                   size="sm"
                 />
               </div>

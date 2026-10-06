@@ -155,6 +155,7 @@ export class InvitationsController {
         role: true,
         skillLevel: true,
         evaluatedSkillLevel: true,
+            showWheelchairBadge: true,
       },
     });
 
@@ -184,6 +185,7 @@ export class InvitationsController {
         role: true,
         skillLevel: true,
         evaluatedSkillLevel: true,
+            showWheelchairBadge: true,
         age: true,
         city: true,
         isBanned: true,

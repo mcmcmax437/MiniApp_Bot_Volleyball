@@ -28,6 +28,11 @@ export class AdminUpdateUserDto {
   @IsOptional() @IsString() city?: string;
   @IsOptional() @IsInt() @Min(5) @Max(120) age?: number;
   @IsOptional() @IsIn([...SKILL_LEVELS, null]) skillLevel?: (typeof SKILL_LEVELS)[number] | null;
+  /** Admin override for the displayed (evaluated) score. Also locks peer overwrite. */
+  @IsOptional() @IsIn([...SKILL_LEVELS, null]) evaluatedSkillLevel?: (typeof SKILL_LEVELS)[number] | null;
+  @IsOptional() @IsBoolean() skillLockedByAdmin?: boolean;
+  /** Replace S1–S6 in the skill circle with a wheelchair icon. */
+  @IsOptional() @IsBoolean() showWheelchairBadge?: boolean;
   @IsOptional() @IsIn(['USER', 'ADMIN']) role?: 'USER' | 'ADMIN';
 
   // ===== v3 =====

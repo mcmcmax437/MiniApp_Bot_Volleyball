@@ -22,6 +22,8 @@ export class BlacklistService {
             username: true,
             photoUrl: true,
             skillLevel: true,
+          evaluatedSkillLevel: true,
+          showWheelchairBadge: true,
           },
         },
       },

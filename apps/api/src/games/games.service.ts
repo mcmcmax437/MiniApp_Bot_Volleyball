@@ -196,6 +196,7 @@ export class GamesService {
             // Weighted (peer-corrected) level — the client badge prefers
             // this over the self-declared one. See skill-aggregator.ts.
             evaluatedSkillLevel: true,
+            showWheelchairBadge: true,
             photoUrl: true,
             role: true,
           },
@@ -212,6 +213,7 @@ export class GamesService {
                 role: true,
                 skillLevel: true,
                 evaluatedSkillLevel: true,
+            showWheelchairBadge: true,
               },
             },
           },
@@ -238,6 +240,7 @@ export class GamesService {
                 role: true,
                 skillLevel: true,
                 evaluatedSkillLevel: true,
+            showWheelchairBadge: true,
               },
             },
           },
@@ -390,6 +393,7 @@ export class GamesService {
             // that the client badge prefers over the self-declared one.
             // See apps/api/src/evaluations/skill-aggregator.ts.
             evaluatedSkillLevel: true,
+            showWheelchairBadge: true,
             photoUrl: true,
             role: true,
           },
@@ -412,6 +416,7 @@ export class GamesService {
                 role: true,
                 skillLevel: true,
                 evaluatedSkillLevel: true,
+            showWheelchairBadge: true,
               },
             },
           },
@@ -810,6 +815,7 @@ export class GamesService {
             role: true,
             skillLevel: true,
             evaluatedSkillLevel: true,
+            showWheelchairBadge: true,
           },
         },
       },

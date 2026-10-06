@@ -55,6 +55,7 @@ export const pl: Record<string, string> = {
     'Głębokie rozumienie taktyki, mocne zagrywki, wyćwiczone kombinacje.',
   'skill.LEVEL_6.desc':
     'Byli zawodowcy, mistrzowie sportu, doskonała technika, błyskawiczna praca zespołowa.',
+  'skill.wheelchair': 'Zawodnik na wózku',
 
   'home.title': 'Główna',
   'home.hello': 'Cześć, {name}!',
@@ -393,6 +394,13 @@ export const pl: Record<string, string> = {
   'admin.unban': 'Odblokuj',
   'admin.banReason': 'Powód blokady',
   'admin.userDetails': 'Szczegóły użytkownika',
+  'admin.userSkill': 'Poziom umiejętności',
+  'admin.userSkillHint': 'Ustaw wynik na odznace. Blokada chroni go przed ocenami graczy.',
+  'admin.userSkillSave': 'Zapisz wynik',
+  'admin.userSkillSaved': 'Wynik zapisany.',
+  'admin.userSkillClear': 'Wyczyść wynik',
+  'admin.userSkillLock': 'Zablokuj przed ocenami graczy',
+  'admin.userWheelchair': 'Pokaż ikonę wózka zamiast liczby',
   'admin.userActivity': 'Aktywność',
   'admin.appUsage': 'Użycie aplikacji',
   'admin.stat.visited': 'Odwiedzone',

@@ -99,7 +99,8 @@ export type IconName =
   | "ai-generate"
   | "magic-wand-01"
   | "loading"
-  | "save-01";
+  | "save-01"
+  | "wheelchair";
 
 interface IconProps {
   name: IconName;

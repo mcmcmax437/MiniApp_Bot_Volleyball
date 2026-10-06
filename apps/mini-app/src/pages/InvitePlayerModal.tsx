@@ -7,7 +7,7 @@ import { Modal } from '../Modal';
 import { Photo } from '../Photo';
 import { SkillBadge } from '../SkillBadge';
 import { AdminCrownBadge, isAdminUser } from '../AdminCrownBadge';
-import { effectiveSkillLevel } from '../lib/skill';
+import { effectiveSkillLevel, hasSkillBadge } from '../lib/skill';
 import { useTelegram } from '../tg';
 import './InvitePlayerModal.css';
 
@@ -351,7 +351,14 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
                     ) : null
                   }
                   bottomRightBadge={
-                    lvl ? <SkillBadge level={lvl} size="sm" className="skillBadge-on-photo" /> : null
+                    hasSkillBadge(u) ? (
+                      <SkillBadge
+                        level={lvl}
+                        wheelchair={!!u.showWheelchairBadge}
+                        size="sm"
+                        className="skillBadge-on-photo"
+                      />
+                    ) : null
                   }
                 />
                 <div className="inviteRow-body">
