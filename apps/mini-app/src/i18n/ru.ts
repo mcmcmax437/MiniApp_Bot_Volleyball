@@ -55,6 +55,7 @@ export const ru: Record<string, string> = {
     'Глубокое тактическое понимание, мощные подачи, отработанные комбинации.',
   'skill.LEVEL_6.desc':
     'Бывшие профи, мастера спорта, отличная техника, молниеносная командная работа.',
+  'skill.wheelchair': 'Спортсмен на коляске',
 
   'home.title': 'Главная',
   'home.hello': 'Привет, {name}!',
@@ -393,6 +394,13 @@ export const ru: Record<string, string> = {
   'admin.unban': 'Разблокировать',
   'admin.banReason': 'Причина блокировки',
   'admin.userDetails': 'Данные пользователя',
+  'admin.userSkill': 'Уровень навыка',
+  'admin.userSkillHint': 'Задайте балл на бейдже. Блокировка не даёт оценкам игроков его менять.',
+  'admin.userSkillSave': 'Сохранить балл',
+  'admin.userSkillSaved': 'Балл сохранён.',
+  'admin.userSkillClear': 'Очистить балл',
+  'admin.userSkillLock': 'Заблокировать от оценок игроков',
+  'admin.userWheelchair': 'Показывать иконку коляски вместо числа',
   'admin.userActivity': 'Активность',
   'admin.appUsage': 'Использование приложения',
   'admin.stat.visited': 'Посетил',

@@ -900,7 +900,9 @@ button.btn[type="submit"],
 .skillBadge-level_4 { background: #9a7b4a; color: #faf6f0; border-color: rgba(255,255,255,0.12); }
 .skillBadge-level_5 { background: #9a6a52; color: #faf4f0; border-color: rgba(255,255,255,0.12); }
 .skillBadge-level_6 { background: #8a7a9a; color: #f6f4fa; border-color: rgba(255,255,255,0.12); }
+.skillBadge-wheelchair { background: #4a7c9b; color: #f0f8fc; border-color: rgba(255,255,255,0.14); }
 .skillBadge-empty { color: var(--text-muted); }
+.skillBadge-icon { display: inline-flex; line-height: 1; }
 
 /* Page header — used on every page except Home (which has its own hero) */
 .page-header {

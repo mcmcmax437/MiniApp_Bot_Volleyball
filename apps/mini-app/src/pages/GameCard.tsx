@@ -6,7 +6,7 @@ import type { ApiGame, ApiGameParticipantUser } from "../api";
 import { SkillBadge } from "../SkillBadge";
 import { AdminCrownBadge, isAdminUser } from "../AdminCrownBadge";
 import { useI18n } from "../i18n";
-import { effectiveSkillLevel } from "../lib/skill";
+import { effectiveSkillLevel, hasSkillBadge } from "../lib/skill";
 import { resolveGameCover } from "../lib/play-type";
 import { formatGameDateOnly, formatGameTimeOnly } from "../lib/datetime";
 import { gameDisplayStatus, type GameDisplayStatus } from "../lib/game-status";
@@ -210,7 +210,16 @@ export function GameCard({ game }: GameCardProps) {
                               <AdminCrownBadge title={t('profile.status.admin')} size="sm" />
                             ) : null
                           }
-                          bottomRightBadge={lvl ? <SkillBadge level={lvl} size="sm" className="skillBadge-on-photo" /> : null}
+                          bottomRightBadge={
+                            hasSkillBadge(u) ? (
+                              <SkillBadge
+                                level={lvl}
+                                wheelchair={!!u.showWheelchairBadge}
+                                size="sm"
+                                className="skillBadge-on-photo"
+                              />
+                            ) : null
+                          }
                         />
                       </button>
                     );

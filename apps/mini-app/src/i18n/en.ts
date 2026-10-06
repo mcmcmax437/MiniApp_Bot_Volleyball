@@ -63,6 +63,7 @@ export const en: Record<string, string> = {
   'skill.LEVEL_4.desc': 'Confident play with the setter, first-tempo attacks, powerful & tactical serves.',
   'skill.LEVEL_5.desc': 'Deep tactical understanding, powerful serves / gliders, well-rehearsed combinations.',
   'skill.LEVEL_6.desc': 'Former pro athletes, MS / CMS holders, excellent technique, lightning-fast teamwork.',
+  'skill.wheelchair': 'Wheelchair athlete',
 
   // ===== Home =====
   'home.title': 'Home',
@@ -426,6 +427,13 @@ export const en: Record<string, string> = {
   'admin.unban': 'Unban',
   'admin.banReason': 'Ban reason',
   'admin.userDetails': 'User details',
+  'admin.userSkill': 'Skill score',
+  'admin.userSkillHint': 'Set the score shown on their badge. Lock keeps peer ratings from changing it.',
+  'admin.userSkillSave': 'Save score',
+  'admin.userSkillSaved': 'Score saved.',
+  'admin.userSkillClear': 'Clear score',
+  'admin.userSkillLock': 'Lock against peer ratings',
+  'admin.userWheelchair': 'Show wheelchair icon instead of number',
   'admin.userActivity': 'Activity',
   'admin.appUsage': 'App usage',
   'admin.stat.visited': 'Visited',

@@ -108,6 +108,11 @@ model User {
   // Aggregated skill from post-game evaluations (kept separate from self-declared skillLevel)
   evaluatedSkillLevel SkillLevel?
   evaluatedAt     DateTime?
+  /// When true, peer recalibration must not overwrite `evaluatedSkillLevel`
+  /// (admin has set the displayed score manually).
+  skillLockedByAdmin Boolean @default(false)
+  /// When true, skill badges show a wheelchair icon instead of S1–S6.
+  showWheelchairBadge Boolean @default(false)
 
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt

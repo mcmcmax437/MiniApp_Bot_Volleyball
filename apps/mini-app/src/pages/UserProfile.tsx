@@ -7,7 +7,7 @@ import { Photo } from '../Photo';
 import { SkillBadge } from '../SkillBadge';
 import { AdminCrownBadge, isAdminUser } from '../AdminCrownBadge';
 import { useI18n } from '../i18n';
-import { effectiveSkillLevel } from '../lib/skill';
+import { effectiveSkillLevel, hasSkillBadge } from '../lib/skill';
 import { confirmDialog } from '../lib/confirm';
 import './Profile.css';
 import './UserProfile.css';
@@ -117,9 +117,14 @@ export function UserProfilePage() {
               <span className="profileHero-username">@{u.username}</span>
             </div>
           )}
-          {level && (
+          {hasSkillBadge(u) && (
             <div className="profileHero-skillBig" aria-label={t('profile.skill')}>
-              <SkillBadge level={level} size="xl" withLabel />
+              <SkillBadge
+                level={level}
+                wheelchair={!!u.showWheelchairBadge}
+                size="xl"
+                withLabel
+              />
             </div>
           )}
         </div>

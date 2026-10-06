@@ -111,6 +111,8 @@ export class MeController {
       language: (u as any).language ?? null,
       evaluatedSkillLevel: (u as any).evaluatedSkillLevel ?? null,
       evaluatedAt: (u as any).evaluatedAt ?? null,
+      skillLockedByAdmin: !!(u as any).skillLockedByAdmin,
+      showWheelchairBadge: !!(u as any).showWheelchairBadge,
       isBanned: u.isBanned,
       bannedReason: u.bannedReason,
     };

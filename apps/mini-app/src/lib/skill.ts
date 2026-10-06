@@ -10,6 +10,7 @@ import type { ApiUser, SkillLevel } from '../api';
 type WithLevels = {
   skillLevel?: SkillLevel | null;
   evaluatedSkillLevel?: SkillLevel | null;
+  showWheelchairBadge?: boolean | null;
 };
 
 /**
@@ -28,3 +29,11 @@ export function effectiveSkillLevel(
   if (!user) return null;
   return (user.evaluatedSkillLevel ?? user.skillLevel) ?? null;
 }
+
+/** True when the skill pill should render (number and/or wheelchair). */
+export function hasSkillBadge(user: WithLevels | null | undefined): boolean {
+  if (!user) return false;
+  return !!user.showWheelchairBadge || effectiveSkillLevel(user) != null;
+}
+
+export type { WithLevels };

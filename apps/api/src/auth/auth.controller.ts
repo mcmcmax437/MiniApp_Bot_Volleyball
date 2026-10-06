@@ -67,6 +67,8 @@ export class AuthController {
       language: u.language ?? null,
       evaluatedSkillLevel: u.evaluatedSkillLevel ?? null,
       evaluatedAt: u.evaluatedAt ?? null,
+      skillLockedByAdmin: !!u.skillLockedByAdmin,
+      showWheelchairBadge: !!u.showWheelchairBadge,
       isBanned: u.isBanned ?? false,
       bannedReason: u.bannedReason ?? null,
     };

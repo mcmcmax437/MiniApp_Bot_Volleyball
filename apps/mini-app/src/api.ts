@@ -24,6 +24,7 @@ export interface InviteSearchUser {
   photoUrl: string | null;
   skillLevel: SkillLevel | null;
   evaluatedSkillLevel?: SkillLevel | null;
+  showWheelchairBadge?: boolean;
   role?: UserRole;
 }
 
@@ -37,6 +38,7 @@ export interface PublicUserProfile {
   role: UserRole;
   skillLevel: SkillLevel | null;
   evaluatedSkillLevel: SkillLevel | null;
+  showWheelchairBadge?: boolean;
   age: number | null;
   city: string;
   gamesHosted: number;
@@ -91,6 +93,10 @@ export interface ApiUser {
   language: Language | null;
   evaluatedSkillLevel: SkillLevel | null;
   evaluatedAt: string | null;
+  /** Admin locked the displayed score against peer recalibration. */
+  skillLockedByAdmin: boolean;
+  /** Skill badge shows a wheelchair icon instead of S1–S6. */
+  showWheelchairBadge: boolean;
   isBanned: boolean;
   bannedReason: string | null;
 }
@@ -118,6 +124,8 @@ export interface ApiGameParticipantUser {
   skillLevel: SkillLevel | null;
   /** Weighted (peer-corrected) level, computed by the backend. */
   evaluatedSkillLevel: SkillLevel | null;
+  /** When true, skill badges show a wheelchair icon instead of S1–S6. */
+  showWheelchairBadge?: boolean;
   /** Present on game/invite payloads so clients can show the admin crown. */
   role?: UserRole;
 }
@@ -186,6 +194,7 @@ export interface ApiGameDetail extends Omit<ApiGame, 'participants'> {
       role?: UserRole;
       skillLevel: SkillLevel | null;
       evaluatedSkillLevel?: SkillLevel | null;
+      showWheelchairBadge?: boolean;
     };
   }>;
   invitations?: GameSentInvitation[];
@@ -310,6 +319,8 @@ export interface AdminUserListItem {
     language: string | null;
     isBanned: boolean;
     bannedReason: string | null;
+    skillLockedByAdmin?: boolean;
+    showWheelchairBadge?: boolean;
     createdAt: string;
   }>;
   total: number;
@@ -405,6 +416,8 @@ export interface AdminUserDetail {
   isBanned: boolean;
   bannedReason: string | null;
   bannedAt: string | null;
+  skillLockedByAdmin?: boolean;
+  showWheelchairBadge?: boolean;
   createdAt: string;
   stats: {
     gamesAttended: number;
@@ -446,7 +459,16 @@ export interface BlacklistEntry {
   blockedId: string;
   reason: string | null;
   createdAt: string;
-  user: { id: string; firstName: string; lastName: string | null; username: string | null; photoUrl: string | null; skillLevel: SkillLevel | null };
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string | null;
+    username: string | null;
+    photoUrl: string | null;
+    skillLevel: SkillLevel | null;
+    evaluatedSkillLevel?: SkillLevel | null;
+    showWheelchairBadge?: boolean;
+  };
 }
 
 export interface ReportDto {
@@ -534,6 +556,7 @@ export interface EvaluationCandidate {
   role?: UserRole;
   skillLevel: SkillLevel | null;
   evaluatedSkillLevel: SkillLevel | null;
+  showWheelchairBadge?: boolean;
   alreadyRated: boolean;
   ratedAs: SkillLevel | null;
 }
@@ -772,7 +795,23 @@ export function useApi() {
         initData,
       );
     },
-    adminUpdateUser: (id: string, patch: Record<string, unknown>) =>
+    adminUpdateUser: (
+      id: string,
+      patch: {
+        skillLevel?: SkillLevel | null;
+        evaluatedSkillLevel?: SkillLevel | null;
+        skillLockedByAdmin?: boolean;
+        showWheelchairBadge?: boolean;
+        firstName?: string;
+        lastName?: string | null;
+        username?: string | null;
+        city?: string;
+        age?: number;
+        role?: UserRole;
+        isBanned?: boolean;
+        bannedReason?: string | null;
+      },
+    ) =>
       http<ApiUser>(`/admin/users/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(patch),
