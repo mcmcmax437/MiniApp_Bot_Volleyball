@@ -58,6 +58,7 @@ export class AuthController {
       lng: u.lng,
       reminderOffsets: u.reminderOffsets,
       photoUrl: u.photoUrl ?? null,
+      savedCoverImageUrl: u.savedCoverImageUrl ?? null,
       role: u.role ?? 'USER',
       isSuperAdmin: this.isSuperAdmin(u.telegramId),
       // v3 fields — kept in sync with MeController.toPublicUser so the

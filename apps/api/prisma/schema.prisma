@@ -96,6 +96,9 @@ model User {
   reminderOffsets Json
   // Telegram profile photo URL, refreshed on every login
   photoUrl        String?
+  /// Host's reusable court cover (one photo). Copied onto new games so the
+  /// host does not re-upload when creating another game.
+  savedCoverImageUrl String?  @db.VarChar(500)
   role            UserRole    @default(USER)
   // v3 fields:
   language        String? // IETF tag e.g. "uk", "pl", "en", "ru"

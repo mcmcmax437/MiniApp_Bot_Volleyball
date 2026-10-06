@@ -83,6 +83,8 @@ export interface ApiUser {
   lng: number | null;
   reminderOffsets: number[];
   photoUrl: string | null;
+  /** Host's reusable court cover — prefilled on Create Game. */
+  savedCoverImageUrl: string | null;
   role: UserRole;
   isSuperAdmin: boolean;
   // v3:
@@ -682,11 +684,14 @@ export function useApi() {
 
     setGameCovers: (
       id: string,
-      images: Array<{ base64: string; mime?: string }>,
+      opts:
+        | { images: Array<{ base64: string; mime?: string }> }
+        | { reuseSaved: true }
+        | { reuseFromGameId: string },
     ) =>
       http<ApiGameDetail>(`/games/${id}/covers`, {
         method: 'POST',
-        body: JSON.stringify({ images }),
+        body: JSON.stringify(opts),
       }, initData),
 
     clearGameCovers: (id: string) =>
