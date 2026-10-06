@@ -32,6 +32,18 @@ const SKILL_ICONS: Record<SkillLevel, IconName> = {
   LEVEL_6: 'crown',
 };
 
+type CoverChoice =
+  | { kind: 'none' }
+  | { kind: 'saved'; url: string }
+  | { kind: 'fromGame'; gameId: string; url: string }
+  | { kind: 'upload'; base64: string; mime: string; preview: string };
+
+type LastHostedCover = {
+  gameId: string;
+  url: string;
+  startAt: string;
+} | null;
+
 export function CreateGamePage() {
   const api = useApi();
   const navigate = useNavigate();
@@ -48,11 +60,13 @@ export function CreateGamePage() {
   }, [cityQ.data?.timeZone]);
   // City catalog + venues from games this user hosted (covers city-alias
   // mismatches and places used before the picker knew about them).
+  // Also remembers the latest hosted cover so Create can reuse it without
+  // a second round-trip when the profile library is still empty.
   const venuesQ = useQuery(
     ['venues', filterCity, meQ.data?.id, 'with-hosted'],
     async () => {
       const catalog = await api.listVenues({ city: filterCity });
-      if (!meQ.data?.id) return catalog;
+      if (!meQ.data?.id) return { venues: catalog, lastCover: null as LastHostedCover };
       const from = new Date();
       from.setFullYear(from.getFullYear() - 2);
       const hosted = await api.listGames({
@@ -62,6 +76,7 @@ export function CreateGamePage() {
         includeClosed: true,
       });
       const byId = new Map(catalog.map((v) => [v.id, v]));
+      let lastCover: LastHostedCover = null;
       for (const g of hosted) {
         const v = g.venue;
         if (v?.id && !byId.has(v.id)) {
@@ -78,11 +93,40 @@ export function CreateGamePage() {
             capacity: g.spotsTotal,
           });
         }
+        if (g.coverImageUrl?.trim()) {
+          if (
+            !lastCover ||
+            new Date(g.startAt).getTime() > new Date(lastCover.startAt).getTime()
+          ) {
+            lastCover = {
+              gameId: g.id,
+              url: g.coverImageUrl,
+              startAt: g.startAt,
+            };
+          }
+        }
       }
-      return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+      return {
+        venues: [...byId.values()].sort((a, b) => a.name.localeCompare(b.name)),
+        lastCover,
+      };
     },
     { enabled: !!filterCity },
   );
+
+  const venues = venuesQ.data?.venues;
+
+  useEffect(() => {
+    if (coverSeeded.current) return;
+    if (meQ.data?.savedCoverImageUrl?.trim()) return;
+    const last = venuesQ.data?.lastCover;
+    if (!last) {
+      if (venuesQ.isSuccess) coverSeeded.current = true;
+      return;
+    }
+    coverSeeded.current = true;
+    setCover({ kind: 'fromGame', gameId: last.gameId, url: last.url });
+  }, [meQ.data?.savedCoverImageUrl, venuesQ.data?.lastCover, venuesQ.isSuccess]);
 
   const [venueId, setVenueId] = useState('');
   const [venueName, setVenueName] = useState('');
@@ -103,15 +147,23 @@ export function CreateGamePage() {
   // live in `notes` only — so no client-side state is needed here.
   const [isClosed, setIsClosed] = useState(false);
   const [playType, setPlayType] = useState<PlayType>('OUTDOOR');
-  const [cover1, setCover1] = useState<{ base64: string; mime: string; preview: string } | null>(null);
-  const [cover2, setCover2] = useState<{ base64: string; mime: string; preview: string } | null>(null);
+  const [cover, setCover] = useState<CoverChoice>({ kind: 'none' });
   const [coverError, setCoverError] = useState<string | null>(null);
-  const cover1Ref = useRef<HTMLInputElement>(null);
-  const cover2Ref = useRef<HTMLInputElement>(null);
+  const coverRef = useRef<HTMLInputElement>(null);
+  const coverSeeded = useRef(false);
+
+  // Prefill from profile library as soon as /me is available.
+  useEffect(() => {
+    if (coverSeeded.current) return;
+    const saved = meQ.data?.savedCoverImageUrl?.trim();
+    if (!saved) return;
+    coverSeeded.current = true;
+    setCover({ kind: 'saved', url: saved });
+  }, [meQ.data?.savedCoverImageUrl]);
 
   const selectedVenue = useMemo(
-    () => venuesQ.data?.find((v) => v.id === venueId),
-    [venuesQ.data, venueId],
+    () => venues?.find((v) => v.id === venueId),
+    [venues, venueId],
   );
 
   const [costTouched, setCostTouched] = useState(false);
@@ -160,15 +212,18 @@ export function CreateGamePage() {
         coverImageUrl: undefined,
         playType,
       });
-      const images = [cover1, cover2]
-        .filter((c): c is { base64: string; mime: string; preview: string } => !!c)
-        .map((c) => ({ base64: c.base64, mime: c.mime }));
-      if (images.length) {
-        try {
-          await api.setGameCovers(g.id, images);
-        } catch {
-          // Game exists; host can set covers from Edit. Still navigate.
+      try {
+        if (cover.kind === 'upload') {
+          await api.setGameCovers(g.id, {
+            images: [{ base64: cover.base64, mime: cover.mime }],
+          });
+        } else if (cover.kind === 'saved') {
+          await api.setGameCovers(g.id, { reuseSaved: true });
+        } else if (cover.kind === 'fromGame') {
+          await api.setGameCovers(g.id, { reuseFromGameId: cover.gameId });
         }
+      } catch {
+        // Game exists; host can set covers from Edit. Still navigate.
       }
       return g;
     },
@@ -176,23 +231,30 @@ export function CreateGamePage() {
       onSuccess: (g) => {
         qc.invalidateQueries(['games']); // also matches the versioned keys
         qc.invalidateQueries(['venues']);
+        qc.invalidateQueries(['me']);
         navigate(`/games/${g.id}`);
       },
     },
   );
 
-  const pickCover = async (slot: 1 | 2, file: File | null) => {
+  const pickCover = async (file: File | null) => {
     if (!file) return;
     try {
       const { base64, mime } = await readImageAsDataUrl(file);
-      const draft = { base64, mime, preview: base64 };
-      if (slot === 1) setCover1(draft);
-      else setCover2(draft);
+      setCover({ kind: 'upload', base64, mime, preview: base64 });
       setCoverError(null);
     } catch (err) {
       setCoverError((err as Error).message || t('error.unknown'));
     }
   };
+
+  const coverPreview =
+    cover.kind === 'upload'
+      ? cover.preview
+      : cover.kind === 'saved' || cover.kind === 'fromGame'
+        ? cover.url
+        : null;
+  const usingSavedCover = cover.kind === 'saved' || cover.kind === 'fromGame';
 
   if (venuesQ.isLoading) {
     return (
@@ -244,7 +306,7 @@ export function CreateGamePage() {
               onChange={(e) => {
                 const id = e.target.value;
                 setVenueId(id);
-                const v = (venuesQ.data ?? []).find((x) => x.id === id);
+                const v = (venues ?? []).find((x) => x.id === id);
                 if (v) {
                   setVenueName(v.name);
                   setVenueAddress(v.address);
@@ -254,11 +316,11 @@ export function CreateGamePage() {
               aria-label={t('create.field.savedPlaces')}
             >
               <option value="">
-                {(venuesQ.data ?? []).length === 0
+                {(venues ?? []).length === 0
                   ? t('create.field.noSavedPlaces')
                   : t('create.field.savedPlacesPlaceholder')}
               </option>
-              {(venuesQ.data ?? []).map((v) => (
+              {(venues ?? []).map((v) => (
                 <option key={v.id} value={v.id}>
                   {v.name} — {v.address}
                 </option>
@@ -595,57 +657,48 @@ export function CreateGamePage() {
         <p className="field-hint" style={{ marginTop: 0 }}>
           {t('game.coversHint')}
         </p>
-        <div className="createCovers">
+        <div className="createCovers createCovers-single">
           <button
             type="button"
             className="createCovers-slot"
-            onClick={() => cover1Ref.current?.click()}
+            onClick={() => coverRef.current?.click()}
           >
-            {cover1 ? (
-              <img src={cover1.preview} alt="" />
+            {coverPreview ? (
+              <img src={coverPreview} alt="" />
             ) : (
               <span>
                 <Icon name="plus-sign" size={18} />
-                {t('game.coversAdd', { n: 1 })}
-              </span>
-            )}
-          </button>
-          <button
-            type="button"
-            className="createCovers-slot"
-            onClick={() => cover2Ref.current?.click()}
-          >
-            {cover2 ? (
-              <img src={cover2.preview} alt="" />
-            ) : (
-              <span>
-                <Icon name="plus-sign" size={18} />
-                {t('game.coversAdd', { n: 2 })}
+                {t('game.coversAdd')}
               </span>
             )}
           </button>
         </div>
         <input
-          ref={cover1Ref}
+          ref={coverRef}
           type="file"
           accept="image/jpeg,image/png,image/webp"
           hidden
           onChange={(e) => {
-            void pickCover(1, e.target.files?.[0] ?? null);
+            void pickCover(e.target.files?.[0] ?? null);
             e.target.value = '';
           }}
         />
-        <input
-          ref={cover2Ref}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          hidden
-          onChange={(e) => {
-            void pickCover(2, e.target.files?.[0] ?? null);
-            e.target.value = '';
-          }}
-        />
-        {!cover1 && !cover2 && (
+        {usingSavedCover && (
+          <p className="field-hint createCovers-reuseHint">
+            {t('game.coversReuseHint')}
+          </p>
+        )}
+        {coverPreview && (
+          <button
+            type="button"
+            className="btn btn-sm btn-ghost"
+            style={{ marginTop: 8, alignSelf: 'flex-start' }}
+            onClick={() => setCover({ kind: 'none' })}
+          >
+            {t('game.coversClear')}
+          </button>
+        )}
+        {!coverPreview && (
           <div className="createCovers-fallback">
             <img src={coverForPlayType(playType)} alt="" />
             <span>{t('create.field.coverPreviewHint')}</span>

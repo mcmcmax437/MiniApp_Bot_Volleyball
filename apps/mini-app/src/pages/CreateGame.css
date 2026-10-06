@@ -553,6 +553,16 @@
   margin-top: 8px;
 }
 
+.createCovers-single {
+  grid-template-columns: 1fr;
+  max-width: 280px;
+}
+
+.createCovers-reuseHint {
+  margin-top: 8px;
+  color: var(--brand-300);
+}
+
 .createCovers-slot {
   aspect-ratio: 16 / 10;
   border-radius: 12px;

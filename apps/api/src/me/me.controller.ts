@@ -104,6 +104,7 @@ export class MeController {
       lng: u.lng,
       reminderOffsets: u.reminderOffsets,
       photoUrl: u.photoUrl ?? null,
+      savedCoverImageUrl: u.savedCoverImageUrl ?? null,
       role: u.role ?? 'USER',
       isSuperAdmin,
       // v3 fields that aren't currently on User but the client expects:

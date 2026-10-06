@@ -5,7 +5,8 @@ import type { PlayType } from '../api';
  *
  * The image is a public asset (under `apps/mini-app/public/`) served by Vite
  * at the site root. Used as the fallback when the host has not uploaded a
- * custom field photo (`coverImageUrl` / `coverImageUrl2`).
+ * custom field photo (`coverImageUrl`). Legacy games may still have a second
+ * photo in `coverImageUrl2`; both are preferred over the stock cover.
  *
  * If a game was created before `playType` shipped, it defaults to OUTDOOR
  * server-side, so the same default image covers the legacy rows too.
