@@ -1,6 +1,5 @@
 import { SkillLevel, SKILL_LEVELS } from './api';
 import { useI18n } from './i18n';
-import { Icon } from './Icon';
 
 interface SkillBadgeProps {
   level: SkillLevel | null | undefined;
@@ -21,16 +20,46 @@ function classFor(level: SkillLevel): string {
   return `skillBadge skillBadge-${level.toLowerCase()}`;
 }
 
-const ICON_SIZE: Record<NonNullable<SkillBadgeProps['size']>, number> = {
+/** Square red badge sizes (px) — kept equal so the glyph never squashes. */
+const WHEELCHAIR_BOX: Record<NonNullable<SkillBadgeProps['size']>, number> = {
+  sm: 20,
+  md: 22,
+  lg: 28,
+  xl: 36,
+};
+
+const WHEELCHAIR_ICON: Record<NonNullable<SkillBadgeProps['size']>, number> = {
   sm: 12,
   md: 14,
-  lg: 16,
-  xl: 20,
+  lg: 18,
+  xl: 22,
 };
+
+/** Proportional white wheelchair glyph (inline SVG — webfont was X-compressed). */
+function WheelchairGlyph({ size }: { size: number }) {
+  return (
+    <svg
+      className="skillBadge-wheelchairGlyph"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {/* Compact ISA-style mark; square viewBox keeps X/Y equal. */}
+      <circle cx="13" cy="4" r="2.25" fill="currentColor" />
+      <path
+        fill="currentColor"
+        d="M7.5 8.25a1.25 1.25 0 0 0 0 2.5h2.05l-.55 2.65A4.75 4.75 0 1 0 11.7 14l.45-2.25h2.35l1.85 3.55a1.25 1.25 0 1 0 2.2-1.15l-2.05-3.95A1.5 1.5 0 0 0 15.15 9H12.4l.35-1.75A1.25 1.25 0 0 0 11.55 5.5H9.75a1.25 1.25 0 0 0 0 2.5H7.5zm1.75 7.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"
+      />
+    </svg>
+  );
+}
 
 /**
  * Compact pill that shows skill as `S1`…`S6`, or a wheelchair icon when
- * `wheelchair` is set. Optional `withLabel` appends the localized name.
+ * `wheelchair` is set. Optional `withLabel` appends the localized name
+ * (ignored for wheelchair — icon only).
  */
 export function SkillBadge({
   level,
@@ -44,15 +73,17 @@ export function SkillBadge({
   const extra = className ? ` ${className}` : '';
 
   if (wheelchair) {
-    // Icon-only: red wheelchair on a white pill — never show skill text.
+    // Icon-only: solid red circle + white wheelchair — never show skill text.
     const label = t('skill.wheelchair');
+    const box = WHEELCHAIR_BOX[size];
     return (
       <span
         className={`skillBadge skillBadge-wheelchair skillBadge-${size}${extra}`}
+        style={{ width: box, height: box }}
         title={title ?? label}
         aria-label={label}
       >
-        <Icon name="wheelchair" size={ICON_SIZE[size]} className="skillBadge-icon" />
+        <WheelchairGlyph size={WHEELCHAIR_ICON[size]} />
       </span>
     );
   }
