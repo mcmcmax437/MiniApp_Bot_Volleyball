@@ -288,7 +288,7 @@ function UserDetailsModal({ userId, onClose }: { userId: string | null; onClose:
                       level={previewLevel}
                       wheelchair={wheelchair}
                       size="sm"
-                      withLabel
+                      withLabel={!wheelchair}
                     />
                   </div>
                 )}

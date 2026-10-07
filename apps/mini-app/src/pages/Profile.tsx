@@ -187,7 +187,7 @@ export function ProfilePage() {
                 level={effectiveSkillLevel(meQ.data)}
                 wheelchair={!!meQ.data.showWheelchairBadge}
                 size="xl"
-                withLabel
+                withLabel={!meQ.data.showWheelchairBadge}
               />
             </div>
           )}

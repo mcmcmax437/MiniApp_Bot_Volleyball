@@ -900,7 +900,22 @@ button.btn[type="submit"],
 .skillBadge-level_4 { background: #9a7b4a; color: #faf6f0; border-color: rgba(255,255,255,0.12); }
 .skillBadge-level_5 { background: #9a6a52; color: #faf4f0; border-color: rgba(255,255,255,0.12); }
 .skillBadge-level_6 { background: #8a7a9a; color: #f6f4fa; border-color: rgba(255,255,255,0.12); }
-.skillBadge-wheelchair { background: #4a7c9b; color: #f0f8fc; border-color: rgba(255,255,255,0.14); }
+/* White circle + red wheelchair icon only (no text label). */
+.skillBadge-wheelchair {
+  background: #ffffff;
+  color: #dc2626;
+  border: 1.5px solid #dc2626;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  aspect-ratio: 1;
+  padding: 4px;
+  min-width: 1.5em;
+  min-height: 1.5em;
+}
+.skillBadge-wheelchair.skillBadge-sm { padding: 3px; }
+.skillBadge-wheelchair.skillBadge-xl { padding: 8px; }
+.skillBadge-wheelchair .skillBadge-icon {
+  color: #dc2626;
+}
 .skillBadge-empty { color: var(--text-muted); }
 .skillBadge-icon { display: inline-flex; line-height: 1; }
 
