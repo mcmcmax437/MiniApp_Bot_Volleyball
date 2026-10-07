@@ -44,17 +44,15 @@ export function SkillBadge({
   const extra = className ? ` ${className}` : '';
 
   if (wheelchair) {
+    // Icon-only: red wheelchair on a white pill — never show skill text.
     const label = t('skill.wheelchair');
-    const hasLevel = !!level && SKILL_LEVELS.includes(level);
-    const base = hasLevel ? classFor(level!) : 'skillBadge skillBadge-wheelchair';
     return (
       <span
-        className={`${base} skillBadge-${size}${extra}`}
+        className={`skillBadge skillBadge-wheelchair skillBadge-${size}${extra}`}
         title={title ?? label}
         aria-label={label}
       >
         <Icon name="wheelchair" size={ICON_SIZE[size]} className="skillBadge-icon" />
-        {withLabel && <span className="skillBadge-label">{label}</span>}
       </span>
     );
   }

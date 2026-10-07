@@ -123,7 +123,7 @@ export function UserProfilePage() {
                 level={level}
                 wheelchair={!!u.showWheelchairBadge}
                 size="xl"
-                withLabel
+                withLabel={!u.showWheelchairBadge}
               />
             </div>
           )}
