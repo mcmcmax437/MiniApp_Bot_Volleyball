@@ -1,10 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import { useApi, AdminUserListItem, AdminUserDetail, SkillLevel } from "../api";
+import {
+  useApi,
+  AdminUserListItem,
+  AdminUserDetail,
+  SkillLevel,
+  SKILL_LEVELS,
+} from "../api";
 import { Icon } from "../Icon";
 import { Photo } from "../Photo";
 import { SkillBadge } from "../SkillBadge";
 import { useI18n } from "../i18n";
+import { effectiveSkillLevel, hasSkillBadge } from "../lib/skill";
 
 function formatDurationMs(ms: number): string {
   if (!ms || ms < 1000) return '0s';
@@ -101,12 +108,24 @@ export function AdminUsersPage() {
       )}
 
       <div className="adminItems">
-        {q.data?.items.map((u) => (
+        {q.data?.items.map((u) => {
+          const displayLevel = effectiveSkillLevel(u);
+          return (
           <article key={u.id} className="adminItem">
             <Photo
               src={u.photoUrl}
               name={`${u.firstName}${u.lastName ? " " + u.lastName : ""}`}
               size={40}
+              bottomRightBadge={
+                hasSkillBadge(u) ? (
+                  <SkillBadge
+                    level={displayLevel}
+                    wheelchair={!!u.showWheelchairBadge}
+                    size="sm"
+                    className="skillBadge-on-photo"
+                  />
+                ) : null
+              }
             />
             <div className="adminItem-info">
               <div className="adminItem-title">
@@ -126,11 +145,6 @@ export function AdminUsersPage() {
               </div>
               <div className="adminItem-sub">
                 {u.username ? `@${u.username}` : "—"} · {u.city ?? '—'}
-                {u.skillLevel && (
-                  <span style={{ marginLeft: 6 }}>
-                    <SkillBadge level={u.skillLevel as SkillLevel} size="sm" />
-                  </span>
-                )}
               </div>
               <div className="adminItem-meta">
                 ID: {u.id} · TG: {u.telegramId} · Joined {new Date(u.createdAt).toLocaleDateString()}
@@ -185,7 +199,8 @@ export function AdminUsersPage() {
               </button>
             </div>
           </article>
-        ))}
+          );
+        })}
       </div>
 
       <UserDetailsModal userId={openUser} onClose={() => setOpenUser(null)} />
@@ -195,6 +210,7 @@ export function AdminUsersPage() {
 
 function UserDetailsModal({ userId, onClose }: { userId: string | null; onClose: () => void }) {
   const api = useApi();
+  const qc = useQueryClient();
   const { t } = useI18n();
   const q = useQuery<AdminUserDetail | null>(
     ['admin', 'user', userId],
@@ -202,7 +218,48 @@ function UserDetailsModal({ userId, onClose }: { userId: string | null; onClose:
     { enabled: !!userId },
   );
 
+  const [score, setScore] = useState<SkillLevel | null>(null);
+  const [wheelchair, setWheelchair] = useState(false);
+  const [locked, setLocked] = useState(true);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!q.data) return;
+    setScore(q.data.evaluatedSkillLevel ?? q.data.skillLevel ?? null);
+    setWheelchair(!!q.data.showWheelchairBadge);
+    setLocked(!!q.data.skillLockedByAdmin);
+    setSaveError(null);
+  }, [q.data]);
+
+  const saveMut = useMutation(
+    () =>
+      api.adminUpdateUser(userId!, {
+        // Keep self-declared in sync when admin sets a score.
+        skillLevel: score,
+        evaluatedSkillLevel: score,
+        skillLockedByAdmin: locked,
+        showWheelchairBadge: wheelchair,
+      }),
+    {
+      onSuccess: () => {
+        qc.invalidateQueries(['admin', 'user', userId]);
+        qc.invalidateQueries(['admin', 'users']);
+        setSaveError(null);
+      },
+      onError: (err) => {
+        setSaveError((err as Error).message || t('error.unknown'));
+      },
+    },
+  );
+
   if (!userId) return null;
+
+  const previewLevel = score;
+  const dirty =
+    !!q.data &&
+    (score !== (q.data.evaluatedSkillLevel ?? q.data.skillLevel ?? null) ||
+      wheelchair !== !!q.data.showWheelchairBadge ||
+      locked !== !!q.data.skillLockedByAdmin);
 
   return (
     <div className="modalBackdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -225,15 +282,93 @@ function UserDetailsModal({ userId, onClose }: { userId: string | null; onClose:
                 <div style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>
                   @{q.data.username ?? '—'} · {q.data.city}
                 </div>
-                {q.data.skillLevel && (
+                {(previewLevel || wheelchair) && (
                   <div style={{ marginTop: 6 }}>
-                    <SkillBadge level={q.data.skillLevel as SkillLevel} size="sm" withLabel />
+                    <SkillBadge
+                      level={previewLevel}
+                      wheelchair={wheelchair}
+                      size="sm"
+                      withLabel={!wheelchair}
+                    />
                   </div>
                 )}
               </div>
             </div>
 
             <h2 className="formSection-title">
+              <span className="formSection-num"><Icon name="award-01" size={12} /></span>
+              {t('admin.userSkill')}
+            </h2>
+            <p className="field-hint" style={{ marginTop: 0 }}>
+              {t('admin.userSkillHint')}
+            </p>
+            <div className="skillChipGrid" role="radiogroup" aria-label={t('admin.userSkill')}>
+              {SKILL_LEVELS.map((s, i) => (
+                <button
+                  key={s}
+                  type="button"
+                  className={`skillChip ${score === s ? 'isActive' : ''}`}
+                  onClick={() => {
+                    setScore(s);
+                    setLocked(true);
+                  }}
+                  data-analytics-label={`admin-set-skill-${s}`}
+                >
+                  <span className="skillChip-num">{i + 1}</span>
+                </button>
+              ))}
+            </div>
+            <div className="adminSkillToggles">
+              <label className="adminSkillToggle">
+                <input
+                  type="checkbox"
+                  checked={wheelchair}
+                  onChange={(e) => setWheelchair(e.target.checked)}
+                />
+                <Icon name="wheelchair" size={16} />
+                <span>{t('admin.userWheelchair')}</span>
+              </label>
+              <label className="adminSkillToggle">
+                <input
+                  type="checkbox"
+                  checked={locked}
+                  onChange={(e) => setLocked(e.target.checked)}
+                />
+                <Icon name="lock" size={14} />
+                <span>{t('admin.userSkillLock')}</span>
+              </label>
+            </div>
+            <div className="modal-actions" style={{ marginTop: 10 }}>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => {
+                  setScore(null);
+                  setLocked(false);
+                }}
+                disabled={saveMut.isLoading}
+              >
+                {t('admin.userSkillClear')}
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm"
+                disabled={!dirty || saveMut.isLoading}
+                onClick={() => saveMut.mutate()}
+                data-analytics-label="admin-user-skill-save"
+              >
+                <Icon name="save-01" size={14} />
+                {saveMut.isLoading ? t('common.loading') : t('admin.userSkillSave')}
+              </button>
+            </div>
+            {saveMut.isSuccess && !dirty && (
+              <div className="field-hint" style={{ color: 'var(--success)', marginTop: 6 }}>
+                {t('admin.userSkillSaved')}
+              </div>
+            )}
+            {saveError && <div className="error" style={{ marginTop: 8 }}>{saveError}</div>}
+
+            <h2 className="formSection-title" style={{ marginTop: 16 }}>
               <span className="formSection-num"><Icon name="chart-bar" size={12} /></span>
               {t('admin.userActivity')}
             </h2>
@@ -303,12 +438,6 @@ function UserDetailsModal({ userId, onClose }: { userId: string | null; onClose:
               <span>{t('admin.stat.paymentsMade')}</span>
               <strong>{q.data.stats.paymentsMade}</strong>
             </div>
-            {q.data.evaluatedSkillLevel && (
-              <div className="costRow">
-                <span>{t('admin.stat.evaluatedSkill')}</span>
-                <SkillBadge level={q.data.evaluatedSkillLevel as SkillLevel} size="sm" withLabel />
-              </div>
-            )}
             {q.data.isBanned && (
               <div className="error" style={{ marginTop: 10 }}>
                 <Icon name="user-remove-01" size={14} />

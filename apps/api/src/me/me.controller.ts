@@ -104,12 +104,15 @@ export class MeController {
       lng: u.lng,
       reminderOffsets: u.reminderOffsets,
       photoUrl: u.photoUrl ?? null,
+      savedCoverImageUrl: u.savedCoverImageUrl ?? null,
       role: u.role ?? 'USER',
       isSuperAdmin,
       // v3 fields that aren't currently on User but the client expects:
       language: (u as any).language ?? null,
       evaluatedSkillLevel: (u as any).evaluatedSkillLevel ?? null,
       evaluatedAt: (u as any).evaluatedAt ?? null,
+      skillLockedByAdmin: !!(u as any).skillLockedByAdmin,
+      showWheelchairBadge: !!(u as any).showWheelchairBadge,
       isBanned: u.isBanned,
       bannedReason: u.bannedReason,
     };

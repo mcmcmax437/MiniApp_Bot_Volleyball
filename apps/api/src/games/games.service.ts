@@ -196,6 +196,7 @@ export class GamesService {
             // Weighted (peer-corrected) level — the client badge prefers
             // this over the self-declared one. See skill-aggregator.ts.
             evaluatedSkillLevel: true,
+            showWheelchairBadge: true,
             photoUrl: true,
             role: true,
           },
@@ -212,6 +213,7 @@ export class GamesService {
                 role: true,
                 skillLevel: true,
                 evaluatedSkillLevel: true,
+            showWheelchairBadge: true,
               },
             },
           },
@@ -238,6 +240,7 @@ export class GamesService {
                 role: true,
                 skillLevel: true,
                 evaluatedSkillLevel: true,
+            showWheelchairBadge: true,
               },
             },
           },
@@ -390,6 +393,7 @@ export class GamesService {
             // that the client badge prefers over the self-declared one.
             // See apps/api/src/evaluations/skill-aggregator.ts.
             evaluatedSkillLevel: true,
+            showWheelchairBadge: true,
             photoUrl: true,
             role: true,
           },
@@ -412,6 +416,7 @@ export class GamesService {
                 role: true,
                 skillLevel: true,
                 evaluatedSkillLevel: true,
+            showWheelchairBadge: true,
               },
             },
           },
@@ -810,6 +815,7 @@ export class GamesService {
             role: true,
             skillLevel: true,
             evaluatedSkillLevel: true,
+            showWheelchairBadge: true,
           },
         },
       },
@@ -1057,13 +1063,18 @@ export class GamesService {
   }
 
   /**
-   * Host/admin uploads 1–2 field photos (base64). Replaces existing covers
-   * in order: images[0] → coverImageUrl, images[1] → coverImageUrl2.
+   * Host/admin sets the single field photo: upload bytes, reuse the host's
+   * saved library cover, or copy from another game they hosted.
+   * Also refreshes `User.savedCoverImageUrl` so the next create can reuse it.
    */
   async setCovers(
     me: User,
     gameId: string,
-    images: Array<{ base64: string; mime?: string }>,
+    opts: {
+      images?: Array<{ base64: string; mime?: string }>;
+      reuseSaved?: boolean;
+      reuseFromGameId?: string;
+    },
   ) {
     const game = await this.prisma.game.findUnique({ where: { id: gameId } });
     if (!game) throw new NotFoundException('Game not found');
@@ -1073,30 +1084,73 @@ export class GamesService {
     if (game.status === 'CANCELLED' || game.status === 'FINISHED') {
       throw new BadRequestException(`Cannot edit a ${game.status.toLowerCase()} game`);
     }
-    if (!images.length || images.length > 2) {
-      throw new BadRequestException('Provide 1 or 2 images');
+
+    const images = opts.images ?? [];
+    const reuseSaved = !!opts.reuseSaved;
+    const reuseFromGameId = opts.reuseFromGameId?.trim() || '';
+    const modes = [images.length > 0, reuseSaved, !!reuseFromGameId].filter(Boolean).length;
+    if (modes !== 1) {
+      throw new BadRequestException(
+        'Provide exactly one of: images, reuseSaved, or reuseFromGameId',
+      );
+    }
+    if (images.length > 1) {
+      throw new BadRequestException('Only one cover photo is allowed per game');
     }
 
-    const url1 = await this.covers.saveSlot(gameId, 1, images[0].base64, images[0].mime);
-    let url2: string | null = null;
-    if (images[1]) {
-      url2 = await this.covers.saveSlot(gameId, 2, images[1].base64, images[1].mime);
+    let url1: string;
+    let source: 'upload' | 'saved' | 'game' = 'upload';
+
+    if (images.length) {
+      url1 = await this.covers.saveSlot(gameId, 1, images[0].base64, images[0].mime);
+      source = 'upload';
+    } else if (reuseSaved) {
+      url1 = await this.covers.copyUserCoverToGame(me.id, gameId);
+      source = 'saved';
     } else {
-      await this.covers.deleteSlotFiles(gameId, 2);
+      const sourceGame = await this.prisma.game.findUnique({
+        where: { id: reuseFromGameId },
+      });
+      if (!sourceGame) throw new NotFoundException('Source game not found');
+      if (sourceGame.hostId !== me.id && me.role !== 'ADMIN') {
+        throw new ForbiddenException('You can only reuse covers from games you hosted');
+      }
+      if (!sourceGame.coverImageUrl) {
+        throw new BadRequestException('Source game has no cover photo');
+      }
+      url1 = await this.covers.copyGameSlotToGame(reuseFromGameId, 1, gameId);
+      source = 'game';
     }
+
+    // One cover per game going forward — drop a legacy second slot if present.
+    await this.covers.deleteSlotFiles(gameId, 2);
 
     await this.prisma.game.update({
       where: { id: gameId },
       data: {
         coverImageUrl: url1,
-        coverImageUrl2: url2,
+        coverImageUrl2: null,
       },
     });
+
+    // Keep the host's reusable library cover in sync (upload or promote).
+    let savedUrl: string | null = null;
+    if (source === 'upload' && images[0]) {
+      savedUrl = await this.covers.saveUserCover(me.id, images[0].base64, images[0].mime);
+    } else {
+      savedUrl = await this.covers.copyGameSlotToUser(gameId, 1, me.id);
+    }
+    if (savedUrl) {
+      await this.prisma.user.update({
+        where: { id: me.id },
+        data: { savedCoverImageUrl: savedUrl },
+      });
+    }
 
     void this.analytics.trackEvent(me.id, 'game_covers_set', {
       screen: `/games/${gameId}`,
       target: gameId,
-      meta: { count: images.length },
+      meta: { count: 1, source },
     });
 
     return this.findOne(gameId);

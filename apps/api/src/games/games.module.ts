@@ -1,5 +1,9 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { GamesController, GameCoverController } from './games.controller';
+import {
+  GamesController,
+  GameCoverController,
+  UserCoverController,
+} from './games.controller';
 import { GamesService } from './games.service';
 import { GameCoverService } from './game-cover.service';
 import { SchedulerModule } from '../scheduler/scheduler.module';
@@ -14,7 +18,7 @@ import { AnalyticsModule } from '../analytics/analytics.module';
     AnalyticsModule,
     forwardRef(() => InvitationsModule),
   ],
-  controllers: [GamesController, GameCoverController],
+  controllers: [GamesController, GameCoverController, UserCoverController],
   providers: [GamesService, GameCoverService],
   exports: [GamesService, GameCoverService],
 })

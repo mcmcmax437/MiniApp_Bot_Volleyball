@@ -14,7 +14,7 @@ import { SkillBadge } from "../SkillBadge";
 import { AdminCrownBadge } from "../AdminCrownBadge";
 import { useI18n, LANG_LABELS, LANG_FLAGS } from "../i18n";
 import { reverseGeocode } from "../geo";
-import { effectiveSkillLevel } from "../lib/skill";
+import { effectiveSkillLevel, hasSkillBadge } from "../lib/skill";
 import "./Profile.css";
 
 function scrollIntoViewSafe(el: HTMLElement) {
@@ -179,11 +179,16 @@ export function ProfilePage() {
               <span className="profileHero-username">@{meQ.data.username}</span>
             </div>
           )}
-          {effectiveSkillLevel(meQ.data) && (
+          {hasSkillBadge(meQ.data) && (
             // Display-only under the name (not on the photo) — avoids
             // corner-badge clipping and matches the prominent skill rule.
             <div className="profileHero-skillBig" aria-label={t('profile.skill')}>
-              <SkillBadge level={effectiveSkillLevel(meQ.data)!} size="xl" withLabel />
+              <SkillBadge
+                level={effectiveSkillLevel(meQ.data)}
+                wheelchair={!!meQ.data.showWheelchairBadge}
+                size="xl"
+                withLabel={!meQ.data.showWheelchairBadge}
+              />
             </div>
           )}
           {meQ.data.evaluatedSkillLevel && meQ.data.skillLevel &&

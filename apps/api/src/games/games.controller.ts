@@ -70,13 +70,28 @@ class CoverImageDto {
   @IsOptional() @IsString() mime?: string;
 }
 
+/**
+ * Set the game's single cover photo. Exactly one mode:
+ * - `images` (1 item): upload new bytes (also saved on the host profile)
+ * - `reuseSaved`: copy the host's saved library cover onto this game
+ * - `reuseFromGameId`: copy another game's cover the host owns onto this game
+ */
 class UploadCoversDto {
+  @IsOptional()
   @IsArray()
   @ArrayMinSize(1)
-  @ArrayMaxSize(2)
+  @ArrayMaxSize(1)
   @ValidateNested({ each: true })
   @Type(() => CoverImageDto)
-  images!: CoverImageDto[];
+  images?: CoverImageDto[];
+
+  @IsOptional()
+  @IsBoolean()
+  reuseSaved?: boolean;
+
+  @IsOptional()
+  @IsString()
+  reuseFromGameId?: string;
 }
 
 class CreateReservationDto {
@@ -204,7 +219,7 @@ export class GamesController {
     return this.games.listActivity(me, id);
   }
 
-  /** Host/admin: upload 1–2 custom field photos (base64). */
+  /** Host/admin: set the single custom field photo (upload or reuse). */
   @Post(':id/covers')
   @UseGuards(JwtAuthGuard, NotBannedGuard)
   setCovers(
@@ -213,7 +228,11 @@ export class GamesController {
     @Body() dto: UploadCoversDto,
   ) {
     if (!me) throw new UnauthorizedException('User not found');
-    return this.games.setCovers(me, id, dto.images);
+    return this.games.setCovers(me, id, {
+      images: dto.images,
+      reuseSaved: dto.reuseSaved,
+      reuseFromGameId: dto.reuseFromGameId,
+    });
   }
 
   @Delete(':id/covers')
@@ -268,6 +287,37 @@ export class GameCoverController {
       return res.status(404).end();
     }
     const fp = this.covers.absolutePath(file);
+    try {
+      await fs.access(fp);
+    } catch {
+      return res.status(404).end();
+    }
+    const lower = file.toLowerCase();
+    const type = lower.endsWith('.png')
+      ? 'image/png'
+      : lower.endsWith('.webp')
+        ? 'image/webp'
+        : 'image/jpeg';
+    res.setHeader('Content-Type', type);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return res.sendFile(fp);
+  }
+}
+
+/**
+ * Public file server for a host's reusable library cover.
+ * Path: GET /api/v1/user-covers/:file
+ */
+@Controller('user-covers')
+export class UserCoverController {
+  constructor(private readonly covers: GameCoverService) {}
+
+  @Get(':file')
+  async serve(@Param('file') file: string, @Res() res: Response) {
+    if (!this.covers.isSafeUserCoverFileName(file)) {
+      return res.status(404).end();
+    }
+    const fp = this.covers.userAbsolutePath(file);
     try {
       await fs.access(fp);
     } catch {

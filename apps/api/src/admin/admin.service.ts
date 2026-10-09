@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { EvaluationsService } from '../evaluations/evaluations.service';
 import {
   AdminUpdateGameDto,
   AdminUpdateUserDto,
@@ -24,6 +25,7 @@ export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly analytics: AnalyticsService,
+    private readonly evaluations: EvaluationsService,
   ) {}
 
   // ---------- Stats ----------
@@ -102,6 +104,8 @@ export class AdminService {
           city: true,
           skillLevel: true,
           evaluatedSkillLevel: true,
+          showWheelchairBadge: true,
+          skillLockedByAdmin: true,
           role: true,
           isBanned: true,
           bannedReason: true,
@@ -257,7 +261,7 @@ export class AdminService {
     const before = await this.getUser(id);
 
     // ----- v3 ban handling -----
-    let banFields: any = {};
+    let banFields: Record<string, unknown> = {};
     if (typeof dto.isBanned === 'boolean') {
       banFields.isBanned = dto.isBanned;
       if (dto.isBanned) {
@@ -271,6 +275,27 @@ export class AdminService {
       banFields.bannedReason = dto.bannedReason;
     }
 
+    // Admin-set displayed score: write evaluatedSkillLevel and lock peer overwrite
+    // so recalibration does not wipe the manual value.
+    const skillFields: Record<string, unknown> = {};
+    if (dto.skillLevel !== undefined) {
+      skillFields.skillLevel = dto.skillLevel;
+    }
+    if (dto.evaluatedSkillLevel !== undefined) {
+      skillFields.evaluatedSkillLevel = dto.evaluatedSkillLevel;
+      skillFields.evaluatedAt = dto.evaluatedSkillLevel ? new Date() : null;
+      // Setting a score locks by default; explicit unlock still wins below.
+      if (dto.skillLockedByAdmin === undefined) {
+        skillFields.skillLockedByAdmin = dto.evaluatedSkillLevel != null;
+      }
+    }
+    if (dto.skillLockedByAdmin !== undefined) {
+      skillFields.skillLockedByAdmin = dto.skillLockedByAdmin;
+    }
+    if (dto.showWheelchairBadge !== undefined) {
+      skillFields.showWheelchairBadge = dto.showWheelchairBadge;
+    }
+
     const updated = await this.prisma.user.update({
       where: { id },
       data: {
@@ -279,12 +304,29 @@ export class AdminService {
         username: dto.username === undefined ? undefined : dto.username,
         city: dto.city ?? undefined,
         age: dto.age ?? undefined,
-        skillLevel: dto.skillLevel === undefined ? undefined : dto.skillLevel,
         role: dto.role ?? undefined,
+        ...skillFields,
         ...banFields,
       },
     });
-    const after = publicUser(updated);
+
+    // If admin unlocked the score without setting a new evaluated level,
+    // recompute from peers so the badge updates immediately.
+    if (
+      dto.skillLockedByAdmin === false &&
+      dto.evaluatedSkillLevel === undefined
+    ) {
+      try {
+        await this.evaluations.recalibrateUserSkill(id);
+      } catch (err) {
+        this.logger.warn(
+          `recalibrate after unlock failed for ${id}: ${(err as Error).message}`,
+        );
+      }
+    }
+
+    const fresh = await this.prisma.user.findUnique({ where: { id } });
+    const after = publicUser(fresh ?? updated);
     await this.log(actorId, dto.isBanned ? (dto.isBanned ? 'user.ban' : 'user.unban') : 'user.update', 'user', id, {
       before,
       after,

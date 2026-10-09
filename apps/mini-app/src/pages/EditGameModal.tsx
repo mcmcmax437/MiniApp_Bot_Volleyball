@@ -26,26 +26,11 @@ interface Props {
 
 type CoverDraft = { preview: string; base64: string; mime: string } | null;
 
-async function fetchUrlAsDataUrl(url: string): Promise<{ base64: string; mime: string }> {
-  const res = await fetch(url, { credentials: 'include' });
-  if (!res.ok) throw new Error('Could not keep existing cover photo');
-  const blob = await res.blob();
-  const mime = blob.type || 'image/jpeg';
-  const base64 = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ''));
-    reader.onerror = () => reject(new Error('Could not read cover photo'));
-    reader.readAsDataURL(blob);
-  });
-  return { base64, mime };
-}
-
 export function EditGameModal({ open, game, onClose, onSaved }: Props) {
   const api = useApi();
   const { t, lang } = useI18n();
   const qc = useQueryClient();
-  const file1Ref = useRef<HTMLInputElement>(null);
-  const file2Ref = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const [venueName, setVenueName] = useState('');
   const [venueAddress, setVenueAddress] = useState('');
@@ -54,8 +39,7 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
   const [skillLevel, setSkillLevel] = useState<SkillLevel>('LEVEL_3');
   const [spotsTotal, setSpotsTotal] = useState(10);
   const [error, setError] = useState<string | null>(null);
-  const [cover1, setCover1] = useState<CoverDraft>(null);
-  const [cover2, setCover2] = useState<CoverDraft>(null);
+  const [coverDraft, setCoverDraft] = useState<CoverDraft>(null);
   const [clearCovers, setClearCovers] = useState(false);
   const [coversDirty, setCoversDirty] = useState(false);
 
@@ -68,18 +52,14 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
     setSkillLevel(game.skillLevel);
     setSpotsTotal(game.spotsTotal);
     setError(null);
-    setCover1(null);
-    setCover2(null);
+    setCoverDraft(null);
     setClearCovers(false);
     setCoversDirty(false);
   }, [open, game]);
 
-  const preview1 =
-    cover1?.preview ??
+  const preview =
+    coverDraft?.preview ??
     (!clearCovers && game.coverImageUrl ? game.coverImageUrl : null);
-  const preview2 =
-    cover2?.preview ??
-    (!clearCovers && game.coverImageUrl2 ? game.coverImageUrl2 : null);
 
   const saveMut = useMutation(
     async (patch: UpdateGamePayload) => {
@@ -89,24 +69,10 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
       }
       if (clearCovers) {
         updated = await api.clearGameCovers(game.id);
-      } else if (cover1 || cover2) {
-        const images: Array<{ base64: string; mime?: string }> = [];
-        if (cover1) {
-          images.push({ base64: cover1.base64, mime: cover1.mime });
-          if (cover2) {
-            images.push({ base64: cover2.base64, mime: cover2.mime });
-          } else if (game.coverImageUrl2) {
-            images.push(await fetchUrlAsDataUrl(game.coverImageUrl2));
-          }
-        } else if (cover2) {
-          if (game.coverImageUrl) {
-            images.push(await fetchUrlAsDataUrl(game.coverImageUrl));
-          }
-          images.push({ base64: cover2.base64, mime: cover2.mime });
-        }
-        if (images.length) {
-          updated = await api.setGameCovers(game.id, images);
-        }
+      } else if (coverDraft) {
+        updated = await api.setGameCovers(game.id, {
+          images: [{ base64: coverDraft.base64, mime: coverDraft.mime }],
+        });
       }
       return updated;
     },
@@ -114,6 +80,7 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
       onSuccess: () => {
         qc.invalidateQueries(['game', game.id]);
         qc.invalidateQueries(['games']);
+        qc.invalidateQueries(['me']);
         onClose();
         onSaved?.(t('game.editDone'));
       },
@@ -125,13 +92,11 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
 
   const seated = game.participantsCount + (game.reservedCount ?? 0);
 
-  const pickCover = async (slot: 1 | 2, file: File | null) => {
+  const pickCover = async (file: File | null) => {
     if (!file) return;
     try {
       const { base64, mime } = await readImageAsDataUrl(file);
-      const draft = { preview: base64, base64, mime };
-      if (slot === 1) setCover1(draft);
-      else setCover2(draft);
+      setCoverDraft({ preview: base64, base64, mime });
       setClearCovers(false);
       setCoversDirty(true);
       setError(null);
@@ -314,66 +279,40 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
         <p className="editGame-hint" style={{ marginTop: 0 }}>
           {t('game.coversHint')}
         </p>
-        <div className="editGame-covers">
+        <div className="editGame-covers editGame-covers-single">
           <button
             type="button"
             className="editGame-coverSlot"
-            onClick={() => file1Ref.current?.click()}
-            data-analytics-label="game-cover-1"
+            onClick={() => fileRef.current?.click()}
+            data-analytics-label="game-cover"
           >
-            {preview1 ? (
-              <img src={preview1} alt="" />
+            {preview ? (
+              <img src={preview} alt="" />
             ) : (
               <span>
                 <Icon name="plus-sign" size={18} />
-                {t('game.coversAdd', { n: 1 })}
-              </span>
-            )}
-          </button>
-          <button
-            type="button"
-            className="editGame-coverSlot"
-            onClick={() => file2Ref.current?.click()}
-            data-analytics-label="game-cover-2"
-          >
-            {preview2 ? (
-              <img src={preview2} alt="" />
-            ) : (
-              <span>
-                <Icon name="plus-sign" size={18} />
-                {t('game.coversAdd', { n: 2 })}
+                {t('game.coversAdd')}
               </span>
             )}
           </button>
         </div>
         <input
-          ref={file1Ref}
+          ref={fileRef}
           type="file"
           accept="image/jpeg,image/png,image/webp"
           hidden
           onChange={(e) => {
-            void pickCover(1, e.target.files?.[0] ?? null);
+            void pickCover(e.target.files?.[0] ?? null);
             e.target.value = '';
           }}
         />
-        <input
-          ref={file2Ref}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          hidden
-          onChange={(e) => {
-            void pickCover(2, e.target.files?.[0] ?? null);
-            e.target.value = '';
-          }}
-        />
-        {(preview1 || preview2 || game.coverImageUrl || game.coverImageUrl2) && (
+        {(preview || game.coverImageUrl || game.coverImageUrl2) && (
           <button
             type="button"
             className="btn btn-sm btn-ghost"
             style={{ marginTop: 8 }}
             onClick={() => {
-              setCover1(null);
-              setCover2(null);
+              setCoverDraft(null);
               setClearCovers(true);
               setCoversDirty(true);
             }}
@@ -381,7 +320,7 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
             {t('game.coversClear')}
           </button>
         )}
-        {!preview1 && !preview2 && (
+        {!preview && (
           <div className="editGame-coverFallback">
             <img src={coverForPlayType(playType)} alt="" />
             <span>{t('create.field.coverPreviewHint')}</span>

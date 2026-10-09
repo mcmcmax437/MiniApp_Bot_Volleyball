@@ -14,7 +14,7 @@ import { Photo } from '../Photo';
 import { SkillBadge } from '../SkillBadge';
 import { AdminCrownBadge, isAdminUser } from '../AdminCrownBadge';
 import { useI18n } from '../i18n';
-import { effectiveSkillLevel } from '../lib/skill';
+import { effectiveSkillLevel, hasSkillBadge } from '../lib/skill';
 import { coverForPlayType, resolveGameCovers } from '../lib/play-type';
 import { isEvalDone, markEvalDone } from '../lib/eval-done';
 import { Modal } from '../Modal';
@@ -46,6 +46,7 @@ interface PlayerRowProps {
   skillLevel: SkillLevel | null;
   /** Weighted (peer-corrected) level, computed by the backend. */
   evaluatedSkillLevel: SkillLevel | null;
+  showWheelchairBadge?: boolean;
   role?: UserRole | null;
   isHost: boolean;
   isYou: boolean;
@@ -71,6 +72,7 @@ function PlayerRow({
   lastName,
   skillLevel,
   evaluatedSkillLevel,
+  showWheelchairBadge,
   role,
   isHost,
   isYou,
@@ -84,9 +86,10 @@ function PlayerRow({
   const fullName = lastName ? `${firstName} ${lastName}` : firstName;
   const showMenu = !isYou;
   // Prefer the peer-corrected (weighted) level. Falls back to self-declared
-  // when the backend hasn't computed a value yet. `null` hides the badge
-  // entirely (player has never picked a level).
+  // when the backend hasn't computed a value yet. Wheelchair badge can show
+  // even without a numeric level.
   const level = effectiveSkillLevel({ skillLevel, evaluatedSkillLevel });
+  const showBadge = hasSkillBadge({ skillLevel, evaluatedSkillLevel, showWheelchairBadge });
   // The "HOST" pill already announces the host's role. Showing the
   // "Organizer" subtitle next to it is just noise — the pill says the
   // same thing twice. For host rows we hide the role label and put the
@@ -107,7 +110,16 @@ function PlayerRow({
           size={44}
           variant="rounded"
           topLeftBadge={showAdmin ? <AdminCrownBadge title={t('profile.status.admin')} /> : null}
-          bottomRightBadge={level ? <SkillBadge level={level} size="sm" className="skillBadge-on-photo" /> : null}
+          bottomRightBadge={
+            showBadge ? (
+              <SkillBadge
+                level={level}
+                wheelchair={!!showWheelchairBadge}
+                size="sm"
+                className="skillBadge-on-photo"
+              />
+            ) : null
+          }
         />
         <span className="detailPlayer-body">
           <span className="detailPlayer-name">
@@ -554,6 +566,7 @@ export function GameDetailPage() {
               lastName={g.host.lastName}
               skillLevel={g.host.skillLevel}
               evaluatedSkillLevel={g.host.evaluatedSkillLevel}
+              showWheelchairBadge={g.host.showWheelchairBadge}
               role={g.host.role}
               isHost
               isYou={myId === g.host.id}
@@ -578,6 +591,7 @@ export function GameDetailPage() {
                   lastName={p.user.lastName}
                   skillLevel={p.user.skillLevel}
                   evaluatedSkillLevel={p.user.evaluatedSkillLevel}
+                  showWheelchairBadge={p.user.showWheelchairBadge}
                   role={p.user.role}
                   isHost={false}
                   isYou={myId === p.userId}
@@ -629,9 +643,10 @@ export function GameDetailPage() {
                             ) : null
                           }
                           bottomRightBadge={
-                            (u?.evaluatedSkillLevel || u?.skillLevel) ? (
+                            u && hasSkillBadge(u) ? (
                               <SkillBadge
                                 level={(u.evaluatedSkillLevel ?? u.skillLevel) as SkillLevel}
+                                wheelchair={!!u.showWheelchairBadge}
                                 size="sm"
                                 className="skillBadge-on-photo"
                               />

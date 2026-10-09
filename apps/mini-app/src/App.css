@@ -900,7 +900,37 @@ button.btn[type="submit"],
 .skillBadge-level_4 { background: #9a7b4a; color: #faf6f0; border-color: rgba(255,255,255,0.12); }
 .skillBadge-level_5 { background: #9a6a52; color: #faf4f0; border-color: rgba(255,255,255,0.12); }
 .skillBadge-level_6 { background: #8a7a9a; color: #f6f4fa; border-color: rgba(255,255,255,0.12); }
+/* Solid red circle + white wheelchair glyph only (no text). */
+.skillBadge-wheelchair {
+  background: #dc2626;
+  color: #ffffff;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  /* Fixed square — never inherit asymmetric S1–S6 padding. */
+  padding: 0 !important;
+  gap: 0;
+  letter-spacing: 0;
+  aspect-ratio: 1;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+.skillBadge-wheelchair.skillBadge-on-photo {
+  /* Override the horizontal-heavy on-photo padding used by S-codes. */
+  padding: 0 !important;
+  border: 2px solid var(--surface-1);
+}
+.skillBadge-wheelchairGlyph {
+  display: block;
+  flex-shrink: 0;
+  /* Keep glyph square — defeats any parent stretch/compress. */
+  width: auto;
+  height: auto;
+  aspect-ratio: 1;
+  color: #ffffff;
+  fill: #ffffff;
+}
 .skillBadge-empty { color: var(--text-muted); }
+.skillBadge-icon { display: inline-flex; line-height: 1; }
 
 /* Page header — used on every page except Home (which has its own hero) */
 .page-header {

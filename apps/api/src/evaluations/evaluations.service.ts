@@ -225,9 +225,11 @@ export class EvaluationsService implements OnApplicationBootstrap {
   ) {
     const user = await tx.user.findUnique({
       where: { id: userId },
-      select: { skillLevel: true },
+      select: { skillLevel: true, skillLockedByAdmin: true },
     });
     if (!user) return null;
+    // Admin-locked scores are authoritative until an admin unlocks them.
+    if (user.skillLockedByAdmin) return null;
 
     const rows = await tx.gameEvaluation.findMany({
       where: { evaluateeId: userId },
@@ -272,6 +274,7 @@ export class EvaluationsService implements OnApplicationBootstrap {
                 role: true,
                 skillLevel: true,
                 evaluatedSkillLevel: true,
+            showWheelchairBadge: true,
               },
             },
           },

@@ -95,6 +95,11 @@
   gap: 8px;
 }
 
+.editGame-covers-single {
+  grid-template-columns: 1fr;
+  max-width: 280px;
+}
+
 .editGame-coverSlot {
   position: relative;
   aspect-ratio: 16 / 10;
