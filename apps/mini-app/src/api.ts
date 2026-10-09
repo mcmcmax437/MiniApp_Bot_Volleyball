@@ -672,6 +672,21 @@ export function useApi() {
       http<ApiGameDetail>(`/games/${id}/cancel`, { method: 'POST' }, initData),
     getWaitlistMe: (id: string) =>
       http<{ onWaitlist: boolean }>(`/games/${id}/waitlist/me`, { method: 'GET' }, initData),
+    getGameWaitlist: (id: string) =>
+      http<{
+        count: number;
+        items: Array<{
+          id: string;
+          createdAt: string;
+          user: {
+            id: string;
+            firstName: string;
+            lastName: string | null;
+            username: string | null;
+            photoUrl: string | null;
+          };
+        }>;
+      }>(`/games/${id}/waitlist`, { method: 'GET' }, initData),
     joinWaitlist: (id: string) =>
       http<{ onWaitlist: boolean }>(`/games/${id}/waitlist`, { method: 'POST' }, initData),
     leaveWaitlist: (id: string) =>

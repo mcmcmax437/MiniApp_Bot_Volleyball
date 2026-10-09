@@ -981,6 +981,43 @@ export class GamesService {
     return { onWaitlist: !!row };
   }
 
+  /** Admin-only: who pressed Notify me on a full game. */
+  async listWaitlist(me: User, gameId: string) {
+    if (me.role !== 'ADMIN') {
+      throw new ForbiddenException('Admin only');
+    }
+    const game = await this.prisma.game.findUnique({
+      where: { id: gameId },
+      select: { id: true },
+    });
+    if (!game) throw new NotFoundException('Game not found');
+
+    const rows = await this.prisma.gameWaitlist.findMany({
+      where: { gameId },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+            photoUrl: true,
+          },
+        },
+      },
+    });
+
+    return {
+      count: rows.length,
+      items: rows.map((r) => ({
+        id: r.id,
+        createdAt: r.createdAt.toISOString(),
+        user: r.user,
+      })),
+    };
+  }
+
   /** Admin-only join/leave timeline for a game. */
   async listActivity(me: User, gameId: string) {
     if (me.role !== 'ADMIN') {

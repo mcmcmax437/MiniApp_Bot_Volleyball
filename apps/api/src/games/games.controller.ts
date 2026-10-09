@@ -174,6 +174,14 @@ export class GamesController {
     return this.games.getWaitlistMe(me, id);
   }
 
+  /** Admin-only count of people who pressed Notify me. */
+  @Get(':id/waitlist')
+  @UseGuards(JwtAuthGuard, NotBannedGuard)
+  listWaitlist(@CurrentUser() me: User | null, @Param('id') id: string) {
+    if (!me) throw new UnauthorizedException('User not found');
+    return this.games.listWaitlist(me, id);
+  }
+
   @Post(':id/waitlist')
   @UseGuards(JwtAuthGuard, NotBannedGuard)
   joinWaitlist(@CurrentUser() me: User | null, @Param('id') id: string) {

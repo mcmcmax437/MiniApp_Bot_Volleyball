@@ -223,6 +223,7 @@ export const ru: Record<string, string> = {
   'game.coversAdd': 'Фото {n}',
   'game.coversClear': 'Убрать свои фото',
   'gameDetail.activityTitle': 'Активность игроков',
+  'gameDetail.notifyCount': '{n} нажали «Уведомить меня»',
   'gameDetail.activityEmpty': 'Пока нет входов/выходов.',
   'gameDetail.activityJoined': '«{name}» вошёл в игру · {when}',
   'gameDetail.activityLeft': '«{name}» вышел из игры · {when}',

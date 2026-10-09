@@ -232,6 +232,7 @@ export const uk: Record<string, string> = {
   'game.coversAdd': 'Фото {n}',
   'game.coversClear': 'Прибрати свої фото',
   'gameDetail.activityTitle': 'Активність гравців',
+  'gameDetail.notifyCount': '{n} натиснули «Повідомити мене»',
   'gameDetail.activityEmpty': 'Ще немає входів/виходів.',
   'gameDetail.activityJoined': '«{name}» зайшов у гру · {when}',
   'gameDetail.activityLeft': '«{name}» вийшов з гри · {when}',

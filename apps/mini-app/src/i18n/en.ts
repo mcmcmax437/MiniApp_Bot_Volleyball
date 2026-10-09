@@ -241,6 +241,7 @@ export const en: Record<string, string> = {
   'game.coversAdd': 'Photo {n}',
   'game.coversClear': 'Remove custom photos',
   'gameDetail.activityTitle': 'Player activity',
+  'gameDetail.notifyCount': '{n} pressed Notify me',
   'gameDetail.activityEmpty': 'No join/leave events yet.',
   'gameDetail.activityJoined': '“{name}” entered the game · {when}',
   'gameDetail.activityLeft': '“{name}” left the game · {when}',

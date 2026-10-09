@@ -223,6 +223,7 @@ export const pl: Record<string, string> = {
   'game.coversAdd': 'Zdjęcie {n}',
   'game.coversClear': 'Usuń własne zdjęcia',
   'gameDetail.activityTitle': 'Aktywność graczy',
+  'gameDetail.notifyCount': '{n} nacisnęło Powiadom mnie',
   'gameDetail.activityEmpty': 'Brak wejść/wyjść.',
   'gameDetail.activityJoined': '„{name}” dołączył do gry · {when}',
   'gameDetail.activityLeft': '„{name}” opuścił grę · {when}',

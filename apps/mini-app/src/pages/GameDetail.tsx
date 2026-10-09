@@ -259,6 +259,7 @@ export function GameDetailPage() {
     {
       onSuccess: (_data, subscribe) => {
         qc.invalidateQueries(['game-waitlist', id]);
+        qc.invalidateQueries(['game-waitlist-admin', id]);
         setWaitlistToast(
           subscribe ? t('game.waitlistToast') : t('game.waitlistToastOff'),
         );
@@ -276,6 +277,11 @@ export function GameDetailPage() {
   const reservationsQ = useQuery(
     ['game-reservations', id],
     () => api.getGameReservations(id!),
+    { enabled: !!id && isAdmin },
+  );
+  const waitlistAdminQ = useQuery(
+    ['game-waitlist-admin', id],
+    () => api.getGameWaitlist(id!),
     { enabled: !!id && isAdmin },
   );
   const [reserveNote, setReserveNote] = useState('');
@@ -468,6 +474,24 @@ export function GameDetailPage() {
           </div>
         )}
       </div>
+
+      {isAdmin && isFull && (
+        <div className="detailNotifyCount" role="status">
+          <Icon name="bell-dot" size={14} />
+          <span>{t('gameDetail.notifyCount', { n: waitlistAdminQ.data?.count ?? 0 })}</span>
+          {(waitlistAdminQ.data?.items.length ?? 0) > 0 && (
+            <ul className="detailNotifyCount-list">
+              {waitlistAdminQ.data!.items.map((row) => {
+                const name = row.user.lastName
+                  ? `${row.user.firstName} ${row.user.lastName}`
+                  : row.user.firstName;
+                const label = row.user.username ? `${name} (@${row.user.username})` : name;
+                return <li key={row.id}>{label}</li>;
+              })}
+            </ul>
+          )}
+        </div>
+      )}
 
       {/* Tab strip — Players / Info */}
       <div className="detailTabs" role="tablist">
