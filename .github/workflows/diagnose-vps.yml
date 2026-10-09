@@ -1,0 +1,74 @@
+name: Diagnose VPS (read-only)
+
+# Read-only SSH checks for volleyball-api / nginx / memory.
+# Does not rebuild, migrate, or restart anything.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: diagnose-vps
+  cancel-in-progress: true
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Collect VPS status (read-only)
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          VPS_APP_DIR: /usr/src/volleyball_miniApp/MiniApp_Bot_Volleyball
+        run: |
+          set -euo pipefail
+          if [ -z "${VPS_HOST:-}" ] || [ -z "${VPS_USER:-}" ] || [ -z "${VPS_SSH_KEY:-}" ]; then
+            echo "Missing GitHub secrets: VPS_HOST, VPS_USER, VPS_SSH_PRIVATE_KEY"
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/deploy_key \
+            "${VPS_USER}@${VPS_HOST}" \
+            "VPS_APP_DIR='${VPS_APP_DIR}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          APP_DIR="$VPS_APP_DIR"
+          echo "==== host / time ===="
+          hostname; date -u; uptime
+          echo
+          echo "==== memory ===="
+          free -h || true
+          echo
+          echo "==== disk ===="
+          df -h / /usr/src 2>/dev/null || df -h /
+          echo
+          echo "==== pm2 list ===="
+          pm2 ls || true
+          echo
+          echo "==== volleyball-api describe ===="
+          pm2 describe volleyball-api || true
+          echo
+          echo "==== volleyball-api logs (last 200, no stream) ===="
+          pm2 logs volleyball-api --lines 200 --nostream --raw || true
+          echo
+          echo "==== local health (4017) ===="
+          curl -sS -o /tmp/volley_health -w "http=%{http_code} time=%{time_total}\n" \
+            --connect-timeout 3 --max-time 8 http://127.0.0.1:4017/api/v1/healthz || echo "curl_fail"
+          head -c 300 /tmp/volley_health 2>/dev/null; echo
+          echo
+          echo "==== nginx error log (last 40 volleyball lines) ===="
+          (sudo tail -n 200 /var/log/nginx/error.log 2>/dev/null || tail -n 200 /var/log/nginx/error.log 2>/dev/null || true) \
+            | grep -iE 'volleyball|4017|upstream|connect\(\)' | tail -n 40 || true
+          echo
+          echo "==== git HEAD on server ===="
+          if [[ -d "$APP_DIR/.git" ]]; then
+            git -C "$APP_DIR" rev-parse --short HEAD
+            git -C "$APP_DIR" log -1 --oneline
+          else
+            echo "no git checkout at $APP_DIR"
+          fi
+          echo
+          echo "==== listening on 4017 ===="
+          ss -ltnp 2>/dev/null | grep 4017 || netstat -ltnp 2>/dev/null | grep 4017 || echo "nothing listening on 4017"
+          REMOTE
