@@ -1121,9 +1121,18 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
   const listQ = useQuery(['payments', 'game', gameId], () => api.listGamePayments(gameId), { enabled: open });
   const setPaidMut = useMutation(
     ({ userId, isPaid }: { userId: string; isPaid: boolean }) =>
-      api.setGamePayment(gameId, { userId, isPaid }),
+      // Marking paid always records cash (court settlement). Unpaid clears method.
+      api.setGamePayment(gameId, {
+        userId,
+        isPaid,
+        ...(isPaid ? { method: 'CASH' as const } : {}),
+      }),
     { onSuccess: () => qc.invalidateQueries(['payments', 'game', gameId]) },
   );
+
+  const paidCashCount = (listQ.data?.participants ?? []).filter(
+    (p) => p.isPaid && p.method === 'CASH',
+  ).length;
 
   return (
     <Modal open={open} onClose={onClose} title={t('payments.title')}>
@@ -1147,7 +1156,15 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
                 {(listQ.data.perPlayer / 100).toFixed(2)}
               </strong>
             </div>
+            <div className="paymentsSummary-row">
+              <span className="paymentsSummary-label">{t('payments.cashCollected')}</span>
+              <strong className="paymentsSummary-value">
+                {paidCashCount}/{listQ.data.participants.length}
+              </strong>
+            </div>
           </div>
+
+          <p className="paymentsHint">{t('payments.cashHint')}</p>
 
           <div className="paymentsList">
             <div className="paymentsList-header">
@@ -1174,17 +1191,36 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
                   {p.user.firstName}
                   {p.user.lastName ? ` ${p.user.lastName}` : ''}
                 </span>
-                <span className={`paymentItem-pill ${p.isPaid ? 'isPaid' : 'isUnpaid'}`}>
-                  {p.isPaid ? t('payments.paid') : t('payments.unpaid')}
+                <span
+                  className={`paymentItem-pill ${
+                    p.isPaid && p.method === 'CASH'
+                      ? 'isCash'
+                      : p.isPaid
+                        ? 'isPaid'
+                        : 'isUnpaid'
+                  }`}
+                >
+                  {p.isPaid && p.method === 'CASH' ? (
+                    <>
+                      <Icon name="dollar-01" size={11} />
+                      {t('payments.paidCash')}
+                    </>
+                  ) : p.isPaid ? (
+                    t('payments.paid')
+                  ) : (
+                    t('payments.unpaid')
+                  )}
                 </span>
                 <button
                   className="btn-icon paymentsList-toggle"
                   onClick={() => setPaidMut.mutate({ userId: p.userId, isPaid: !p.isPaid })}
                   disabled={setPaidMut.isLoading}
-                  aria-label={p.isPaid ? t('payments.markUnpaid') : t('payments.markPaid')}
-                  data-analytics-label={p.isPaid ? 'payments-mark-unpaid' : 'payments-mark-paid'}
+                  aria-label={p.isPaid ? t('payments.markUnpaid') : t('payments.markPaidCash')}
+                  data-analytics-label={
+                    p.isPaid ? 'payments-mark-unpaid' : 'payments-mark-paid-cash'
+                  }
                 >
-                  <Icon name={p.isPaid ? 'cancel-01' : 'checkmark-square-01'} size={14} />
+                  <Icon name={p.isPaid ? 'cancel-01' : 'dollar-01'} size={14} />
                 </button>
               </div>
             ))}

@@ -1,14 +1,20 @@
 import { Body, Controller, Get, Param, Post, UnauthorizedException, UseGuards } from '@nestjs/common';
-import { IsBoolean, IsString } from 'class-validator';
+import { IsBoolean, IsIn, IsOptional, IsString } from 'class-validator';
 import { PaymentsService } from './payments.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { NotBannedGuard } from '../auth/not-banned.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { User } from '@prisma/client';
 
+const PAYMENT_METHODS = ['CASH'] as const;
+
 class SetPaidDto {
   @IsString() userId!: string;
   @IsBoolean() isPaid!: boolean;
+  /** How they paid. Defaults to CASH when marking paid; cleared when unpaid. */
+  @IsOptional()
+  @IsIn(PAYMENT_METHODS as unknown as string[])
+  method?: (typeof PAYMENT_METHODS)[number];
 }
 
 @UseGuards(JwtAuthGuard, NotBannedGuard)
@@ -29,7 +35,7 @@ export class PaymentsController {
     @Body() dto: SetPaidDto,
   ) {
     if (!me) throw new UnauthorizedException('User not found');
-    return this.payments.setPaid(me, gameId, dto.userId, dto.isPaid);
+    return this.payments.setPaid(me, gameId, dto.userId, dto.isPaid, dto.method);
   }
 
   @Get('payments/mine')
