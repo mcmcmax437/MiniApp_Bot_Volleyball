@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -1120,6 +1120,11 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
   const qc = useQueryClient();
   const listKey = ['payments', 'game', gameId] as const;
   const listQ = useQuery(listKey, () => api.listGamePayments(gameId), { enabled: open });
+  /** Blocks double-tap (touch+click) from selecting then immediately clearing. */
+  const inFlightUsers = useRef(new Set<string>());
+  const lastSelectAt = useRef(new Map<string, number>());
+  const [, bumpBusy] = useState(0);
+
   const setMethodMut = useMutation(
     ({ userId, method }: { userId: string; method: 'CASH' | 'BANK' | null }) =>
       api.setGamePayment(gameId, { userId, method }),
@@ -1148,7 +1153,9 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
       onError: (_err, _vars, ctx) => {
         if (ctx?.prev) qc.setQueryData(listKey, ctx.prev);
       },
-      onSettled: () => {
+      onSettled: (_data, _err, vars) => {
+        inFlightUsers.current.delete(vars.userId);
+        bumpBusy((n) => n + 1);
         void qc.invalidateQueries(listKey);
       },
     },
@@ -1159,9 +1166,26 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
   const cashCount = participants.filter((p) => p.method === 'CASH').length;
   const bankCount = participants.filter((p) => p.method === 'BANK').length;
 
-  /** Exclusive pick: Cash XOR Bank. Tap the active one again → unpaid. */
+  /**
+   * Exclusive pick: Cash XOR Bank. Tap the active one again → unpaid.
+   * Ignores re-entry while that row's request is in flight, and ignores
+   * accidental clear within 500ms of a select (mobile double-fire).
+   */
   const toggleMethod = (userId: string, current: 'CASH' | 'BANK' | null, next: 'CASH' | 'BANK') => {
-    setMethodMut.mutate({ userId, method: current === next ? null : next });
+    if (inFlightUsers.current.has(userId)) return;
+
+    const clearing = current === next;
+    if (clearing) {
+      const selectedAt = lastSelectAt.current.get(userId) ?? 0;
+      if (Date.now() - selectedAt < 500) return;
+    }
+
+    const method: 'CASH' | 'BANK' | null = clearing ? null : next;
+    if (method) lastSelectAt.current.set(userId, Date.now());
+
+    inFlightUsers.current.add(userId);
+    bumpBusy((n) => n + 1);
+    setMethodMut.mutate({ userId, method });
   };
 
   return (
@@ -1216,6 +1240,7 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
             </div>
             {participants.map((p) => {
               const method = p.method === 'CASH' || p.method === 'BANK' ? p.method : null;
+              const busy = inFlightUsers.current.has(p.userId);
               return (
                 <div
                   key={p.userId}
@@ -1248,6 +1273,7 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
                         method === 'CASH' ? ' isOn' : ''
                       }`}
                       onClick={() => toggleMethod(p.userId, method, 'CASH')}
+                      disabled={busy}
                       aria-checked={method === 'CASH'}
                       aria-label={
                         method === 'CASH' ? t('payments.markUnpaid') : t('payments.markPaidCash')
@@ -1265,6 +1291,7 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
                         method === 'BANK' ? ' isOn' : ''
                       }`}
                       onClick={() => toggleMethod(p.userId, method, 'BANK')}
+                      disabled={busy}
                       aria-checked={method === 'BANK'}
                       aria-label={
                         method === 'BANK' ? t('payments.markUnpaid') : t('payments.markPaidBank')
