@@ -1,8 +1,4 @@
--- Track how a player paid (cash at the court). Null while unpaid.
+-- How a player paid: CASH or BANK. Null / neither selected = unpaid.
 
-CREATE TABLE IF NOT EXISTS `_PaymentMethod_probe` (`id` INT NOT NULL);
-DROP TABLE `_PaymentMethod_probe`;
-
--- Prisma MySQL enums are created inline on the column for optional enums.
 ALTER TABLE `GamePayment`
-  ADD COLUMN `method` ENUM('CASH') NULL AFTER `isPaid`;
+  ADD COLUMN `method` ENUM('CASH', 'BANK') NULL AFTER `isPaid`;

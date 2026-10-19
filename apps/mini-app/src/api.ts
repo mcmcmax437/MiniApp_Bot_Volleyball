@@ -525,8 +525,8 @@ export interface GameSentInvitation {
   };
 }
 
-/** How a player settled a paid game (host marks cash at the court). */
-export type PaymentMethod = 'CASH';
+/** How a player settled a paid game. Null / neither selected = unpaid. */
+export type PaymentMethod = 'CASH' | 'BANK';
 
 export interface GamePaymentDetail {
   currency: Currency;
@@ -1000,7 +1000,7 @@ export function useApi() {
       http<GamePaymentDetail>(`/games/${gameId}/payments`, { method: 'GET' }, initData),
     setGamePayment: (
       gameId: string,
-      body: { userId: string; isPaid: boolean; method?: PaymentMethod },
+      body: { userId: string; method: PaymentMethod | null },
     ) =>
       http<{ id: string; isPaid: boolean; method: PaymentMethod | null }>(
         `/games/${gameId}/payments`,

@@ -74,17 +74,24 @@ export function PaymentsPage() {
           <article key={p.id} className="paymentItem">
             <span
               className={`paymentItem-pill ${
-                p.isPaid && p.method === 'CASH'
+                p.method === 'CASH'
                   ? 'isCash'
-                  : p.isPaid
-                    ? 'isPaid'
-                    : 'isUnpaid'
+                  : p.method === 'BANK'
+                    ? 'isBank'
+                    : p.isPaid
+                      ? 'isPaid'
+                      : 'isUnpaid'
               }`}
             >
-              {p.isPaid && p.method === 'CASH' ? (
+              {p.method === 'CASH' ? (
                 <>
                   <Icon name="dollar-01" size={11} />
                   {t('payments.paidCash')}
+                </>
+              ) : p.method === 'BANK' ? (
+                <>
+                  <Icon name="credit-card" size={11} />
+                  {t('payments.paidBank')}
                 </>
               ) : p.isPaid ? (
                 t('payments.paid')

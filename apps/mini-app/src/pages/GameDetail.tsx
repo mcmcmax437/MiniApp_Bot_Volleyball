@@ -1119,20 +1119,21 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
   const { t } = useI18n();
   const qc = useQueryClient();
   const listQ = useQuery(['payments', 'game', gameId], () => api.listGamePayments(gameId), { enabled: open });
-  const setPaidMut = useMutation(
-    ({ userId, isPaid }: { userId: string; isPaid: boolean }) =>
-      // Marking paid always records cash (court settlement). Unpaid clears method.
-      api.setGamePayment(gameId, {
-        userId,
-        isPaid,
-        ...(isPaid ? { method: 'CASH' as const } : {}),
-      }),
+  const setMethodMut = useMutation(
+    ({ userId, method }: { userId: string; method: 'CASH' | 'BANK' | null }) =>
+      api.setGamePayment(gameId, { userId, method }),
     { onSuccess: () => qc.invalidateQueries(['payments', 'game', gameId]) },
   );
 
-  const paidCashCount = (listQ.data?.participants ?? []).filter(
-    (p) => p.isPaid && p.method === 'CASH',
-  ).length;
+  const participants = listQ.data?.participants ?? [];
+  const paidCount = participants.filter((p) => p.isPaid).length;
+  const cashCount = participants.filter((p) => p.method === 'CASH').length;
+  const bankCount = participants.filter((p) => p.method === 'BANK').length;
+
+  /** Tap selected method again → unpaid (nothing selected). Otherwise set that method. */
+  const toggleMethod = (userId: string, current: 'CASH' | 'BANK' | null, next: 'CASH' | 'BANK') => {
+    setMethodMut.mutate({ userId, method: current === next ? null : next });
+  };
 
   return (
     <Modal open={open} onClose={onClose} title={t('payments.title')}>
@@ -1157,73 +1158,86 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
               </strong>
             </div>
             <div className="paymentsSummary-row">
-              <span className="paymentsSummary-label">{t('payments.cashCollected')}</span>
+              <span className="paymentsSummary-label">{t('payments.collected')}</span>
               <strong className="paymentsSummary-value">
-                {paidCashCount}/{listQ.data.participants.length}
+                {paidCount}/{participants.length}
+                {paidCount > 0 ? (
+                  <span className="paymentsSummary-split">
+                    {' '}
+                    ({cashCount} {t('payments.paidCash')} · {bankCount} {t('payments.paidBank')})
+                  </span>
+                ) : null}
               </strong>
             </div>
           </div>
 
-          <p className="paymentsHint">{t('payments.cashHint')}</p>
+          <p className="paymentsHint">{t('payments.methodHint')}</p>
 
           <div className="paymentsList">
             <div className="paymentsList-header">
               <span>{t('payments.players')}</span>
-              <span>{t('payments.status')}</span>
+              <span className="paymentsList-headerMethods">
+                <span>{t('payments.paidCash')}</span>
+                <span>{t('payments.paidBank')}</span>
+              </span>
             </div>
-            {listQ.data.participants.map((p) => (
-              <div
-                key={p.userId}
-                className={`paymentsList-row${p.isPaid ? ' isPaid' : ' isUnpaid'}`}
-              >
-                <Photo
-                  src={p.user.photoUrl}
-                  name={p.user.firstName}
-                  size={32}
-                  variant="rounded"
-                  topLeftBadge={
-                    isAdminUser(p.user) ? (
-                      <AdminCrownBadge title={t('profile.status.admin')} size="sm" />
-                    ) : null
-                  }
-                />
-                <span className="paymentsList-name">
-                  {p.user.firstName}
-                  {p.user.lastName ? ` ${p.user.lastName}` : ''}
-                </span>
-                <span
-                  className={`paymentItem-pill ${
-                    p.isPaid && p.method === 'CASH'
-                      ? 'isCash'
-                      : p.isPaid
-                        ? 'isPaid'
-                        : 'isUnpaid'
-                  }`}
+            {participants.map((p) => {
+              const method = p.method;
+              return (
+                <div
+                  key={p.userId}
+                  className={`paymentsList-row${p.isPaid ? ' isPaid' : ' isUnpaid'}`}
                 >
-                  {p.isPaid && p.method === 'CASH' ? (
-                    <>
-                      <Icon name="dollar-01" size={11} />
-                      {t('payments.paidCash')}
-                    </>
-                  ) : p.isPaid ? (
-                    t('payments.paid')
-                  ) : (
-                    t('payments.unpaid')
-                  )}
-                </span>
-                <button
-                  className="btn-icon paymentsList-toggle"
-                  onClick={() => setPaidMut.mutate({ userId: p.userId, isPaid: !p.isPaid })}
-                  disabled={setPaidMut.isLoading}
-                  aria-label={p.isPaid ? t('payments.markUnpaid') : t('payments.markPaidCash')}
-                  data-analytics-label={
-                    p.isPaid ? 'payments-mark-unpaid' : 'payments-mark-paid-cash'
-                  }
-                >
-                  <Icon name={p.isPaid ? 'cancel-01' : 'dollar-01'} size={14} />
-                </button>
-              </div>
-            ))}
+                  <Photo
+                    src={p.user.photoUrl}
+                    name={p.user.firstName}
+                    size={32}
+                    variant="rounded"
+                    topLeftBadge={
+                      isAdminUser(p.user) ? (
+                        <AdminCrownBadge title={t('profile.status.admin')} size="sm" />
+                      ) : null
+                    }
+                  />
+                  <span className="paymentsList-name">
+                    {p.user.firstName}
+                    {p.user.lastName ? ` ${p.user.lastName}` : ''}
+                  </span>
+                  <div className="paymentsList-methods" role="group" aria-label={t('payments.status')}>
+                    <button
+                      type="button"
+                      className={`btn-icon paymentsMethodCheck${method === 'CASH' ? ' isOn' : ''}`}
+                      onClick={() => toggleMethod(p.userId, method, 'CASH')}
+                      disabled={setMethodMut.isLoading}
+                      aria-pressed={method === 'CASH'}
+                      aria-label={
+                        method === 'CASH' ? t('payments.markUnpaid') : t('payments.markPaidCash')
+                      }
+                      data-analytics-label={
+                        method === 'CASH' ? 'payments-clear-cash' : 'payments-mark-cash'
+                      }
+                    >
+                      <Icon name="checkmark-square-01" size={18} />
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn-icon paymentsMethodCheck${method === 'BANK' ? ' isOn' : ''}`}
+                      onClick={() => toggleMethod(p.userId, method, 'BANK')}
+                      disabled={setMethodMut.isLoading}
+                      aria-pressed={method === 'BANK'}
+                      aria-label={
+                        method === 'BANK' ? t('payments.markUnpaid') : t('payments.markPaidBank')
+                      }
+                      data-analytics-label={
+                        method === 'BANK' ? 'payments-clear-bank' : 'payments-mark-bank'
+                      }
+                    >
+                      <Icon name="checkmark-square-01" size={18} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </>
       )}
