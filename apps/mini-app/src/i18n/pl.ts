@@ -332,7 +332,7 @@ export const pl: Record<string, string> = {
   'payments.perPlayer': 'Za gracza',
   'payments.collected': 'Zebrane',
   'payments.cashCollected': 'Zebrane gotówką',
-  'payments.methodHint': 'Zaznacz Gotówka lub Bank po zapłacie. Nic niezaznaczone oznacza niezapłacone.',
+  'payments.methodHint': 'Dotknij $ (gotówka) lub kartę (przelew). Tylko jedno. Ponowne dotknięcie czyści (niezapłacone).',
   'payments.cashHint': 'Dotknij przycisku gotówki, gdy gracz zapłaci Ci gotówką na boisku.',
   'payments.players': 'Gracze',
   'payments.status': 'Status',

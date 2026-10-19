@@ -932,11 +932,16 @@
 
 .paymentsList-headerMethods {
   display: grid;
-  grid-template-columns: 36px 36px;
-  gap: 6px;
-  text-align: center;
-  font-size: 10px;
-  letter-spacing: 0.02em;
+  grid-template-columns: 40px 40px;
+  gap: 8px;
+  align-items: center;
+}
+
+.paymentsList-headerMethod {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
 }
 
 .paymentsList-row {
@@ -971,34 +976,50 @@
 
 .paymentsList-methods {
   display: grid;
-  grid-template-columns: 36px 36px;
-  gap: 6px;
+  grid-template-columns: 40px 40px;
+  gap: 8px;
 }
 
-/* Dual cash/bank checkmarks — suppress .btn::after brand gradient on squares. */
-.paymentsMethodCheck {
-  width: 36px;
-  height: 36px;
+/* Cash ($) vs Bank (card) — exclusive; only one .isOn at a time.
+   Suppress .btn::after brand gradient on square icon buttons. */
+.paymentsMethodBtn {
+  width: 40px;
+  height: 40px;
   color: var(--text-tertiary);
-  opacity: 0.55;
+  opacity: 0.5;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
 }
 
-.paymentsMethodCheck::after {
+.paymentsMethodBtn::after {
   display: none;
 }
 
-.paymentsMethodCheck:hover {
+.paymentsMethodBtn:hover {
+  opacity: 0.9;
   color: var(--text-primary);
-  opacity: 1;
   background: var(--surface-hover);
 }
 
-.paymentsMethodCheck.isOn {
-  color: var(--success);
+.paymentsMethodBtn-cash.isOn {
   opacity: 1;
-  background: var(--success-soft);
+  color: #16a34a;
+  border-color: rgba(22, 163, 74, 0.55);
+  background: rgba(34, 197, 94, 0.18);
 }
 
-.paymentsMethodCheck.isOn:hover {
-  background: rgba(34, 197, 94, 0.22);
+.paymentsMethodBtn-bank.isOn {
+  opacity: 1;
+  color: #2563eb;
+  border-color: rgba(37, 99, 235, 0.55);
+  background: rgba(59, 130, 246, 0.18);
+}
+
+.paymentsMethodBtn-cash.isOn:hover {
+  background: rgba(34, 197, 94, 0.28);
+}
+
+.paymentsMethodBtn-bank.isOn:hover {
+  background: rgba(59, 130, 246, 0.28);
 }

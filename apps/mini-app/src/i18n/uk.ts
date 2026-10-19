@@ -344,7 +344,7 @@ export const uk: Record<string, string> = {
   'payments.perPlayer': 'З гравця',
   'payments.collected': 'Зібрано',
   'payments.cashCollected': 'Зібрано готівкою',
-  'payments.methodHint': 'Позначте Готівка або Банк після оплати. Нічого не позначено — не сплачено.',
+  'payments.methodHint': 'Натисніть $ (готівка) або картку (банк). Лише один варіант. Повторне натискання знімає позначку.',
   'payments.cashHint': 'Натисніть кнопку готівки, коли гравець сплатив вам готівкою на майданчику.',
   'payments.players': 'Гравці',
   'payments.status': 'Статус',
