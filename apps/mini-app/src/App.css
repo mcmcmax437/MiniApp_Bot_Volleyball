@@ -1161,12 +1161,17 @@ button.btn[type="submit"],
   border-radius: 999px;
 }
 .paymentItem-pill.isPaid { background: var(--success-soft); color: var(--success); }
-.paymentItem-pill.isCash {
+.paymentItem-pill.isCash,
+.paymentItem-pill.isBank {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   background: rgba(34, 197, 94, 0.16);
   color: #16a34a;
+}
+.paymentItem-pill.isBank {
+  background: rgba(59, 130, 246, 0.16);
+  color: #2563eb;
 }
 .paymentItem-pill.isUnpaid { background: var(--warning-soft); color: var(--warning); }
 .paymentItem-info { display: flex; flex-direction: column; min-width: 0; }

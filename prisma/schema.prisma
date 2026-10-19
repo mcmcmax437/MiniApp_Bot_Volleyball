@@ -78,6 +78,7 @@ enum PlayType {
 
 enum PaymentMethod {
   CASH
+  BANK
 }
 
 enum GameActivityKind {

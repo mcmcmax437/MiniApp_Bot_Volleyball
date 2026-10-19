@@ -100,35 +100,57 @@ export function UserProfilePage() {
       </button>
 
       <header className="profileHero">
-        <div className="profileHero-photoWrap">
-          <Photo
-            src={u.photoUrl}
-            name={fullName}
-            size={84}
-            topLeftBadge={
-              showAdmin ? <AdminCrownBadge title={t('profile.status.admin')} /> : null
-            }
-          />
+        <div className="profileHero-top">
+          <div className="profileHero-photoWrap">
+            <Photo
+              src={u.photoUrl}
+              name={fullName}
+              size={84}
+              topLeftBadge={
+                showAdmin ? <AdminCrownBadge title={t('profile.status.admin')} /> : null
+              }
+            />
+          </div>
+          <div className="profileHero-info">
+            <h1 className="profileHero-name">{fullName}</h1>
+            {u.username && (
+              <div className="profileHero-meta">
+                <button
+                  type="button"
+                  className="profileHero-username"
+                  onClick={() => openTelegramUser(u.username!)}
+                  data-analytics-label="user-profile-username-telegram"
+                  aria-label={t('userProfile.message')}
+                >
+                  @{u.username}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-        <div className="profileHero-info">
-          <h1 className="profileHero-name">{fullName}</h1>
-          {u.username && (
-            <div className="profileHero-meta">
-              <span className="profileHero-username">@{u.username}</span>
-            </div>
-          )}
-          {hasSkillBadge(u) && (
-            <div className="profileHero-skillBig" aria-label={t('profile.skill')}>
-              <SkillBadge
-                level={level}
-                wheelchair={!!u.showWheelchairBadge}
-                size="xl"
-                withLabel={!u.showWheelchairBadge}
-              />
-            </div>
-          )}
-        </div>
+        {hasSkillBadge(u) && (
+          <div className="profileHero-skillBig" aria-label={t('profile.skill')}>
+            <SkillBadge
+              level={level}
+              wheelchair={!!u.showWheelchairBadge}
+              size="xl"
+              withLabel={!u.showWheelchairBadge}
+            />
+          </div>
+        )}
       </header>
+
+      {u.username && (
+        <button
+          type="button"
+          className="btn userProfile-message"
+          onClick={() => openTelegramUser(u.username!)}
+          data-analytics-label="user-profile-telegram"
+        >
+          <Icon name="message-01" size={16} />
+          {t('userProfile.message')}
+        </button>
+      )}
 
       <div className="card profileSummary">
         <div className="profileSummary-row">
@@ -156,17 +178,6 @@ export function UserProfilePage() {
       </section>
 
       <div className="userProfile-actions">
-        {u.username && (
-          <button
-            type="button"
-            className="btn"
-            onClick={() => openTelegramUser(u.username!)}
-            data-analytics-label="user-profile-telegram"
-          >
-            <Icon name="message-01" size={16} />
-            {t('userProfile.openTelegram')}
-          </button>
-        )}
         <button
           type="button"
           className="btn btn-ghost userProfile-block"

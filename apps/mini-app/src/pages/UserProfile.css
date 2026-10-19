@@ -16,6 +16,11 @@
   color: var(--text-primary);
 }
 
+.userProfile-message {
+  width: 100%;
+  justify-content: center;
+}
+
 .userProfile-actions {
   display: flex;
   flex-direction: column;

@@ -49,14 +49,17 @@ export class PaymentsService {
       perPlayer,
       participants: participants.map((p) => {
         const payment = byUser.get(p.userId);
+        const method = payment?.method ?? null;
+        const isPaid = !!(payment?.isPaid && method);
         return {
           userId: p.userId,
           user: p.user,
           joinedAt: p.joinedAt,
           amount: payment?.amount ?? perPlayer,
-          isPaid: payment?.isPaid ?? false,
-          method: payment?.method ?? null,
-          paidAt: payment?.paidAt ?? null,
+          // Unpaid by default: nothing selected (no method).
+          isPaid,
+          method: isPaid ? method : null,
+          paidAt: isPaid ? payment?.paidAt ?? null : null,
           note: payment?.note ?? null,
         };
       }),
@@ -64,15 +67,14 @@ export class PaymentsService {
   }
 
   /**
-   * Mark a participant paid/unpaid. When marking paid, `method` defaults to
-   * CASH (court cash tracking). Clearing paid also clears the method.
+   * Set how a participant paid. `method = null` → unpaid (no checkmark).
+   * `CASH` / `BANK` → paid with that method (mutually exclusive).
    */
-  async setPaid(
+  async setMethod(
     me: User,
     gameId: string,
     userId: string,
-    isPaid: boolean,
-    method?: PaymentMethod | null,
+    method: PaymentMethod | null,
   ) {
     const game = await this.prisma.game.findUnique({ where: { id: gameId } });
     if (!game) throw new NotFoundException('Game not found');
@@ -85,9 +87,7 @@ export class PaymentsService {
 
     const count = await this.prisma.gameParticipant.count({ where: { gameId } });
     const perPlayer = this.games.perPlayerCost(game.totalCost, count);
-
-    // Paid → CASH by default (the in-person court flow). Unpaid → clear method.
-    const resolvedMethod: PaymentMethod | null = isPaid ? (method ?? 'CASH') : null;
+    const isPaid = method != null;
 
     return this.prisma.gamePayment.upsert({
       where: { gameId_userId: { gameId, userId } },
@@ -97,19 +97,19 @@ export class PaymentsService {
         amount: perPlayer,
         currency: game.currency,
         isPaid,
-        method: resolvedMethod,
+        method,
         paidAt: isPaid ? new Date() : null,
       },
       update: {
         isPaid,
-        method: resolvedMethod,
+        method,
         paidAt: isPaid ? new Date() : null,
       },
     }).then((row) => {
       void this.analytics.trackEvent(me.id, 'payment_mark', {
         screen: `/games/${gameId}`,
         target: userId,
-        meta: { isPaid, method: resolvedMethod, gameId },
+        meta: { isPaid, method, gameId },
       });
       return row;
     });
