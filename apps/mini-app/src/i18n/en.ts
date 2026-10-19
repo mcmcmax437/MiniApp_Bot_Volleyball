@@ -408,6 +408,7 @@ export const en: Record<string, string> = {
   'userProfile.view': 'View profile',
   'userProfile.viewNamed': 'View {name}\'s profile',
   'userProfile.openTelegram': 'Open in Telegram',
+  'userProfile.message': 'Message in Telegram',
   'userProfile.block': 'Block player',
   'userProfile.blockConfirm': 'Block {name}? They won\'t appear in your games suggestions.',
   'userProfile.notFound': 'Player not found',

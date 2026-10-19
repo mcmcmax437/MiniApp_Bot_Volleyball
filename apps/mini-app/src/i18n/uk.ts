@@ -389,6 +389,7 @@ export const uk: Record<string, string> = {
   'userProfile.view': 'Переглянути профіль',
   'userProfile.viewNamed': 'Профіль гравця {name}',
   'userProfile.openTelegram': 'Відкрити в Telegram',
+  'userProfile.message': 'Написати в Telegram',
   'userProfile.block': 'Заблокувати',
   'userProfile.blockConfirm': 'Заблокувати {name}? Гравець не з\'являтиметься у ваших підказках.',
   'userProfile.notFound': 'Гравця не знайдено',

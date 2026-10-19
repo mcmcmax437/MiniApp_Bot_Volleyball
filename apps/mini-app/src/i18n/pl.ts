@@ -377,6 +377,7 @@ export const pl: Record<string, string> = {
   'userProfile.view': 'Zobacz profil',
   'userProfile.viewNamed': 'Profil gracza {name}',
   'userProfile.openTelegram': 'Otwórz w Telegramie',
+  'userProfile.message': 'Napisz w Telegramie',
   'userProfile.block': 'Zablokuj gracza',
   'userProfile.blockConfirm': 'Zablokować {name}? Nie będzie pojawiać się w Twoich podpowiedziach.',
   'userProfile.notFound': 'Nie znaleziono gracza',

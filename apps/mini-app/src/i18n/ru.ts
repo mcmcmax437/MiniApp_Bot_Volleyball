@@ -377,6 +377,7 @@ export const ru: Record<string, string> = {
   'userProfile.view': 'Смотреть профиль',
   'userProfile.viewNamed': 'Профиль игрока {name}',
   'userProfile.openTelegram': 'Открыть в Telegram',
+  'userProfile.message': 'Написать в Telegram',
   'userProfile.block': 'Заблокировать',
   'userProfile.blockConfirm': 'Заблокировать {name}? Игрок не будет появляться в ваших подсказках.',
   'userProfile.notFound': 'Игрок не найден',

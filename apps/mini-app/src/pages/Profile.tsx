@@ -160,46 +160,47 @@ export function ProfilePage() {
   return (
     <div className="profilePage">
       <header className="profileHero">
-        <div className="profileHero-photoWrap">
-          <Photo
-            src={meQ.data.photoUrl ?? tgPhotoUrl}
-            name={fullName}
-            size={84}
-            topLeftBadge={
-              isAdmin ? <AdminCrownBadge title={t('profile.status.admin')} /> : null
-            }
-          />
+        <div className="profileHero-top">
+          <div className="profileHero-photoWrap">
+            <Photo
+              src={meQ.data.photoUrl ?? tgPhotoUrl}
+              name={fullName}
+              size={84}
+              topLeftBadge={
+                isAdmin ? <AdminCrownBadge title={t('profile.status.admin')} /> : null
+              }
+            />
+          </div>
+          <div className="profileHero-info">
+            <h1 className="profileHero-name">
+              {meQ.data.firstName} {meQ.data.lastName ?? ""}
+            </h1>
+            {meQ.data.username && (
+              <div className="profileHero-meta">
+                <span className="profileHero-username">@{meQ.data.username}</span>
+              </div>
+            )}
+            {meQ.data.evaluatedSkillLevel && meQ.data.skillLevel &&
+              meQ.data.evaluatedSkillLevel !== meQ.data.skillLevel && (
+              <div className="profileHero-eval">
+                <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                  {t('profile.skillFromEvaluations', { n: 1 })}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
-        <div className="profileHero-info">
-          <h1 className="profileHero-name">
-            {meQ.data.firstName} {meQ.data.lastName ?? ""}
-          </h1>
-          {meQ.data.username && (
-            <div className="profileHero-meta">
-              <span className="profileHero-username">@{meQ.data.username}</span>
-            </div>
-          )}
-          {hasSkillBadge(meQ.data) && (
-            // Display-only under the name (not on the photo) — avoids
-            // corner-badge clipping and matches the prominent skill rule.
-            <div className="profileHero-skillBig" aria-label={t('profile.skill')}>
-              <SkillBadge
-                level={effectiveSkillLevel(meQ.data)}
-                wheelchair={!!meQ.data.showWheelchairBadge}
-                size="xl"
-                withLabel={!meQ.data.showWheelchairBadge}
-              />
-            </div>
-          )}
-          {meQ.data.evaluatedSkillLevel && meQ.data.skillLevel &&
-            meQ.data.evaluatedSkillLevel !== meQ.data.skillLevel && (
-            <div className="profileHero-eval">
-              <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-                {t('profile.skillFromEvaluations', { n: 1 })}
-              </span>
-            </div>
-          )}
-        </div>
+        {hasSkillBadge(meQ.data) && (
+          // Full-width row under photo+name so long labels never clip.
+          <div className="profileHero-skillBig" aria-label={t('profile.skill')}>
+            <SkillBadge
+              level={effectiveSkillLevel(meQ.data)}
+              wheelchair={!!meQ.data.showWheelchairBadge}
+              size="xl"
+              withLabel={!meQ.data.showWheelchairBadge}
+            />
+          </div>
+        )}
       </header>
 
       {/* === Section: Quick links === */}
