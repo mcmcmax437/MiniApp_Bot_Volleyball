@@ -358,7 +358,7 @@ export const en: Record<string, string> = {
   'payments.perPlayer': 'Per player',
   'payments.collected': 'Collected',
   'payments.cashCollected': 'Cash collected',
-  'payments.methodHint': 'Check Cash or Bank when paid. Nothing selected means unpaid.',
+  'payments.methodHint': 'Tap $ for cash or the card for bank transfer. Only one. Tap again to clear (unpaid).',
   'payments.cashHint': 'Tap the cash button when a player pays you in cash at the court.',
   'payments.players': 'Players',
   'payments.status': 'Status',

@@ -1118,11 +1118,40 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
   const api = useApi();
   const { t } = useI18n();
   const qc = useQueryClient();
-  const listQ = useQuery(['payments', 'game', gameId], () => api.listGamePayments(gameId), { enabled: open });
+  const listKey = ['payments', 'game', gameId] as const;
+  const listQ = useQuery(listKey, () => api.listGamePayments(gameId), { enabled: open });
   const setMethodMut = useMutation(
     ({ userId, method }: { userId: string; method: 'CASH' | 'BANK' | null }) =>
       api.setGamePayment(gameId, { userId, method }),
-    { onSuccess: () => qc.invalidateQueries(['payments', 'game', gameId]) },
+    {
+      // Optimistic: only one method at a time; tap again clears → unpaid.
+      onMutate: async ({ userId, method }) => {
+        await qc.cancelQueries(listKey);
+        const prev = qc.getQueryData<Awaited<ReturnType<typeof api.listGamePayments>>>(listKey);
+        if (prev) {
+          qc.setQueryData(listKey, {
+            ...prev,
+            participants: prev.participants.map((p) =>
+              p.userId === userId
+                ? {
+                    ...p,
+                    method,
+                    isPaid: method != null,
+                    paidAt: method ? new Date().toISOString() : null,
+                  }
+                : p,
+            ),
+          });
+        }
+        return { prev };
+      },
+      onError: (_err, _vars, ctx) => {
+        if (ctx?.prev) qc.setQueryData(listKey, ctx.prev);
+      },
+      onSettled: () => {
+        void qc.invalidateQueries(listKey);
+      },
+    },
   );
 
   const participants = listQ.data?.participants ?? [];
@@ -1130,7 +1159,7 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
   const cashCount = participants.filter((p) => p.method === 'CASH').length;
   const bankCount = participants.filter((p) => p.method === 'BANK').length;
 
-  /** Tap selected method again → unpaid (nothing selected). Otherwise set that method. */
+  /** Exclusive pick: Cash XOR Bank. Tap the active one again → unpaid. */
   const toggleMethod = (userId: string, current: 'CASH' | 'BANK' | null, next: 'CASH' | 'BANK') => {
     setMethodMut.mutate({ userId, method: current === next ? null : next });
   };
@@ -1176,17 +1205,21 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
           <div className="paymentsList">
             <div className="paymentsList-header">
               <span>{t('payments.players')}</span>
-              <span className="paymentsList-headerMethods">
-                <span>{t('payments.paidCash')}</span>
-                <span>{t('payments.paidBank')}</span>
+              <span className="paymentsList-headerMethods" aria-hidden="true">
+                <span className="paymentsList-headerMethod" title={t('payments.paidCash')}>
+                  <Icon name="dollar-01" size={14} />
+                </span>
+                <span className="paymentsList-headerMethod" title={t('payments.paidBank')}>
+                  <Icon name="credit-card" size={14} />
+                </span>
               </span>
             </div>
             {participants.map((p) => {
-              const method = p.method;
+              const method = p.method === 'CASH' || p.method === 'BANK' ? p.method : null;
               return (
                 <div
                   key={p.userId}
-                  className={`paymentsList-row${p.isPaid ? ' isPaid' : ' isUnpaid'}`}
+                  className={`paymentsList-row${method ? ' isPaid' : ' isUnpaid'}`}
                 >
                   <Photo
                     src={p.user.photoUrl}
@@ -1203,13 +1236,19 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
                     {p.user.firstName}
                     {p.user.lastName ? ` ${p.user.lastName}` : ''}
                   </span>
-                  <div className="paymentsList-methods" role="group" aria-label={t('payments.status')}>
+                  <div
+                    className="paymentsList-methods"
+                    role="radiogroup"
+                    aria-label={t('payments.status')}
+                  >
                     <button
                       type="button"
-                      className={`btn-icon paymentsMethodCheck${method === 'CASH' ? ' isOn' : ''}`}
+                      role="radio"
+                      className={`btn-icon paymentsMethodBtn paymentsMethodBtn-cash${
+                        method === 'CASH' ? ' isOn' : ''
+                      }`}
                       onClick={() => toggleMethod(p.userId, method, 'CASH')}
-                      disabled={setMethodMut.isLoading}
-                      aria-pressed={method === 'CASH'}
+                      aria-checked={method === 'CASH'}
                       aria-label={
                         method === 'CASH' ? t('payments.markUnpaid') : t('payments.markPaidCash')
                       }
@@ -1217,14 +1256,16 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
                         method === 'CASH' ? 'payments-clear-cash' : 'payments-mark-cash'
                       }
                     >
-                      <Icon name="checkmark-square-01" size={18} />
+                      <Icon name="dollar-01" size={16} />
                     </button>
                     <button
                       type="button"
-                      className={`btn-icon paymentsMethodCheck${method === 'BANK' ? ' isOn' : ''}`}
+                      role="radio"
+                      className={`btn-icon paymentsMethodBtn paymentsMethodBtn-bank${
+                        method === 'BANK' ? ' isOn' : ''
+                      }`}
                       onClick={() => toggleMethod(p.userId, method, 'BANK')}
-                      disabled={setMethodMut.isLoading}
-                      aria-pressed={method === 'BANK'}
+                      aria-checked={method === 'BANK'}
                       aria-label={
                         method === 'BANK' ? t('payments.markUnpaid') : t('payments.markPaidBank')
                       }
@@ -1232,7 +1273,7 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
                         method === 'BANK' ? 'payments-clear-bank' : 'payments-mark-bank'
                       }
                     >
-                      <Icon name="checkmark-square-01" size={18} />
+                      <Icon name="credit-card" size={16} />
                     </button>
                   </div>
                 </div>

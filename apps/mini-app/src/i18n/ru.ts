@@ -332,7 +332,7 @@ export const ru: Record<string, string> = {
   'payments.perPlayer': 'С игрока',
   'payments.collected': 'Собрано',
   'payments.cashCollected': 'Собрано наличными',
-  'payments.methodHint': 'Отметьте Наличные или Банк после оплаты. Ничего не отмечено — не оплачено.',
+  'payments.methodHint': 'Нажмите $ (наличные) или карту (банк). Только один вариант. Повторное нажатие снимает отметку.',
   'payments.cashHint': 'Нажмите кнопку наличных, когда игрок заплатил вам наличными на площадке.',
   'payments.players': 'Игроки',
   'payments.status': 'Статус',
