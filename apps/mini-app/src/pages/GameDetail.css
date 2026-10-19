@@ -896,6 +896,13 @@
   font-weight: 700;
 }
 
+.paymentsHint {
+  margin: 0 0 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-tertiary);
+}
+
 .paymentsList {
   display: flex;
   flex-direction: column;
