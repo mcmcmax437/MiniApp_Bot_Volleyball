@@ -15,6 +15,7 @@ import { SKILL_BUCKETS, SKILL_LEVELS } from '../shared/skill-levels';
 import { canonicalizeCity, expandCityFilter, foldCity } from '../shared/city';
 import type { User, Prisma } from '@prisma/client';
 import { GameCoverService } from './game-cover.service';
+import type { GameSettingChange } from '../bot/notify-messages';
 
 const SUPPORTED_CURRENCIES = new Set(['UAH', 'PLN', 'EUR', 'USD']);
 
@@ -649,7 +650,10 @@ export class GamesService {
     venueName?: string;
     venueAddress?: string;
   }) {
-    const game = await this.prisma.game.findUnique({ where: { id: gameId } });
+    const game = await this.prisma.game.findUnique({
+      where: { id: gameId },
+      include: { venue: true },
+    });
     if (!game) throw new NotFoundException('Game not found');
     if (game.hostId !== me.id && me.role !== 'ADMIN') {
       throw new ForbiddenException('Only the host or an admin can edit');
@@ -685,14 +689,15 @@ export class GamesService {
     if (patch.addressHint !== undefined) data.addressHint = patch.addressHint;
     if (patch.playType) data.playType = patch.playType;
 
+    let nextVenue = game.venue;
     if (patch.venueId || (patch.venueAddress && patch.venueAddress.trim())) {
-      const venue = await this.resolveVenue(me, {
+      nextVenue = await this.resolveVenue(me, {
         venueId: patch.venueId,
         venueName: patch.venueName,
         venueAddress: patch.venueAddress?.trim() || '',
         spotsTotal: typeof patch.spotsTotal === 'number' ? patch.spotsTotal : game.spotsTotal,
       } as any);
-      data.venueId = venue.id;
+      data.venueId = nextVenue.id;
     }
 
     // Host typically only sends a new start — keep the same duration.
@@ -736,17 +741,16 @@ export class GamesService {
       }
     }
 
+    const settingChanges = this.settingChanges(game, data, nextVenue, {
+      timeChanged,
+      oldStartAt,
+      explicitEnd: patch.endAt != null,
+    });
+
     if (timeChanged) {
       // Old reminder offsets no longer apply — let the cron fire again for the new kickoff.
       await this.prisma.gameReminderSent
         .deleteMany({ where: { gameId } })
-        .catch(() => undefined);
-      await this.scheduler
-        .notifyTimeChanged(gameId, {
-          oldStartAt,
-          newStartAt: data.startAt,
-          actorId: me.id,
-        })
         .catch(() => undefined);
       void this.analytics.trackEvent(me.id, 'game_reschedule', {
         screen: `/games/${gameId}`,
@@ -756,7 +760,25 @@ export class GamesService {
           newStartAt: (data.startAt as Date).toISOString(),
         },
       });
-    } else if (Object.keys(data).length > 0) {
+    }
+
+    const onlyTime =
+      settingChanges.length === 1 && settingChanges[0]?.field === 'time';
+    if (onlyTime) {
+      await this.scheduler
+        .notifyTimeChanged(gameId, {
+          oldStartAt,
+          newStartAt: data.startAt,
+          actorId: me.id,
+        })
+        .catch(() => undefined);
+    } else if (settingChanges.length > 0) {
+      await this.scheduler
+        .notifyGameSettingsChanged(gameId, { actorId: me.id, changes: settingChanges })
+        .catch(() => undefined);
+    }
+
+    if (!timeChanged && Object.keys(data).length > 0) {
       void this.analytics.trackEvent(me.id, 'game_edit', {
         screen: `/games/${gameId}`,
         target: gameId,
@@ -765,6 +787,119 @@ export class GamesService {
     }
 
     return this.findOne(gameId);
+  }
+
+  /** Fields that matter to people already in the lobby. Cover photos are skipped. */
+  private settingChanges(
+    game: {
+      startAt: Date;
+      endAt: Date;
+      venueId: string;
+      venue: { name: string; address: string };
+      playType: string;
+      skillLevel: string;
+      spotsTotal: number;
+      notes: string | null;
+      addressHint: string | null;
+      isClosed: boolean;
+      isPaid: boolean;
+      totalCost: number;
+      currency: string;
+    },
+    data: {
+      startAt?: Date;
+      endAt?: Date;
+      venueId?: string;
+      playType?: string;
+      skillLevel?: string;
+      spotsTotal?: number;
+      notes?: string | null;
+      addressHint?: string | null;
+      isClosed?: boolean;
+      isPaid?: boolean;
+      totalCost?: number;
+      currency?: string;
+    },
+    nextVenue: { name: string; address: string },
+    opts: { timeChanged: boolean; oldStartAt: Date; explicitEnd: boolean },
+  ): GameSettingChange[] {
+    const changes: GameSettingChange[] = [];
+    if (opts.timeChanged && data.startAt) {
+      changes.push({ field: 'time', oldStartAt: opts.oldStartAt, newStartAt: data.startAt });
+    }
+    if (
+      opts.explicitEnd &&
+      data.endAt &&
+      data.endAt.getTime() !== game.endAt.getTime()
+    ) {
+      changes.push({ field: 'end', oldEndAt: game.endAt, newEndAt: data.endAt });
+    }
+    if (data.venueId && data.venueId !== game.venueId) {
+      changes.push({
+        field: 'place',
+        from: this.placeLabel(game.venue.name, game.venue.address),
+        to: this.placeLabel(nextVenue.name, nextVenue.address),
+      });
+    }
+    if (data.playType && data.playType !== game.playType) {
+      changes.push({ field: 'playType', from: game.playType, to: data.playType });
+    }
+    if (data.skillLevel && data.skillLevel !== game.skillLevel) {
+      changes.push({
+        field: 'level',
+        from: this.levelNum(game.skillLevel),
+        to: this.levelNum(data.skillLevel),
+      });
+    }
+    if (typeof data.spotsTotal === 'number' && data.spotsTotal !== game.spotsTotal) {
+      changes.push({ field: 'spots', from: game.spotsTotal, to: data.spotsTotal });
+    }
+    const newSpots = typeof data.spotsTotal === 'number' ? data.spotsTotal : game.spotsTotal;
+    const newTotal = typeof data.totalCost === 'number' ? data.totalCost : game.totalCost;
+    const newCurrency = data.currency ?? game.currency;
+    const costChanged =
+      (typeof data.totalCost === 'number' && data.totalCost !== game.totalCost) ||
+      (!!data.currency && data.currency !== game.currency);
+    if (costChanged) {
+      changes.push({
+        field: 'price',
+        from: this.moneyLabel(game.totalCost, game.spotsTotal, game.currency),
+        to: this.moneyLabel(newTotal, newSpots, newCurrency),
+      });
+    }
+    if (data.notes !== undefined && (data.notes ?? '') !== (game.notes ?? '')) {
+      changes.push({ field: 'notes' });
+    }
+    if (
+      data.addressHint !== undefined &&
+      (data.addressHint ?? '') !== (game.addressHint ?? '')
+    ) {
+      changes.push({ field: 'hint' });
+    }
+    if (typeof data.isClosed === 'boolean' && data.isClosed !== game.isClosed) {
+      changes.push({ field: 'closed', closed: data.isClosed });
+    }
+    if (typeof data.isPaid === 'boolean' && data.isPaid !== game.isPaid) {
+      changes.push({ field: 'paid', paid: data.isPaid });
+    }
+    return changes;
+  }
+
+  private placeLabel(name: string, address?: string | null): string {
+    const line = address?.trim() ?? '';
+    if (line && line !== name.trim()) return `${name} — ${line}`;
+    return name;
+  }
+
+  private levelNum(level: string): number {
+    const n = Number(String(level).replace(/\D/g, ''));
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  private moneyLabel(totalMinor: number, spots: number, currency: string): string {
+    const per = this.plannedPerPlayerCost(totalMinor, spots) / 100;
+    const major = Number.isInteger(per) ? String(per) : per.toFixed(2);
+    return `${major} ${currency}`;
   }
 
   /**

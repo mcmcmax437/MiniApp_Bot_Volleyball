@@ -4,10 +4,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TelegramSender } from '../bot/telegram-sender';
 import {
   cancelledMessage,
+  gameSettingsChangedMessage,
   ratePlayersMessage,
   reminderMessage,
   spotOpenedMessage,
   timeChangedMessage,
+  type GameSettingChange,
 } from '../bot/notify-messages';
 
 /** Look far enough ahead to cover Profile's "24h + 2h + 30m" preset (1440m). */
@@ -310,6 +312,55 @@ export class SchedulerService {
         locale: p.user.language ?? 'en',
       });
       await this.sender.sendToTelegramId(p.user.telegramId, text, {
+        replyMarkup: openBtn,
+      });
+    }
+  }
+
+  /**
+   * Tell everyone who joined (and anyone still waiting on a join request)
+   * that the host changed lobby settings. Skips the person who saved.
+   */
+  async notifyGameSettingsChanged(
+    gameId: string,
+    opts: { actorId: string; changes: GameSettingChange[] },
+  ) {
+    if (!this.sender.isReady()) return;
+    if (!opts.changes.length) return;
+
+    const game = await this.prisma.game.findUnique({
+      where: { id: gameId },
+      include: {
+        venue: true,
+        participants: { include: { user: true } },
+        joinRequests: {
+          where: { status: 'PENDING' },
+          include: { user: true },
+        },
+      },
+    });
+    if (!game) return;
+    if (game.status === 'CANCELLED' || game.status === 'FINISHED') return;
+
+    const seen = new Set<string>();
+    const recipients = [
+      ...game.participants.map((p) => p.user),
+      ...game.joinRequests.map((r) => r.user),
+    ];
+    const openBtn = this.sender.openAppButton('Open game', `g_${game.id}`);
+    for (const user of recipients) {
+      if (seen.has(user.id)) continue;
+      seen.add(user.id);
+      if (user.id === opts.actorId) continue;
+      if (user.isBanned) continue;
+      const text = gameSettingsChangedMessage({
+        venueName: game.venue.name,
+        venueAddress: game.venue.address,
+        startAt: game.startAt,
+        changes: opts.changes,
+        locale: user.language ?? 'en',
+      });
+      await this.sender.sendToTelegramId(user.telegramId, text, {
         replyMarkup: openBtn,
       });
     }
