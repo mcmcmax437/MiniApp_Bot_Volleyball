@@ -152,7 +152,7 @@ export const en: Record<string, string> = {
   'game.changeTimeDone': 'Time updated. Players were notified.',
   'game.edit': 'Edit game',
   'game.editTitle': 'Edit game',
-  'game.editHint': 'Update place, type, time, skill, or spots. Players get a Telegram alert only if the start time changes.',
+  'game.editHint': 'Update place, type, time, skill, or spots. Everyone who joined gets a Telegram message, if they have opened the bot at least once.',
   'game.editSave': 'Save changes',
   'game.editDone': 'Game updated.',
   'game.editNoChanges': 'Nothing changed.',

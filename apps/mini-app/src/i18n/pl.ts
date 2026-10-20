@@ -136,7 +136,7 @@ export const pl: Record<string, string> = {
   'game.changeTimeDone': 'Godzina zaktualizowana. Gracze zostali powiadomieni.',
   'game.edit': 'Edytuj grę',
   'game.editTitle': 'Edytuj grę',
-  'game.editHint': 'Zmień miejsce, typ, godzinę, poziom lub miejsca. Gracze dostaną Telegram tylko gdy zmieni się start.',
+  'game.editHint': 'Zmień miejsce, typ, godzinę, poziom lub miejsca. Wszyscy zapisani dostaną wiadomość na Telegramie, jeśli choć raz otworzyli bota.',
   'game.editSave': 'Zapisz',
   'game.editDone': 'Gra zaktualizowana.',
   'game.editNoChanges': 'Nic nie zmieniono.',
