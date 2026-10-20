@@ -473,3 +473,22 @@ model AppSession {
   @@index([platform])
   @@index([language])
 }
+
+/// Volleyball offers parsed from hand-written Facebook group posts.
+/// Admin pastes this week's posts; the board does not read Facebook itself.
+model FbGameOffer {
+  id         String    @id @default(cuid())
+  rawText    String    @db.Text
+  status     String    @db.VarChar(8)
+  gameDate   DateTime?
+  whenLabel  String?   @db.VarChar(80)
+  gameLevel  String?   @db.VarChar(40)
+  freePlaces String?   @db.VarChar(20)
+  address    String?   @db.VarChar(240)
+  link       String?   @db.VarChar(500)
+  postedAt   DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+
+  @@index([postedAt])
+  @@index([gameDate])
+}

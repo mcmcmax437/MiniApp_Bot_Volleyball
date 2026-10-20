@@ -279,6 +279,19 @@ export interface CreateVenuePayload {
 }
 
 // Admin types (subset of fields used by the admin page)
+export interface AdminFbOffer {
+  id: string;
+  status: 'OPEN' | 'FULL';
+  gameDate: string | null;
+  whenLabel: string | null;
+  gameLevel: string | null;
+  freePlaces: string | null;
+  address: string | null;
+  link: string | null;
+  rawText: string;
+  postedAt: string;
+}
+
 export interface AdminRatingsGiven {
   user: {
     id: string;
@@ -781,6 +794,12 @@ export function useApi() {
       http<AdminUserDetail>(`/admin/users/${id}`, { method: 'GET' }, initData),
     adminListRatingsGiven: (userId: string) =>
       http<AdminRatingsGiven>(`/admin/users/${userId}/ratings-given`, { method: 'GET' }, initData),
+    adminListFbOffers: () =>
+      http<{ items: AdminFbOffer[] }>('/admin/fb-offers', { method: 'GET' }, initData),
+    adminImportFbOffers: (body: { text: string; link?: string }) =>
+      http<{ count: number }>('/admin/fb-offers', { method: 'POST', body: JSON.stringify(body) }, initData),
+    adminDeleteFbOffer: (id: string) =>
+      http<{ ok: boolean }>(`/admin/fb-offers/${id}`, { method: 'DELETE' }, initData),
     adminListRatingGivers: (q?: string) => {
       const params = new URLSearchParams();
       if (q?.trim()) params.set('q', q.trim());

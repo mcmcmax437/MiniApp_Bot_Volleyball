@@ -10,11 +10,12 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { IsIn, IsOptional } from 'class-validator';
+import { IsOptional, IsString, MaxLength, IsIn } from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { AdminGuard } from '../auth/admin.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AdminService } from './admin.service';
+import { FbOffersService } from './fb-offers.service';
 import {
   AdminListQuery,
   AdminUpdateGameDto,
@@ -22,6 +23,17 @@ import {
   AdminUpdateVenueDto,
 } from './dto';
 import type { User } from '@prisma/client';
+
+class ImportFbOffersDto {
+  @IsString()
+  @MaxLength(20000)
+  text!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  link?: string;
+}
 
 class ResolveReportDto {
   @IsIn(['REVIEWED', 'DISMISSED']) status!: 'REVIEWED' | 'DISMISSED';
@@ -32,7 +44,10 @@ class ResolveReportDto {
 @UseGuards(JwtAuthGuard, AdminGuard)
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly admin: AdminService) {}
+  constructor(
+    private readonly admin: AdminService,
+    private readonly fbOffers: FbOffersService,
+  ) {}
 
   @Get('stats')
   stats() {
@@ -209,6 +224,22 @@ export class AdminController {
       }
     }
     return resolved;
+  }
+
+  /** This week's volleyball posts pasted from the Facebook group. */
+  @Get('fb-offers')
+  listFbOffers() {
+    return this.fbOffers.listThisWeek();
+  }
+
+  @Post('fb-offers')
+  importFbOffers(@Body() dto: ImportFbOffersDto) {
+    return this.fbOffers.importPosts(dto.text, dto.link);
+  }
+
+  @Delete('fb-offers/:id')
+  removeFbOffer(@Param('id') id: string) {
+    return this.fbOffers.remove(id);
   }
 
   // ---------- Analytics / heatmap ----------

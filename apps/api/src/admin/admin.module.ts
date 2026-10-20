@@ -4,6 +4,7 @@ import { AnalyticsModule } from '../analytics/analytics.module';
 import { EvaluationsModule } from '../evaluations/evaluations.module';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
+import { FbOffersService } from './fb-offers.service';
 import { AdminGuard } from '../auth/admin.guard';
 
 @Module({
@@ -12,7 +13,7 @@ import { AdminGuard } from '../auth/admin.guard';
   // AdminGuard) chain on AdminController needs at boot time.
   imports: [AuthModule, AnalyticsModule, EvaluationsModule],
   controllers: [AdminController],
-  providers: [AdminService, AdminGuard],
+  providers: [AdminService, FbOffersService, AdminGuard],
   exports: [AdminService],
 })
 export class AdminModule {}

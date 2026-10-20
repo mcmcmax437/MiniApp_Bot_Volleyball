@@ -694,3 +694,95 @@ button.adminRatings-pick.isActive {
   height: 16px;
   accent-color: var(--brand);
 }
+
+.adminFb {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.adminFb-hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.adminFb-group {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.adminFb textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.adminFb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.adminFb-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+}
+
+.adminFb-card.isFull {
+  border-color: var(--danger);
+}
+
+.adminFb-cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.adminFb-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+}
+
+.adminFb-fields > div {
+  display: grid;
+  grid-template-columns: 108px 1fr;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.adminFb-fields dt {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+}
+
+.adminFb-fields dd {
+  margin: 0;
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.adminFb-raw summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.adminFb-raw pre {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
