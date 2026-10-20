@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -1118,12 +1118,75 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
   const api = useApi();
   const { t } = useI18n();
   const qc = useQueryClient();
-  const listQ = useQuery(['payments', 'game', gameId], () => api.listGamePayments(gameId), { enabled: open });
-  const setPaidMut = useMutation(
-    ({ userId, isPaid }: { userId: string; isPaid: boolean }) =>
-      api.setGamePayment(gameId, { userId, isPaid }),
-    { onSuccess: () => qc.invalidateQueries(['payments', 'game', gameId]) },
+  const listKey = ['payments', 'game', gameId] as const;
+  const listQ = useQuery(listKey, () => api.listGamePayments(gameId), { enabled: open });
+  /** Blocks double-tap (touch+click) from selecting then immediately clearing. */
+  const inFlightUsers = useRef(new Set<string>());
+  const lastSelectAt = useRef(new Map<string, number>());
+  const [, bumpBusy] = useState(0);
+
+  const setMethodMut = useMutation(
+    ({ userId, method }: { userId: string; method: 'CASH' | 'BANK' | null }) =>
+      api.setGamePayment(gameId, { userId, method }),
+    {
+      // Optimistic: only one method at a time; tap again clears → unpaid.
+      onMutate: async ({ userId, method }) => {
+        await qc.cancelQueries(listKey);
+        const prev = qc.getQueryData<Awaited<ReturnType<typeof api.listGamePayments>>>(listKey);
+        if (prev) {
+          qc.setQueryData(listKey, {
+            ...prev,
+            participants: prev.participants.map((p) =>
+              p.userId === userId
+                ? {
+                    ...p,
+                    method,
+                    isPaid: method != null,
+                    paidAt: method ? new Date().toISOString() : null,
+                  }
+                : p,
+            ),
+          });
+        }
+        return { prev };
+      },
+      onError: (_err, _vars, ctx) => {
+        if (ctx?.prev) qc.setQueryData(listKey, ctx.prev);
+      },
+      onSettled: (_data, _err, vars) => {
+        inFlightUsers.current.delete(vars.userId);
+        bumpBusy((n) => n + 1);
+        void qc.invalidateQueries(listKey);
+      },
+    },
   );
+
+  const participants = listQ.data?.participants ?? [];
+  const paidCount = participants.filter((p) => p.isPaid).length;
+  const cashCount = participants.filter((p) => p.method === 'CASH').length;
+  const bankCount = participants.filter((p) => p.method === 'BANK').length;
+
+  /**
+   * Exclusive pick: Cash XOR Bank. Tap the active one again → unpaid.
+   * Ignores re-entry while that row's request is in flight, and ignores
+   * accidental clear within 500ms of a select (mobile double-fire).
+   */
+  const toggleMethod = (userId: string, current: 'CASH' | 'BANK' | null, next: 'CASH' | 'BANK') => {
+    if (inFlightUsers.current.has(userId)) return;
+
+    const clearing = current === next;
+    if (clearing) {
+      const selectedAt = lastSelectAt.current.get(userId) ?? 0;
+      if (Date.now() - selectedAt < 500) return;
+    }
+
+    const method: 'CASH' | 'BANK' | null = clearing ? null : next;
+    if (method) lastSelectAt.current.set(userId, Date.now());
+
+    inFlightUsers.current.add(userId);
+    bumpBusy((n) => n + 1);
+    setMethodMut.mutate({ userId, method });
+  };
 
   return (
     <Modal open={open} onClose={onClose} title={t('payments.title')}>
@@ -1147,47 +1210,102 @@ function PaymentsModal({ open, gameId, onClose }: { open: boolean; gameId: strin
                 {(listQ.data.perPlayer / 100).toFixed(2)}
               </strong>
             </div>
+            <div className="paymentsSummary-row">
+              <span className="paymentsSummary-label">{t('payments.collected')}</span>
+              <strong className="paymentsSummary-value">
+                {paidCount}/{participants.length}
+                {paidCount > 0 ? (
+                  <span className="paymentsSummary-split">
+                    {' '}
+                    ({cashCount} {t('payments.paidCash')} · {bankCount} {t('payments.paidBank')})
+                  </span>
+                ) : null}
+              </strong>
+            </div>
           </div>
+
+          <p className="paymentsHint">{t('payments.methodHint')}</p>
 
           <div className="paymentsList">
             <div className="paymentsList-header">
               <span>{t('payments.players')}</span>
-              <span>{t('payments.status')}</span>
+              <span className="paymentsList-headerMethods" aria-hidden="true">
+                <span className="paymentsList-headerMethod" title={t('payments.paidCash')}>
+                  <Icon name="dollar-01" size={14} />
+                </span>
+                <span className="paymentsList-headerMethod" title={t('payments.paidBank')}>
+                  <Icon name="credit-card" size={14} />
+                </span>
+              </span>
             </div>
-            {listQ.data.participants.map((p) => (
-              <div
-                key={p.userId}
-                className={`paymentsList-row${p.isPaid ? ' isPaid' : ' isUnpaid'}`}
-              >
-                <Photo
-                  src={p.user.photoUrl}
-                  name={p.user.firstName}
-                  size={32}
-                  variant="rounded"
-                  topLeftBadge={
-                    isAdminUser(p.user) ? (
-                      <AdminCrownBadge title={t('profile.status.admin')} size="sm" />
-                    ) : null
-                  }
-                />
-                <span className="paymentsList-name">
-                  {p.user.firstName}
-                  {p.user.lastName ? ` ${p.user.lastName}` : ''}
-                </span>
-                <span className={`paymentItem-pill ${p.isPaid ? 'isPaid' : 'isUnpaid'}`}>
-                  {p.isPaid ? t('payments.paid') : t('payments.unpaid')}
-                </span>
-                <button
-                  className="btn-icon paymentsList-toggle"
-                  onClick={() => setPaidMut.mutate({ userId: p.userId, isPaid: !p.isPaid })}
-                  disabled={setPaidMut.isLoading}
-                  aria-label={p.isPaid ? t('payments.markUnpaid') : t('payments.markPaid')}
-                  data-analytics-label={p.isPaid ? 'payments-mark-unpaid' : 'payments-mark-paid'}
+            {participants.map((p) => {
+              const method = p.method === 'CASH' || p.method === 'BANK' ? p.method : null;
+              const busy = inFlightUsers.current.has(p.userId);
+              return (
+                <div
+                  key={p.userId}
+                  className={`paymentsList-row${method ? ' isPaid' : ' isUnpaid'}`}
                 >
-                  <Icon name={p.isPaid ? 'cancel-01' : 'checkmark-square-01'} size={14} />
-                </button>
-              </div>
-            ))}
+                  <Photo
+                    src={p.user.photoUrl}
+                    name={p.user.firstName}
+                    size={32}
+                    variant="rounded"
+                    topLeftBadge={
+                      isAdminUser(p.user) ? (
+                        <AdminCrownBadge title={t('profile.status.admin')} size="sm" />
+                      ) : null
+                    }
+                  />
+                  <span className="paymentsList-name">
+                    {p.user.firstName}
+                    {p.user.lastName ? ` ${p.user.lastName}` : ''}
+                  </span>
+                  <div
+                    className="paymentsList-methods"
+                    role="radiogroup"
+                    aria-label={t('payments.status')}
+                  >
+                    <button
+                      type="button"
+                      role="radio"
+                      className={`btn-icon paymentsMethodBtn paymentsMethodBtn-cash${
+                        method === 'CASH' ? ' isOn' : ''
+                      }`}
+                      onClick={() => toggleMethod(p.userId, method, 'CASH')}
+                      disabled={busy}
+                      aria-checked={method === 'CASH'}
+                      aria-label={
+                        method === 'CASH' ? t('payments.markUnpaid') : t('payments.markPaidCash')
+                      }
+                      data-analytics-label={
+                        method === 'CASH' ? 'payments-clear-cash' : 'payments-mark-cash'
+                      }
+                    >
+                      <Icon name="dollar-01" size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      role="radio"
+                      className={`btn-icon paymentsMethodBtn paymentsMethodBtn-bank${
+                        method === 'BANK' ? ' isOn' : ''
+                      }`}
+                      onClick={() => toggleMethod(p.userId, method, 'BANK')}
+                      disabled={busy}
+                      aria-checked={method === 'BANK'}
+                      aria-label={
+                        method === 'BANK' ? t('payments.markUnpaid') : t('payments.markPaidBank')
+                      }
+                      data-analytics-label={
+                        method === 'BANK' ? 'payments-clear-bank' : 'payments-mark-bank'
+                      }
+                    >
+                      <Icon name="credit-card" size={16} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </>
       )}

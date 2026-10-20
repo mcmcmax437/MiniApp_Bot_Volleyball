@@ -72,8 +72,32 @@ export function PaymentsPage() {
       <div className="paymentsList">
         {(myQ.data ?? []).map((p) => (
           <article key={p.id} className="paymentItem">
-            <span className={`paymentItem-pill ${p.isPaid ? 'isPaid' : 'isUnpaid'}`}>
-              {p.isPaid ? t('payments.paid') : t('payments.unpaid')}
+            <span
+              className={`paymentItem-pill ${
+                p.method === 'CASH'
+                  ? 'isCash'
+                  : p.method === 'BANK'
+                    ? 'isBank'
+                    : p.isPaid
+                      ? 'isPaid'
+                      : 'isUnpaid'
+              }`}
+            >
+              {p.method === 'CASH' ? (
+                <>
+                  <Icon name="dollar-01" size={11} />
+                  {t('payments.paidCash')}
+                </>
+              ) : p.method === 'BANK' ? (
+                <>
+                  <Icon name="credit-card" size={11} />
+                  {t('payments.paidBank')}
+                </>
+              ) : p.isPaid ? (
+                t('payments.paid')
+              ) : (
+                t('payments.unpaid')
+              )}
             </span>
             <div className="paymentItem-info">
               <div className="paymentItem-venue">{p.game.venue.name}</div>

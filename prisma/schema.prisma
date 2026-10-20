@@ -76,6 +76,11 @@ enum PlayType {
   BEACH
 }
 
+enum PaymentMethod {
+  CASH
+  BANK
+}
+
 enum GameActivityKind {
   JOINED
   LEFT
@@ -395,6 +400,8 @@ model GamePayment {
   amount    Int
   currency  String   @default("UAH")
   isPaid    Boolean  @default(false)
+  /// How the player settled (host marks cash at the court). Null while unpaid.
+  method    PaymentMethod?
   paidAt    DateTime?
   note      String?  @db.VarChar(280)
   createdAt DateTime @default(now())

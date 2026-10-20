@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { PrismaService } from '../prisma/prisma.service';
 import { GamesService } from '../games/games.service';
 import { AnalyticsService } from '../analytics/analytics.service';
-import type { User } from '@prisma/client';
+import type { PaymentMethod, User } from '@prisma/client';
 
 @Injectable()
 export class PaymentsService {
@@ -49,21 +49,33 @@ export class PaymentsService {
       perPlayer,
       participants: participants.map((p) => {
         const payment = byUser.get(p.userId);
+        const method = payment?.method ?? null;
+        const isPaid = !!(payment?.isPaid && method);
         return {
           userId: p.userId,
           user: p.user,
           joinedAt: p.joinedAt,
           amount: payment?.amount ?? perPlayer,
-          isPaid: payment?.isPaid ?? false,
-          paidAt: payment?.paidAt ?? null,
+          // Unpaid by default: nothing selected (no method).
+          isPaid,
+          method: isPaid ? method : null,
+          paidAt: isPaid ? payment?.paidAt ?? null : null,
           note: payment?.note ?? null,
         };
       }),
     };
   }
 
-  /** Toggle "paid" for a single participant. Host-only. */
-  async setPaid(me: User, gameId: string, userId: string, isPaid: boolean) {
+  /**
+   * Set how a participant paid. `method = null` → unpaid (no checkmark).
+   * `CASH` / `BANK` → paid with that method (mutually exclusive).
+   */
+  async setMethod(
+    me: User,
+    gameId: string,
+    userId: string,
+    method: PaymentMethod | null,
+  ) {
     const game = await this.prisma.game.findUnique({ where: { id: gameId } });
     if (!game) throw new NotFoundException('Game not found');
     if (game.hostId !== me.id && me.role !== 'ADMIN') {
@@ -75,6 +87,7 @@ export class PaymentsService {
 
     const count = await this.prisma.gameParticipant.count({ where: { gameId } });
     const perPlayer = this.games.perPlayerCost(game.totalCost, count);
+    const isPaid = method != null;
 
     return this.prisma.gamePayment.upsert({
       where: { gameId_userId: { gameId, userId } },
@@ -84,17 +97,19 @@ export class PaymentsService {
         amount: perPlayer,
         currency: game.currency,
         isPaid,
+        method,
         paidAt: isPaid ? new Date() : null,
       },
       update: {
         isPaid,
+        method,
         paidAt: isPaid ? new Date() : null,
       },
     }).then((row) => {
       void this.analytics.trackEvent(me.id, 'payment_mark', {
         screen: `/games/${gameId}`,
         target: userId,
-        meta: { isPaid, gameId },
+        meta: { isPaid, method, gameId },
       });
       return row;
     });

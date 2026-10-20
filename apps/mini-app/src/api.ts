@@ -538,6 +538,9 @@ export interface GameSentInvitation {
   };
 }
 
+/** How a player settled a paid game. Null / neither selected = unpaid. */
+export type PaymentMethod = 'CASH' | 'BANK';
+
 export interface GamePaymentDetail {
   currency: Currency;
   totalCost: number;
@@ -555,6 +558,7 @@ export interface GamePaymentDetail {
     joinedAt: string;
     amount: number;
     isPaid: boolean;
+    method: PaymentMethod | null;
     paidAt: string | null;
     note: string | null;
   }>;
@@ -1013,17 +1017,34 @@ export function useApi() {
 
     listGamePayments: (gameId: string) =>
       http<GamePaymentDetail>(`/games/${gameId}/payments`, { method: 'GET' }, initData),
-    setGamePayment: (gameId: string, body: { userId: string; isPaid: boolean }) =>
-      http<{ id: string; isPaid: boolean }>(`/games/${gameId}/payments`, {
-        method: 'POST',
-        body: JSON.stringify(body),
-      }, initData),
-    listMyPayments: () =>
-      http<Array<{ id: string; isPaid: boolean; amount: number; currency: Currency; game: { id: string; startAt: string; venue: { name: string }; host: { firstName: string; lastName: string | null; username: string | null } } }>>(
-        `/payments/mine`,
-        { method: 'GET' },
+    setGamePayment: (
+      gameId: string,
+      body: { userId: string; method: PaymentMethod | null },
+    ) =>
+      http<{ id: string; isPaid: boolean; method: PaymentMethod | null }>(
+        `/games/${gameId}/payments`,
+        {
+          method: 'POST',
+          body: JSON.stringify(body),
+        },
         initData,
       ),
+    listMyPayments: () =>
+      http<
+        Array<{
+          id: string;
+          isPaid: boolean;
+          method: PaymentMethod | null;
+          amount: number;
+          currency: Currency;
+          game: {
+            id: string;
+            startAt: string;
+            venue: { name: string };
+            host: { firstName: string; lastName: string | null; username: string | null };
+          };
+        }>
+      >(`/payments/mine`, { method: 'GET' }, initData),
 
     // ===== Evaluations =====
 
