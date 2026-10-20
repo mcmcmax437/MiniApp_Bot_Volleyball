@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { useApi } from "../api";
-import { useTelegram } from "../tg";
+import { botAlertsGranted, requestBotAlerts, useTelegram } from "../tg";
 import { Icon } from "../Icon";
 import { Photo } from "../Photo";
 import { SkillBadge } from "../SkillBadge";
@@ -82,6 +82,7 @@ export function HomePage() {
   const navigate = useNavigate();
 
   const [locating, setLocating] = useState(false);
+  const [alertsOn, setAlertsOn] = useState(botAlertsGranted);
   const [storedCity, setStoredCity] = useState<string | null>(() => getStoredCity());
   const firstName = meQ.data?.firstName ?? user?.first_name ?? "friend";
   const city =
@@ -281,6 +282,28 @@ export function HomePage() {
           />
         </div>
       </header>
+
+      {webApp && !alertsOn && (
+        <button
+          type="button"
+          className="home-onboardBanner"
+          onClick={() => {
+            webApp.HapticFeedback?.impactOccurred?.('light');
+            void requestBotAlerts(cityQ.data?.botUsername).then((ok) => {
+              if (ok) setAlertsOn(true);
+            });
+          }}
+        >
+          <div className="home-onboardBanner-icon">
+            <Icon name="bell-dot" size={18} />
+          </div>
+          <div className="home-onboardBanner-text">
+            <div className="home-onboardBanner-title">{t('home.botAlerts')}</div>
+            <div className="home-onboardBanner-sub">{t('home.botAlertsSub')}</div>
+          </div>
+          <Icon name="arrow-right-01" size={16} />
+        </button>
+      )}
 
       {needsOnboarding && (
         <button type="button" className="home-onboardBanner" onClick={goWelcome}>

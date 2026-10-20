@@ -59,6 +59,8 @@ export const ru: Record<string, string> = {
 
   'home.title': 'Главная',
   'home.hello': 'Привет, {name}!',
+  'home.botAlerts': 'Уведомления об играх в чате бота',
+  'home.botAlertsSub': 'Разрешите сообщения, чтобы изменения игры приходили в этот чат.',
   'home.upcomingGames': 'Предстоящие игры',
   'home.seeAll': 'Все игры',
   'home.noGames': 'Предстоящих игр пока нет',

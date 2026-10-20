@@ -769,12 +769,11 @@ export class GamesService {
         .notifyTimeChanged(gameId, {
           oldStartAt,
           newStartAt: data.startAt,
-          actorId: me.id,
         })
         .catch(() => undefined);
     } else if (settingChanges.length > 0) {
       await this.scheduler
-        .notifyGameSettingsChanged(gameId, { actorId: me.id, changes: settingChanges })
+        .notifyGameSettingsChanged(gameId, { changes: settingChanges })
         .catch(() => undefined);
     }
 

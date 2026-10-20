@@ -59,6 +59,8 @@ export const pl: Record<string, string> = {
 
   'home.title': 'Główna',
   'home.hello': 'Cześć, {name}!',
+  'home.botAlerts': 'Powiadomienia o meczach na czacie bota',
+  'home.botAlertsSub': 'Zezwól na wiadomości, żeby zmiany meczu trafiały na ten czat.',
   'home.upcomingGames': 'Nadchodzące mecze',
   'home.seeAll': 'Zobacz wszystkie',
   'home.noGames': 'Brak nadchodzących meczów',

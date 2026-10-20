@@ -398,6 +398,19 @@ export function gameSettingsChangedMessage(opts: {
   ]);
 }
 
+export function botAlertsEnabledMessage(locale?: string): string {
+  const lang = langOf(locale);
+  const line =
+    lang === 'uk'
+      ? 'Тепер повідомлення про ігри приходитимуть у цей чат.'
+      : lang === 'ru'
+        ? 'Теперь сообщения об играх будут приходить в этот чат.'
+        : lang === 'pl'
+          ? 'Powiadomienia o meczach będą przychodzić na ten czat.'
+          : 'Game alerts will arrive in this chat.';
+  return card([`🏐 <b>VolleyBot</b>`, ``, line]);
+}
+
 export function welcomeMessage(opts: { firstName: string; hasWebApp: boolean }): string {
   const name = esc(opts.firstName || 'friend');
   if (opts.hasWebApp) {

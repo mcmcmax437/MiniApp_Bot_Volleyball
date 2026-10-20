@@ -52,6 +52,8 @@ interface TelegramWebApp {
     notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
     selectionChanged: () => void;
   };
+  /** Ask Telegram to let the bot send this user private messages. */
+  requestWriteAccess?: (callback: (granted: boolean) => void) => void;
 }
 
 declare global {
@@ -60,6 +62,43 @@ declare global {
       WebApp?: TelegramWebApp;
     };
   }
+}
+
+const BOT_ALERTS_KEY = 'volley:bot-alerts:v1';
+
+export function botAlertsGranted(): boolean {
+  try {
+    return localStorage.getItem(BOT_ALERTS_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** User tap required. Telegram shows its own allow dialog. */
+export function requestBotAlerts(botUsername?: string | null): Promise<boolean> {
+  const tg = window.Telegram?.WebApp;
+  const ask = tg?.requestWriteAccess;
+  if (!ask) {
+    const name = botUsername?.trim().replace(/^@/, '');
+    if (name) tg?.openTelegramLink?.(`https://t.me/${name}?start=alerts`);
+    return Promise.resolve(false);
+  }
+  return new Promise((resolve) => {
+    try {
+      ask((granted) => {
+        if (granted) {
+          try {
+            localStorage.setItem(BOT_ALERTS_KEY, '1');
+          } catch {
+            /* ignore */
+          }
+        }
+        resolve(!!granted);
+      });
+    } catch {
+      resolve(false);
+    }
+  });
 }
 
 export function TelegramProvider({ children }: { children: React.ReactNode }) {

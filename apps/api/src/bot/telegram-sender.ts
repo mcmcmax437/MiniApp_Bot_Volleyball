@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Bot, Context, InlineKeyboard } from 'grammy';
-import { welcomeMessage } from './notify-messages';
+import { botAlertsEnabledMessage, welcomeMessage } from './notify-messages';
 
 export type SendOptions = {
   /** Optional inline keyboard (e.g. Open App). */
@@ -28,6 +28,19 @@ export class TelegramSender implements OnModuleInit, OnModuleDestroy {
       return;
     }
     this.bot = new Bot<Context>(this.token);
+
+    this.bot.use(async (ctx, next) => {
+      const allowed = (ctx.update as { write_access_allowed?: unknown }).write_access_allowed;
+      const from = ctx.from;
+      if (!allowed || !from) {
+        await next();
+        return;
+      }
+      const text = botAlertsEnabledMessage(from.language_code);
+      await ctx.api.sendMessage(from.id, text, { parse_mode: 'HTML' }).catch((err) => {
+        this.logger.warn(`write_access confirm failed: ${(err as Error).message}`);
+      });
+    });
 
     this.bot.command('start', async (ctx) => {
       const webappUrl = this.config.get<string>('WEBAPP_URL')?.trim();

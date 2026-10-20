@@ -285,7 +285,7 @@ export class SchedulerService {
    */
   async notifyTimeChanged(
     gameId: string,
-    opts: { oldStartAt: Date; newStartAt: Date; actorId: string },
+    opts: { oldStartAt: Date; newStartAt: Date },
   ) {
     if (!this.sender.isReady()) return;
     if (opts.oldStartAt.getTime() === opts.newStartAt.getTime()) return;
@@ -302,7 +302,6 @@ export class SchedulerService {
 
     const openBtn = this.sender.openAppButton('Open game', `g_${game.id}`);
     for (const p of game.participants) {
-      if (p.userId === opts.actorId) continue;
       if (p.user.isBanned) continue;
       const text = timeChangedMessage({
         venueName: game.venue.name,
@@ -318,12 +317,12 @@ export class SchedulerService {
   }
 
   /**
-   * Tell everyone who joined (and anyone still waiting on a join request)
-   * that the host changed lobby settings. Skips the person who saved.
+   * Tell every joined player, and anyone still waiting on a join request,
+   * that the host changed lobby settings. The host is included.
    */
   async notifyGameSettingsChanged(
     gameId: string,
-    opts: { actorId: string; changes: GameSettingChange[] },
+    opts: { changes: GameSettingChange[] },
   ) {
     if (!this.sender.isReady()) return;
     if (!opts.changes.length) return;
@@ -351,7 +350,6 @@ export class SchedulerService {
     for (const user of recipients) {
       if (seen.has(user.id)) continue;
       seen.add(user.id);
-      if (user.id === opts.actorId) continue;
       if (user.isBanned) continue;
       const text = gameSettingsChangedMessage({
         venueName: game.venue.name,

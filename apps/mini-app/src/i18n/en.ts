@@ -68,6 +68,8 @@ export const en: Record<string, string> = {
   // ===== Home =====
   'home.title': 'Home',
   'home.hello': 'Hello, {name}!',
+  'home.botAlerts': 'Get game alerts in the bot',
+  'home.botAlertsSub': 'Allow messages so time and game changes reach this chat.',
   'home.upcomingGames': 'Upcoming games',
   'home.seeAll': 'See all',
   'home.noGames': 'No upcoming games yet',

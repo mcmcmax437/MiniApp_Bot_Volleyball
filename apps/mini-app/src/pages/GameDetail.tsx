@@ -9,6 +9,7 @@ import {
   CURRENCY_SYMBOLS,
   UserRole,
 } from '../api';
+import { requestBotAlerts } from '../tg';
 import { Icon } from '../Icon';
 import { Photo } from '../Photo';
 import { SkillBadge } from '../SkillBadge';
@@ -221,7 +222,10 @@ export function GameDetailPage() {
   };
 
   const joinMut = useMutation(() => api.joinGame(id!), {
-    onSuccess: () => refreshGameLists(),
+    onSuccess: () => {
+      refreshGameLists();
+      void requestBotAlerts();
+    },
   });
   const leaveMut = useMutation(() => api.leaveGame(id!), {
     onSuccess: () => refreshGameLists(),
