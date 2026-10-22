@@ -113,6 +113,7 @@ export class GamesService {
         currency,
         isPaid: !!dto.isPaid,
         isClosed: !!dto.isClosed,
+        hidePlayersFromOutsiders: !!dto.hidePlayersFromOutsiders,
         coverImageUrl: dto.coverImageUrl ?? null,
         addressHint: dto.addressHint ?? null,
         playType: dto.playType ?? 'OUTDOOR',
@@ -131,7 +132,7 @@ export class GamesService {
     void this.analytics.bumpGameStat(me.id, 'gamesHosted');
     await this.recordActivity(this.prisma, game.id, me.id, 'JOINED').catch(() => undefined);
 
-    return this.findOne(game.id);
+    return this.findOne(game.id, me);
   }
 
   private async resolveVenue(me: User, dto: CreateGameDto) {
@@ -182,7 +183,12 @@ export class GamesService {
     });
   }
 
-  async findOne(id: string) {
+  /**
+   * @param viewer `undefined` = trusted internal caller (no redaction).
+   *        `null` / User = public read; redact roster when host hid players
+   *        and the viewer is not host/admin/participant.
+   */
+  async findOne(id: string, viewer?: User | null) {
     const game = await this.prisma.game.findUnique({
       where: { id },
       include: {
@@ -282,7 +288,7 @@ export class GamesService {
     });
     if (!game) throw new NotFoundException('Game not found');
 
-    return {
+    const payload = {
       ...game,
       // Client historically used `userId` for the invitee on invitation rows.
       invitations: game.invitations.map((inv) => ({
@@ -307,10 +313,15 @@ export class GamesService {
       // signed up. The actual share each participant owes is computed in
       // PaymentsService and surfaced via `/payments/for-game`.
       perPlayerCost: this.plannedPerPlayerCost(game.totalCost, game.spotsTotal),
+      playersHidden: false,
     };
+
+    // Internal callers omit viewer → full payload (e.g. after join/leave).
+    if (viewer === undefined) return payload;
+    return this.applyPlayerVisibility(payload, viewer);
   }
 
-  async list(opts: ListGamesQuery) {
+  async list(opts: ListGamesQuery, viewer: User | null = null) {
     const now = new Date();
     // Keep games on the feed through the auto-finish window. Filtering with
     // `startAt >= now` hid lobbies the moment kickoff passed — so a game
@@ -457,14 +468,97 @@ export class GamesService {
 
     return filtered.map((g) => {
       const { _count, ...rest } = g;
-      return {
+      const payload = {
         ...rest,
         participantsCount: g.participants.length,
         reservedCount: _count.reservations,
         // Planned split (total / spotsTotal) — see note in `getById`.
         perPlayerCost: this.plannedPerPlayerCost(g.totalCost, g.spotsTotal),
+        playersHidden: false,
       };
+      return this.applyPlayerVisibility(payload, viewer);
     });
+  }
+
+  /** True when the viewer may see real participant identities. */
+  private canSeePlayers(
+    game: {
+      hostId: string;
+      hidePlayersFromOutsiders: boolean;
+      participants: Array<{ userId: string }>;
+    },
+    viewer: User | null,
+  ): boolean {
+    if (!game.hidePlayersFromOutsiders) return true;
+    if (!viewer) return false;
+    if (viewer.role === 'ADMIN') return true;
+    if (viewer.id === game.hostId) return true;
+    return game.participants.some((p) => p.userId === viewer.id);
+  }
+
+  private anonymousPlayer(index: number) {
+    return {
+      id: `anon-${index}`,
+      firstName: '',
+      lastName: null as string | null,
+      username: null as string | null,
+      photoUrl: null as string | null,
+      role: 'USER' as const,
+      skillLevel: null,
+      evaluatedSkillLevel: null,
+      showWheelchairBadge: false,
+      identityHidden: true as const,
+    };
+  }
+
+  /**
+   * When the host hid the roster, strip identities for outsiders.
+   * Host profile stays visible; counts stay accurate.
+   */
+  private applyPlayerVisibility<T extends {
+    hostId: string;
+    hidePlayersFromOutsiders: boolean;
+    participants: any[];
+    joinRequests?: any[];
+    invitations?: any[];
+    payments?: any[];
+    playersHidden?: boolean;
+  }>(game: T, viewer: User | null): T {
+    if (this.canSeePlayers(game, viewer)) {
+      return { ...game, playersHidden: false };
+    }
+
+    const participants = game.participants.map((row, index) => {
+      const rawId =
+        (row && typeof row === 'object' && 'userId' in row && row.userId) ||
+        (row && typeof row === 'object' && row.user?.id) ||
+        (row && typeof row === 'object' && row.id) ||
+        null;
+      // Host stays visible as organizer; only other seats become Incognito.
+      if (rawId && rawId === game.hostId) return row;
+
+      const anon = this.anonymousPlayer(index);
+      // List rows are often `{ userId, user }` or a flat user; detail is a join row.
+      if (row && typeof row === 'object' && 'user' in row) {
+        return {
+          ...row,
+          id: typeof row.id === 'string' ? `anon-row-${index}` : row.id,
+          userId: anon.id,
+          user: anon,
+          identityHidden: true,
+        };
+      }
+      return anon;
+    });
+
+    return {
+      ...game,
+      participants,
+      joinRequests: [],
+      invitations: [],
+      payments: [],
+      playersHidden: true,
+    };
   }
 
   async join(me: User, gameId: string) {
@@ -642,6 +736,7 @@ export class GamesService {
     currency?: string;
     isPaid?: boolean;
     isClosed?: boolean;
+    hidePlayersFromOutsiders?: boolean;
     coverImageUrl?: string | null;
     coverImageUrl2?: string | null;
     addressHint?: string | null;
@@ -684,6 +779,9 @@ export class GamesService {
     if (patch.currency && SUPPORTED_CURRENCIES.has(patch.currency)) data.currency = patch.currency;
     if (typeof patch.isPaid === 'boolean') data.isPaid = patch.isPaid;
     if (typeof patch.isClosed === 'boolean') data.isClosed = patch.isClosed;
+    if (typeof patch.hidePlayersFromOutsiders === 'boolean') {
+      data.hidePlayersFromOutsiders = patch.hidePlayersFromOutsiders;
+    }
     if (patch.coverImageUrl !== undefined) data.coverImageUrl = patch.coverImageUrl;
     if (patch.coverImageUrl2 !== undefined) data.coverImageUrl2 = patch.coverImageUrl2;
     if (patch.addressHint !== undefined) data.addressHint = patch.addressHint;
@@ -785,7 +883,7 @@ export class GamesService {
       });
     }
 
-    return this.findOne(gameId);
+    return this.findOne(gameId, me);
   }
 
   /** Fields that matter to people already in the lobby. Cover photos are skipped. */

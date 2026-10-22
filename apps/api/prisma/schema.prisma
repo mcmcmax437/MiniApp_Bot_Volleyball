@@ -193,6 +193,8 @@ model Game {
   status     GameStatus @default(OPEN)
   // v3 fields:
   isClosed       Boolean  @default(false)
+  /// When true, non-participants see the roster as Incognito (host stays visible).
+  hidePlayersFromOutsiders Boolean @default(false)
   currency       String   @default("UAH") // ISO 4217
   isPaid         Boolean  @default(false)
   coverImageUrl  String?  @db.VarChar(500)

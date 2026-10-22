@@ -3,7 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { JwtAuthGuard } from './jwt.guard';
+import { JwtAuthGuard, OptionalJwtAuthGuard } from './jwt.guard';
 import { NotBannedGuard } from './not-banned.guard';
 import { AvatarModule } from '../avatar/avatar.module';
 
@@ -20,7 +20,7 @@ import { AvatarModule } from '../avatar/avatar.module';
     AvatarModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard, NotBannedGuard],
-  exports: [AuthService, JwtAuthGuard, NotBannedGuard, JwtModule],
+  providers: [AuthService, JwtAuthGuard, OptionalJwtAuthGuard, NotBannedGuard],
+  exports: [AuthService, JwtAuthGuard, OptionalJwtAuthGuard, NotBannedGuard, JwtModule],
 })
 export class AuthModule {}

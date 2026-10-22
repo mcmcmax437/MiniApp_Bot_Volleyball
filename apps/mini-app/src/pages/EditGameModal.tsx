@@ -38,6 +38,7 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
   const [startWall, setStartWall] = useState('');
   const [skillLevel, setSkillLevel] = useState<SkillLevel>('LEVEL_3');
   const [spotsTotal, setSpotsTotal] = useState(10);
+  const [hidePlayers, setHidePlayers] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [coverDraft, setCoverDraft] = useState<CoverDraft>(null);
   const [clearCovers, setClearCovers] = useState(false);
@@ -51,6 +52,7 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
     setStartWall(utcIsoToWallClock(game.startAt, getAppTimeZone()));
     setSkillLevel(game.skillLevel);
     setSpotsTotal(game.spotsTotal);
+    setHidePlayers(!!game.hidePlayersFromOutsiders);
     setError(null);
     setCoverDraft(null);
     setClearCovers(false);
@@ -147,6 +149,10 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
         return;
       }
       patch.startAt = iso;
+    }
+
+    if (hidePlayers !== !!game.hidePlayersFromOutsiders) {
+      patch.hidePlayersFromOutsiders = hidePlayers;
     }
 
     if (Object.keys(patch).length === 0 && !coversDirty && !clearCovers) {
@@ -270,6 +276,19 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
           onChange={(e) => setSpotsTotal(Number(e.target.value) || 0)}
         />
       </div>
+
+      <label className="toggle" style={{ marginTop: 4 }}>
+        <input
+          type="checkbox"
+          checked={hidePlayers}
+          onChange={(e) => setHidePlayers(e.target.checked)}
+        />
+        <span className="toggle-track" />
+        <span className="toggle-label">{t('game.hidePlayers')}</span>
+      </label>
+      <p className="editGame-hint" style={{ marginTop: 0 }}>
+        {t('game.hidePlayersHint')}
+      </p>
 
       <div className="field">
         <label className="field-label">

@@ -128,6 +128,8 @@ export interface ApiGameParticipantUser {
   showWheelchairBadge?: boolean;
   /** Present on game/invite payloads so clients can show the admin crown. */
   role?: UserRole;
+  /** Server-redacted roster entry for outsiders when host hid players. */
+  identityHidden?: boolean;
 }
 
 export interface ApiGame {
@@ -143,6 +145,10 @@ export interface ApiGame {
   status: 'OPEN' | 'FULL' | 'CANCELLED' | 'FINISHED';
   // v3:
   isClosed: boolean;
+  /** Host hides roster identities from people who have not joined. */
+  hidePlayersFromOutsiders?: boolean;
+  /** True for this viewer when the roster was redacted to Incognito. */
+  playersHidden?: boolean;
   isPaid: boolean;
   currency: Currency;
   coverImageUrl: string | null;
@@ -177,6 +183,7 @@ export interface ApiGameDetail extends Omit<ApiGame, 'participants'> {
     userId: string;
     user: ApiGameParticipantUser;
     joinedAt: string;
+    identityHidden?: boolean;
   }>;
   /** Public hold ids. Notes are admin-only via `getGameReservations`. */
   reservations?: Array<{ id: string; createdAt: string }>;
@@ -228,6 +235,7 @@ export interface CreateGamePayload {
   currency?: Currency;
   isPaid?: boolean;
   isClosed?: boolean;
+  hidePlayersFromOutsiders?: boolean;
   coverImageUrl?: string;
   addressHint?: string;
   // v4:
@@ -244,6 +252,7 @@ export interface UpdateGamePayload {
   currency?: Currency;
   isPaid?: boolean;
   isClosed?: boolean;
+  hidePlayersFromOutsiders?: boolean;
   coverImageUrl?: string | null;
   coverImageUrl2?: string | null;
   addressHint?: string | null;

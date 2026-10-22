@@ -52,6 +52,8 @@ interface PlayerRowProps {
   isHost: boolean;
   isYou: boolean;
   roleLabel: string;
+  /** Roster redacted for outsiders — show Incognito, no profile/menu. */
+  identityHidden?: boolean;
   onOpenProfile: () => void;
   onReport: () => void;
   menuOpen: boolean;
@@ -78,12 +80,28 @@ function PlayerRow({
   isHost,
   isYou,
   roleLabel,
+  identityHidden,
   onOpenProfile,
   onReport,
   menuOpen,
   onToggleMenu,
 }: PlayerRowProps) {
   const { t } = useI18n();
+  if (identityHidden) {
+    return (
+      <li className="detailPlayer" data-user-id={userId}>
+        <div className="detailPlayer-main detailPlayer-hold">
+          <Photo src={null} name={t('game.incognito')} size={44} variant="rounded" />
+          <span className="detailPlayer-body">
+            <span className="detailPlayer-name">
+              <span className="detailPlayer-nameText">{t('game.incognito')}</span>
+            </span>
+            <span className="detailPlayer-sub">{t('game.playersHiddenHint')}</span>
+          </span>
+        </div>
+      </li>
+    );
+  }
   const fullName = lastName ? `${firstName} ${lastName}` : firstName;
   const showMenu = !isYou;
   // Prefer the peer-corrected (weighted) level. Falls back to self-declared
@@ -550,6 +568,13 @@ export function GameDetailPage() {
         </div>
       )}
 
+      {g.playersHidden && (
+        <div className="requestBanner">
+          <Icon name="view-off" size={14} />
+          <span>{t('game.playersHiddenBanner')}</span>
+        </div>
+      )}
+
       {/* Players tab body */}
       {activeTab === 'players' && (
         <div className="detailCard detailCard-players" role="tabpanel">
@@ -586,32 +611,39 @@ export function GameDetailPage() {
             />
             {g.participants
               .filter((p) => p.userId !== g.host.id)
-              .map((p) => (
-                <PlayerRow
-                  key={p.id}
-                  userId={p.userId}
-                  photoUrl={p.user.photoUrl}
-                  firstName={p.user.firstName}
-                  lastName={p.user.lastName}
-                  skillLevel={p.user.skillLevel}
-                  evaluatedSkillLevel={p.user.evaluatedSkillLevel}
-                  showWheelchairBadge={p.user.showWheelchairBadge}
-                  role={p.user.role}
-                  isHost={false}
-                  isYou={myId === p.userId}
-                  roleLabel={t('gameDetail.rolePlayer')}
-                  onOpenProfile={() =>
-                    navigate(myId === p.userId ? '/profile' : `/users/${p.userId}`)
-                  }
-                  onReport={() =>
-                    setReportTarget({ id: p.userId, name: p.user.firstName })
-                  }
-                  menuOpen={openMenuFor === p.userId}
-                  onToggleMenu={() =>
-                    setOpenMenuFor(openMenuFor === p.userId ? null : p.userId)
-                  }
-                />
-              ))}
+              .map((p) => {
+                const hidden = !!(p.identityHidden || p.user?.identityHidden);
+                return (
+                  <PlayerRow
+                    key={p.id}
+                    userId={p.userId}
+                    photoUrl={hidden ? null : p.user.photoUrl}
+                    firstName={hidden ? '' : p.user.firstName}
+                    lastName={hidden ? null : p.user.lastName}
+                    skillLevel={hidden ? null : p.user.skillLevel}
+                    evaluatedSkillLevel={hidden ? null : p.user.evaluatedSkillLevel}
+                    showWheelchairBadge={hidden ? false : p.user.showWheelchairBadge}
+                    role={hidden ? undefined : p.user.role}
+                    isHost={false}
+                    isYou={!hidden && myId === p.userId}
+                    roleLabel={t('gameDetail.rolePlayer')}
+                    identityHidden={hidden}
+                    onOpenProfile={() => {
+                      if (hidden) return;
+                      navigate(myId === p.userId ? '/profile' : `/users/${p.userId}`);
+                    }}
+                    onReport={() => {
+                      if (hidden) return;
+                      setReportTarget({ id: p.userId, name: p.user.firstName });
+                    }}
+                    menuOpen={!hidden && openMenuFor === p.userId}
+                    onToggleMenu={() => {
+                      if (hidden) return;
+                      setOpenMenuFor(openMenuFor === p.userId ? null : p.userId);
+                    }}
+                  />
+                );
+              })}
             {g.participants.length <= 1 && (
               <li className="detailPlayer-empty">{t('gameDetail.noPlayers')}</li>
             )}
