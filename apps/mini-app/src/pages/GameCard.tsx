@@ -186,32 +186,42 @@ export function GameCard({ game }: GameCardProps) {
               return (
                 <>
                   {visible.map((u) => {
+                    const hidden = !!u.identityHidden;
                     const lvl = effectiveSkillLevel(u);
+                    const label = hidden
+                      ? t('game.incognito')
+                      : (u.firstName ?? t('game.incognito'));
                     return (
                       <button
                         key={u.id}
                         type="button"
                         className="gameCard-playerBtn"
-                        title={u.firstName ?? undefined}
-                        aria-label={t('userProfile.viewNamed', { name: u.firstName ?? '' })}
+                        title={label}
+                        aria-label={
+                          hidden
+                            ? t('game.incognito')
+                            : t('userProfile.viewNamed', { name: u.firstName ?? '' })
+                        }
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          if (u.id) navigate(`/users/${u.id}`);
+                          if (!hidden && u.id) navigate(`/users/${u.id}`);
                         }}
-                        data-analytics-label="game-card-open-profile"
+                        data-analytics-label={
+                          hidden ? 'game-card-incognito' : 'game-card-open-profile'
+                        }
                       >
                         <Photo
-                          src={u.photoUrl ?? null}
-                          name={u.firstName ?? null}
+                          src={hidden ? null : (u.photoUrl ?? null)}
+                          name={hidden ? t('game.incognito') : (u.firstName ?? null)}
                           size={36}
                           topLeftBadge={
-                            isAdminUser(u) ? (
+                            !hidden && isAdminUser(u) ? (
                               <AdminCrownBadge title={t('profile.status.admin')} size="sm" />
                             ) : null
                           }
                           bottomRightBadge={
-                            hasSkillBadge(u) ? (
+                            !hidden && hasSkillBadge(u) ? (
                               <SkillBadge
                                 level={lvl}
                                 wheelchair={!!u.showWheelchairBadge}

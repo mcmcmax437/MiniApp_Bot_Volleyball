@@ -146,6 +146,7 @@ export function CreateGamePage() {
   // point next to the venue address. We dropped it — meeting specifics now
   // live in `notes` only — so no client-side state is needed here.
   const [isClosed, setIsClosed] = useState(false);
+  const [hidePlayersFromOutsiders, setHidePlayersFromOutsiders] = useState(false);
   const [playType, setPlayType] = useState<PlayType>('OUTDOOR');
   const [cover, setCover] = useState<CoverChoice>({ kind: 'none' });
   const [coverError, setCoverError] = useState<string | null>(null);
@@ -209,6 +210,7 @@ export function CreateGamePage() {
         currency,
         isPaid,
         isClosed,
+        hidePlayersFromOutsiders,
         coverImageUrl: undefined,
         playType,
       });
@@ -620,6 +622,17 @@ export function CreateGamePage() {
           <span className="toggle-track" />
           <span className="toggle-label">{t('create.field.closed')}</span>
         </label>
+
+        <label className="toggle" style={{ marginTop: 8 }}>
+          <input
+            type="checkbox"
+            checked={hidePlayersFromOutsiders}
+            onChange={(e) => setHidePlayersFromOutsiders(e.target.checked)}
+          />
+          <span className="toggle-track" />
+          <span className="toggle-label">{t('create.field.hidePlayers')}</span>
+        </label>
+        <p className="field-hint">{t('game.hidePlayersHint')}</p>
 
         <div
           className={`paidBadge ${isPaid ? 'paidBadge-paid' : 'paidBadge-free'}`}

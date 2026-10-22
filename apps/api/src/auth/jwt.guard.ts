@@ -51,3 +51,37 @@ export class JwtAuthGuard implements CanActivate {
     return true;
   }
 }
+
+/**
+ * Same hydration as `JwtAuthGuard`, but never rejects. Used on public game
+ * reads so we can redact the roster for outsiders when the host hid players.
+ */
+@Injectable()
+export class OptionalJwtAuthGuard implements CanActivate {
+  constructor(
+    private readonly auth: AuthService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  async canActivate(ctx: ExecutionContext): Promise<boolean> {
+    const req = ctx.switchToHttp().getRequest<AuthedRequest>();
+    const headerToken = (req.headers.authorization ?? '').replace(/^Bearer\s+/i, '');
+    const cookieToken = (req as Request).cookies?.['auth_token'] as string | undefined;
+    const token = headerToken || cookieToken;
+    if (!token) {
+      req.userRecord = null;
+      return true;
+    }
+    try {
+      const payload = await this.auth.verifyToken(token);
+      req.user = payload;
+      req.userRecord = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+      });
+    } catch {
+      req.user = undefined;
+      req.userRecord = null;
+    }
+    return true;
+  }
+}

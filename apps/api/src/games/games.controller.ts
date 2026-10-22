@@ -31,7 +31,7 @@ import { promises as fs } from 'node:fs';
 import { GamesService } from './games.service';
 import { GameCoverService } from './game-cover.service';
 import { CreateGameDto, ListGamesQuery, PLAY_TYPES, PlayType } from './dto';
-import { JwtAuthGuard } from '../auth/jwt.guard';
+import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/jwt.guard';
 import { NotBannedGuard } from '../auth/not-banned.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { SKILL_LEVELS } from '../shared/skill-levels';
@@ -47,6 +47,8 @@ class UpdateGameDto {
   @IsOptional() @IsString() currency?: string;
   @IsOptional() @IsBoolean() isPaid?: boolean;
   @IsOptional() @IsBoolean() isClosed?: boolean;
+  /** Hide roster identities from people who have not joined. */
+  @IsOptional() @IsBoolean() hidePlayersFromOutsiders?: boolean;
   @IsOptional() @IsString() @MaxLength(500) coverImageUrl?: string | null;
   @IsOptional() @IsString() @MaxLength(500) coverImageUrl2?: string | null;
   @IsOptional() @IsString() @MaxLength(280) addressHint?: string | null;
@@ -103,13 +105,15 @@ export class GamesController {
   constructor(private readonly games: GamesService) {}
 
   @Get()
-  list(@Query() q: ListGamesQuery) {
-    return this.games.list(q);
+  @UseGuards(OptionalJwtAuthGuard)
+  list(@CurrentUser() me: User | null, @Query() q: ListGamesQuery) {
+    return this.games.list(q, me);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.games.findOne(id);
+  @UseGuards(OptionalJwtAuthGuard)
+  findOne(@CurrentUser() me: User | null, @Param('id') id: string) {
+    return this.games.findOne(id, me);
   }
 
   @Post()

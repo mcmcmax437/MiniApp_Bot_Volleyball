@@ -83,6 +83,10 @@ export class CreateGameDto {
   isClosed?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  hidePlayersFromOutsiders?: boolean;
+
+  @IsOptional()
   @IsString()
   @MaxLength(500)
   coverImageUrl?: string;
