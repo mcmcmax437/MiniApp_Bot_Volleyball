@@ -61,12 +61,9 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
   const [startWall, setStartWall] = useState('');
   const [skillLevel, setSkillLevel] = useState<SkillLevel>('LEVEL_3');
   const [spotsTotal, setSpotsTotal] = useState(10);
-<<<<<<< Updated upstream
   const [hidePlayers, setHidePlayers] = useState(false);
-=======
   const [currency, setCurrency] = useState<Currency>('PLN');
   const [costText, setCostText] = useState('0');
->>>>>>> Stashed changes
   const [error, setError] = useState<string | null>(null);
   const [coverDraft, setCoverDraft] = useState<CoverDraft>(null);
   const [clearCovers, setClearCovers] = useState(false);
@@ -80,12 +77,9 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
     setStartWall(utcIsoToWallClock(game.startAt, getAppTimeZone()));
     setSkillLevel(game.skillLevel);
     setSpotsTotal(game.spotsTotal);
-<<<<<<< Updated upstream
     setHidePlayers(!!game.hidePlayersFromOutsiders);
-=======
     setCurrency(game.currency);
     setCostText(costToText(game.totalCost));
->>>>>>> Stashed changes
     setError(null);
     setCoverDraft(null);
     setClearCovers(false);
@@ -185,11 +179,10 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
       patch.startAt = iso;
     }
 
-<<<<<<< Updated upstream
     if (hidePlayers !== !!game.hidePlayersFromOutsiders) {
       patch.hidePlayersFromOutsiders = hidePlayers;
     }
-=======
+
     const minor = parseCostMinor(costText);
     if (minor == null) {
       setError(t('game.editPriceInvalid'));
@@ -199,7 +192,6 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
     if (minor !== game.totalCost) patch.totalCost = minor;
     if (currency !== game.currency) patch.currency = currency;
     if (nextPaid !== game.isPaid) patch.isPaid = nextPaid;
->>>>>>> Stashed changes
 
     if (Object.keys(patch).length === 0 && !coversDirty && !clearCovers) {
       setError(t('game.editNoChanges'));
