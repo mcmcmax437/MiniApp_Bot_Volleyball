@@ -3,10 +3,13 @@ import { useMutation, useQueryClient } from 'react-query';
 import {
   useApi,
   ApiGameDetail,
+  CURRENCY_SYMBOLS,
+  Currency,
   PLAY_TYPES,
   PlayType,
   SKILL_LEVELS,
   SkillLevel,
+  SUPPORTED_CURRENCIES,
   UpdateGamePayload,
 } from '../api';
 import { useI18n } from '../i18n';
@@ -26,6 +29,26 @@ interface Props {
 
 type CoverDraft = { preview: string; base64: string; mime: string } | null;
 
+function costToText(minor: number): string {
+  const major = minor / 100;
+  return Number.isInteger(major) ? String(major) : major.toFixed(2);
+}
+
+function parseCostMinor(text: string): number | null {
+  const normalized = text.trim().replace(',', '.');
+  if (normalized === '') return 0;
+  const major = Number(normalized);
+  if (!Number.isFinite(major) || major < 0) return null;
+  return Math.round(major * 100);
+}
+
+function perPlayerPreview(text: string, spots: number): string {
+  const minor = parseCostMinor(text) ?? 0;
+  if (minor <= 0 || spots <= 0) return '0';
+  const per = minor / spots / 100;
+  return Number.isInteger(per) ? String(per) : per.toFixed(2);
+}
+
 export function EditGameModal({ open, game, onClose, onSaved }: Props) {
   const api = useApi();
   const { t, lang } = useI18n();
@@ -38,7 +61,12 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
   const [startWall, setStartWall] = useState('');
   const [skillLevel, setSkillLevel] = useState<SkillLevel>('LEVEL_3');
   const [spotsTotal, setSpotsTotal] = useState(10);
+<<<<<<< Updated upstream
   const [hidePlayers, setHidePlayers] = useState(false);
+=======
+  const [currency, setCurrency] = useState<Currency>('PLN');
+  const [costText, setCostText] = useState('0');
+>>>>>>> Stashed changes
   const [error, setError] = useState<string | null>(null);
   const [coverDraft, setCoverDraft] = useState<CoverDraft>(null);
   const [clearCovers, setClearCovers] = useState(false);
@@ -52,7 +80,12 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
     setStartWall(utcIsoToWallClock(game.startAt, getAppTimeZone()));
     setSkillLevel(game.skillLevel);
     setSpotsTotal(game.spotsTotal);
+<<<<<<< Updated upstream
     setHidePlayers(!!game.hidePlayersFromOutsiders);
+=======
+    setCurrency(game.currency);
+    setCostText(costToText(game.totalCost));
+>>>>>>> Stashed changes
     setError(null);
     setCoverDraft(null);
     setClearCovers(false);
@@ -82,6 +115,7 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
       onSuccess: () => {
         qc.invalidateQueries(['game', game.id]);
         qc.invalidateQueries(['games']);
+        qc.invalidateQueries(['payments', 'game', game.id]);
         qc.invalidateQueries(['me']);
         onClose();
         onSaved?.(t('game.editDone'));
@@ -151,9 +185,21 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
       patch.startAt = iso;
     }
 
+<<<<<<< Updated upstream
     if (hidePlayers !== !!game.hidePlayersFromOutsiders) {
       patch.hidePlayersFromOutsiders = hidePlayers;
     }
+=======
+    const minor = parseCostMinor(costText);
+    if (minor == null) {
+      setError(t('game.editPriceInvalid'));
+      return;
+    }
+    const nextPaid = minor > 0;
+    if (minor !== game.totalCost) patch.totalCost = minor;
+    if (currency !== game.currency) patch.currency = currency;
+    if (nextPaid !== game.isPaid) patch.isPaid = nextPaid;
+>>>>>>> Stashed changes
 
     if (Object.keys(patch).length === 0 && !coversDirty && !clearCovers) {
       setError(t('game.editNoChanges'));
@@ -289,6 +335,50 @@ export function EditGameModal({ open, game, onClose, onSaved }: Props) {
       <p className="editGame-hint" style={{ marginTop: 0 }}>
         {t('game.hidePlayersHint')}
       </p>
+
+      <div className="field">
+        <label className="field-label" htmlFor="edit-currency">
+          <Icon name="dollar-01" size={12} className="icon-inline" />
+          {t('create.field.currency')}
+        </label>
+        <select
+          id="edit-currency"
+          value={currency}
+          onChange={(e) => setCurrency(e.target.value as Currency)}
+        >
+          {SUPPORTED_CURRENCIES.map((c) => (
+            <option key={c} value={c}>
+              {CURRENCY_SYMBOLS[c]} {c}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="field">
+        <label className="field-label" htmlFor="edit-cost">
+          <Icon name="dollar-01" size={12} className="icon-inline" />
+          {t('create.field.totalCost')}
+        </label>
+        <div className="costInput-row">
+          <input
+            id="edit-cost"
+            type="text"
+            inputMode="decimal"
+            value={costText}
+            onChange={(e) => {
+              const v = e.target.value.replace(',', '.');
+              if (v === '' || /^\d*\.?\d{0,2}$/.test(v)) setCostText(v);
+            }}
+            placeholder="0"
+          />
+          <span className="costInput-currency">{CURRENCY_SYMBOLS[currency]}</span>
+        </div>
+        <div className="field-hint">{t('game.editPriceHint')}</div>
+        <div className="field-hint">
+          {t('payments.perPlayer')}: {CURRENCY_SYMBOLS[currency]}
+          {perPlayerPreview(costText, spotsTotal)}
+        </div>
+      </div>
 
       <div className="field">
         <label className="field-label">

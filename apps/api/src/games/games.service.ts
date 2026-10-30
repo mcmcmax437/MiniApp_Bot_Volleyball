@@ -819,6 +819,19 @@ export class GamesService {
 
     await this.prisma.game.update({ where: { id: gameId }, data });
 
+    const priceTouched =
+      (typeof data.totalCost === 'number' && data.totalCost !== game.totalCost) ||
+      (typeof data.currency === 'string' && data.currency !== game.currency) ||
+      (typeof data.isPaid === 'boolean' && data.isPaid !== game.isPaid);
+    if (priceTouched) {
+      await this.syncPaymentsForPrice(
+        gameId,
+        typeof data.totalCost === 'number' ? data.totalCost : game.totalCost,
+        typeof data.currency === 'string' ? data.currency : game.currency,
+        typeof data.isPaid === 'boolean' ? data.isPaid : game.isPaid,
+      );
+    }
+
     // If capacity grew past current roster while FULL, reopen.
     if (typeof data.spotsTotal === 'number' || data.venueId) {
       const { occupied } = await this.occupiedCounts(this.prisma, gameId);
@@ -976,10 +989,43 @@ export class GamesService {
     if (typeof data.isClosed === 'boolean' && data.isClosed !== game.isClosed) {
       changes.push({ field: 'closed', closed: data.isClosed });
     }
-    if (typeof data.isPaid === 'boolean' && data.isPaid !== game.isPaid) {
+    const paidFlipFollowsPrice =
+      costChanged &&
+      typeof data.isPaid === 'boolean' &&
+      data.isPaid !== game.isPaid &&
+      data.isPaid === newTotal > 0;
+    if (typeof data.isPaid === 'boolean' && data.isPaid !== game.isPaid && !paidFlipFollowsPrice) {
       changes.push({ field: 'paid', paid: data.isPaid });
     }
     return changes;
+  }
+
+  /** Keep each player's payment row aligned with a new court price. */
+  private async syncPaymentsForPrice(
+    gameId: string,
+    totalCost: number,
+    currency: string,
+    isPaid: boolean,
+  ) {
+    if (!isPaid || totalCost <= 0) {
+      await this.prisma.gamePayment.updateMany({
+        where: { gameId },
+        data: { isPaid: false, method: null, paidAt: null, amount: 0, currency },
+      });
+      return;
+    }
+    const participants = await this.prisma.gameParticipant.findMany({
+      where: { gameId },
+      select: { userId: true },
+    });
+    const amount = this.perPlayerCost(totalCost, participants.length);
+    for (const p of participants) {
+      await this.prisma.gamePayment.upsert({
+        where: { gameId_userId: { gameId, userId: p.userId } },
+        create: { gameId, userId: p.userId, amount, currency, isPaid: false },
+        update: { amount, currency },
+      });
+    }
   }
 
   private placeLabel(name: string, address?: string | null): string {
