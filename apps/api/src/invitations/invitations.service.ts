@@ -72,7 +72,9 @@ export class InvitationsService {
         const unread24h =
           !existing.readAt &&
           Date.now() - existing.createdAt.getTime() >= 24 * 60 * 60 * 1000;
-        if (!unread24h) {
+        // Admins can nudge a pending invite at any time (e.g. the invitee
+        // missed the DM) — the host still waits for the 24h unread window.
+        if (!unread24h && me.role !== 'ADMIN') {
           throw new BadRequestException(
             'Invite already pending — resend after 24h if still unread',
           );

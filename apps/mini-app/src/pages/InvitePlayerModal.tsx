@@ -31,9 +31,11 @@ function inviteeIdOf(inv: GameSentInvitation): string {
   return inv.userId || inv.inviteeId;
 }
 
-function canResendInvite(inv: GameSentInvitation): boolean {
+function canResendInvite(inv: GameSentInvitation, isAdmin = false): boolean {
   if (inv.status === 'DECLINED' || inv.status === 'IGNORED') return true;
   if (inv.status !== 'PENDING') return false;
+  // Admins may re-send a pending invite at any time (the API allows it).
+  if (isAdmin) return true;
   if (inv.readAt) return false;
   return Date.now() - new Date(inv.createdAt).getTime() >= RESEND_AFTER_MS;
 }
@@ -81,6 +83,11 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
     refetchInterval: open ? 4_000 : false,
   });
 
+  // Shares the app-wide `me` cache. Admins can re-send pending invites
+  // without waiting for the host's 24h unread window.
+  const meQ = useQuery(['me'], () => api.me(), { enabled: open });
+  const isAdmin = isAdminUser(meQ.data ?? null);
+
   const sentInvites = useMemo(() => {
     const list = gameQ.data?.invitations ?? [];
     return [...list].sort(
@@ -97,10 +104,10 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
     g.participants.forEach((p) => ids.add(p.userId));
     g.invitations?.forEach((i) => {
       if (i.status === 'ACCEPTED') ids.add(inviteeIdOf(i));
-      if (i.status === 'PENDING' && !canResendInvite(i)) ids.add(inviteeIdOf(i));
+      if (i.status === 'PENDING' && !canResendInvite(i, isAdmin)) ids.add(inviteeIdOf(i));
     });
     return Array.from(ids);
-  }, [gameQ.data]);
+  }, [gameQ.data, isAdmin]);
 
   const searchQ = useQuery(
     ['invite-search', gameId, query, excludeIds.join(',')],
@@ -146,7 +153,7 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
 
   const users = searchQ.data?.users ?? [];
   const blockedPendingIds = (gameQ.data?.invitations ?? [])
-    .filter((i) => i.status === 'PENDING' && !canResendInvite(i))
+    .filter((i) => i.status === 'PENDING' && !canResendInvite(i, isAdmin))
     .map(inviteeIdOf);
 
   const sendInvite = (u: InviteSearchUser, resent = false) => {
@@ -249,7 +256,7 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
                   ? `${u.firstName} ${u.lastName}`
                   : u.firstName
                 : inviteeIdOf(inv);
-              const resendable = canResendInvite(inv);
+              const resendable = canResendInvite(inv, isAdmin);
               const isResending =
                 inviteMut.isLoading && inviteMut.variables?.userId === inviteeIdOf(inv);
               return (
@@ -320,11 +327,12 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
         <div className="inviteList" role="list">
           {users.map((u: InviteSearchUser) => {
             const name = u.lastName ? `${u.firstName} ${u.lastName}` : u.firstName;
-            const isPending =
+            const isSent =
               blockedPendingIds.includes(u.id) || justInvitedIds.includes(u.id);
             const pendingInv = (gameQ.data?.invitations ?? []).find(
               (i) => i.status === 'PENDING' && inviteeIdOf(i) === u.id,
             );
+            const showInvitedBadge = isSent || !!pendingInv;
             const lvl = effectiveSkillLevel(u);
             const isInviting =
               inviteMut.isLoading && inviteMut.variables?.userId === u.id;
@@ -334,7 +342,7 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
                   ? ' isSuccess'
                   : ' isError'
                 : '';
-            const btnState = isPending
+            const btnState = isSent
               ? ' isSent'
               : isInviting || pressingId === u.id
                 ? ' isSending'
@@ -371,12 +379,12 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
                   <span className="inviteRow-name">{name}</span>
                   <span className="inviteRow-sub">
                     {u.username ? <span>@{u.username}</span> : null}
-                    {isPending && (
+                    {showInvitedBadge && (
                       <>
                         <span className="inviteRow-badge inviteRow-badge-pending">
                           {t('invite.invited')}
                         </span>
-                        <ReadTicks read={!!pendingInv?.readAt} />
+                        {pendingInv ? <ReadTicks read={!!pendingInv.readAt} /> : null}
                       </>
                     )}
                   </span>
@@ -384,12 +392,12 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
                 <button
                   type="button"
                   className={`inviteAdd${btnState}`}
-                  onClick={() => sendInvite(u)}
-                  disabled={isPending || inviteMut.isLoading}
+                  onClick={() => sendInvite(u, !!pendingInv)}
+                  disabled={isSent || inviteMut.isLoading}
                   aria-label={t('invite.inviteAction', { name: u.firstName })}
                   data-analytics-label="invite-add"
                 >
-                  {isPending ? (
+                  {isSent ? (
                     <Icon name="checkmark-square-01" size={16} />
                   ) : (
                     <Icon name="plus-sign" size={16} />
