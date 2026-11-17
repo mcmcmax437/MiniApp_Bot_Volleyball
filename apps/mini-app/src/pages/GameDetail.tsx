@@ -1045,14 +1045,17 @@ export function GameDetailPage() {
               <Icon name="clock-01" size={14} /> {t('game.requestPending')}
             </button>
           ) : isFull && g.canClaimReservedSpot ? (
-            <button
-              className="btn btn-sm detailActions-primary detailActions-full"
-              onClick={handleJoinClick}
-              disabled={joinMut.isLoading}
-              data-analytics-label="game-join-reserved"
-            >
-              {t('game.join')}
-            </button>
+            <>
+              <button
+                className="btn btn-sm detailActions-primary detailActions-full"
+                onClick={handleJoinClick}
+                disabled={joinMut.isLoading}
+                data-analytics-label="game-join-reserved"
+              >
+                {t('game.join')}
+              </button>
+              <p className="detailActions-hint">{t('game.claimReserved')}</p>
+            </>
           ) : isFull ? (
             <button className="btn btn-sm detailActions-primary detailActions-full" disabled>
               <Icon name="user-group" size={14} /> {t('game.spotsFull')}

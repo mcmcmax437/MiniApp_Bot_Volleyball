@@ -332,6 +332,15 @@
   grid-column: 1 / -1;
 }
 
+.detailActions-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
 .detailActions-primary {
   background: var(--brand) !important;
   color: var(--text-inverse) !important;
