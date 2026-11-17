@@ -217,7 +217,16 @@ export function GameDetailPage() {
   const { t, lang } = useI18n();
 
   const meQ = useQuery(['me'], () => api.me());
-  const gameQ = useQuery(['game', id], () => api.getGame(id!), { enabled: !!id });
+  // Include the viewer in the key: the API personalises the payload (e.g.
+  // `canClaimReservedSpot` for a directly invited player on a full game with
+  // an admin-held seat). A cold start from the invite deep link may fetch the
+  // game before the login cookie exists, so re-fetch as soon as we know who is
+  // looking — otherwise the invitee stays stuck on "Spots full".
+  const viewerId = meQ.data?.id ?? 'anon';
+  const gameQ = useQuery(['game', id, viewerId], () => api.getGame(id!), {
+    enabled: !!id,
+    keepPreviousData: true,
+  });
   const cityQ = useQuery(['default-city'], () => api.defaultCity(), {
     staleTime: 60 * 60_000,
   });
@@ -1044,7 +1053,7 @@ export function GameDetailPage() {
             <button className="btn btn-sm detailActions-primary detailActions-full" disabled>
               <Icon name="clock-01" size={14} /> {t('game.requestPending')}
             </button>
-          ) : isFull && g.canClaimReservedSpot ? (
+          ) : isFull && g.canClaimReservedSpot && meQ.data ? (
             <>
               <button
                 className="btn btn-sm detailActions-primary detailActions-full"

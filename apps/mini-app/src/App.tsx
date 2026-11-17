@@ -159,7 +159,14 @@ export function App() {
   useInvitationRealtime(!!meQ.data && !meQ.data.isBanned);
 
   const loginMut = useMutation(() => api.login(initData), {
-    onSuccess: () => qc.invalidateQueries(['me']),
+    onSuccess: () => {
+      // Reads made before the login cookie existed were answered as an
+      // anonymous viewer. That changes viewer-dependent fields such as
+      // `canClaimReservedSpot` (a direct invitee can take an admin-held seat)
+      // and `playersHidden`. Refetch everything so a deep-linked game is not
+      // left stuck showing "Spots full" for the whole session.
+      qc.invalidateQueries();
+    },
   });
 
   useEffect(() => {

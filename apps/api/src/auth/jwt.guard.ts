@@ -1,8 +1,10 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import type { User } from '@prisma/client';
 import { AuthService, JwtPayload } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { verifyTelegramInitData } from './telegram-auth.util';
 
 export interface AuthedRequest extends Request {
   /**
@@ -61,6 +63,7 @@ export class OptionalJwtAuthGuard implements CanActivate {
   constructor(
     private readonly auth: AuthService,
     private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
   ) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
@@ -68,20 +71,49 @@ export class OptionalJwtAuthGuard implements CanActivate {
     const headerToken = (req.headers.authorization ?? '').replace(/^Bearer\s+/i, '');
     const cookieToken = (req as Request).cookies?.['auth_token'] as string | undefined;
     const token = headerToken || cookieToken;
-    if (!token) {
-      req.userRecord = null;
-      return true;
+    if (token) {
+      try {
+        const payload = await this.auth.verifyToken(token);
+        req.user = payload;
+        req.userRecord = await this.prisma.user.findUnique({
+          where: { id: payload.sub },
+        });
+        return true;
+      } catch {
+        // Expired / invalid cookie — fall through to the initData fallback.
+      }
     }
+
+    // The Mini App sends its Telegram `initData` on every request, but the
+    // login cookie only exists after `/auth/telegram` has run. On a cold start
+    // from a deep link (e.g. an invitation's "Open invite" button) the game
+    // read can race ahead of that login and be answered as an anonymous
+    // viewer — which used to leave an invited player stuck on "Spots full"
+    // even when a reserved seat was held for them. Verify the initData here
+    // so public reads are personalised from the first call.
+    const user = await this.userFromInitData(req);
+    req.userRecord = user;
+    req.user = user ? { sub: user.id, tid: user.telegramId.toString() } : undefined;
+    return true;
+  }
+
+  /** Resolve the Telegram user from the `X-Telegram-InitData` header. */
+  private async userFromInitData(req: Request): Promise<User | null> {
+    const raw = req.headers['x-telegram-initdata'];
+    const initData = Array.isArray(raw) ? raw[0] : raw;
+    if (!initData) return null;
+    const botToken = this.config.get<string>('BOT_TOKEN');
+    if (!botToken) return null;
     try {
-      const payload = await this.auth.verifyToken(token);
-      req.user = payload;
-      req.userRecord = await this.prisma.user.findUnique({
-        where: { id: payload.sub },
+      const parsed = verifyTelegramInitData(initData, botToken);
+      const telegramId = parsed.user?.id;
+      if (!telegramId) return null;
+      return await this.prisma.user.findUnique({
+        where: { telegramId: BigInt(telegramId) },
       });
     } catch {
-      req.user = undefined;
-      req.userRecord = null;
+      // Invalid / expired initData → treat the request as anonymous.
+      return null;
     }
-    return true;
   }
 }
