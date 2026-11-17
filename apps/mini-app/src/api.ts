@@ -205,6 +205,11 @@ export interface ApiGameDetail extends Omit<ApiGame, 'participants'> {
     };
   }>;
   invitations?: GameSentInvitation[];
+  /**
+   * This viewer has a direct invite and the game is full only because of
+   * an admin-held seat. Joining releases that seat.
+   */
+  canClaimReservedSpot?: boolean;
   payments?: Array<{
     id: string;
     userId: string;

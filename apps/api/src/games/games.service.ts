@@ -314,6 +314,7 @@ export class GamesService {
       // PaymentsService and surfaced via `/payments/for-game`.
       perPlayerCost: this.plannedPerPlayerCost(game.totalCost, game.spotsTotal),
       playersHidden: false,
+      canClaimReservedSpot: this.viewerCanClaimReserved(game, viewer),
     };
 
     // Internal callers omit viewer → full payload (e.g. after join/leave).
@@ -480,6 +481,32 @@ export class GamesService {
     });
   }
 
+  /**
+   * A direct invite can take one admin-held seat when the roster itself
+   * still has room. A shared game link does not.
+   */
+  private viewerCanClaimReserved(
+    game: {
+      status: string;
+      spotsTotal: number;
+      participants: Array<{ userId: string }>;
+      reservations: unknown[];
+      invitations: Array<{ inviteeId: string; status: string }>;
+    },
+    viewer?: User | null,
+  ): boolean {
+    if (!viewer) return false;
+    if (game.status !== 'OPEN' && game.status !== 'FULL') return false;
+    if (game.participants.some((p) => p.userId === viewer.id)) return false;
+    const invited = game.invitations.some(
+      (inv) => inv.inviteeId === viewer.id && inv.status === 'PENDING',
+    );
+    if (!invited) return false;
+    const players = game.participants.length;
+    const reserved = game.reservations.length;
+    return reserved > 0 && players < game.spotsTotal && players + reserved >= game.spotsTotal;
+  }
+
   /** True when the viewer may see real participant identities. */
   private canSeePlayers(
     game: {
@@ -563,6 +590,7 @@ export class GamesService {
 
   async join(me: User, gameId: string) {
     let tracked: 'join' | 'join_request' | null = null;
+    let acceptedInviteId: string | null = null;
 
     const joined = await this.prisma.$transaction(async (tx) => {
       const game = await tx.game.findUnique({
@@ -570,7 +598,9 @@ export class GamesService {
         include: { participants: true },
       });
       if (!game) throw new NotFoundException('Game not found');
-      if (game.status !== 'OPEN') throw new BadRequestException(`Game is ${game.status}`);
+      if (game.status !== 'OPEN' && game.status !== 'FULL') {
+        throw new BadRequestException(`Game is ${game.status}`);
+      }
       if (game.endAt.getTime() <= Date.now()) {
         throw new BadRequestException('Game has already ended');
       }
@@ -578,8 +608,13 @@ export class GamesService {
       const already = game.participants.find((p) => p.userId === me.id);
       if (already) return this.findOne(gameId);
 
-      // Closed lobbies: host must approve. Re-route to GameJoinRequest.
-      if (game.isClosed) {
+      const pendingInvite = await tx.gameInvitation.findUnique({
+        where: { gameId_inviteeId: { gameId, inviteeId: me.id } },
+      });
+      const directInvite = pendingInvite?.status === 'PENDING' ? pendingInvite : null;
+
+      // Closed lobbies: host must approve, unless this person was invited directly.
+      if (game.isClosed && !directInvite) {
         const existing = await tx.gameJoinRequest.findUnique({
           where: { gameId_userId: { gameId, userId: me.id } },
         });
@@ -596,8 +631,18 @@ export class GamesService {
         return this.findOne(gameId);
       }
 
-      if (game.participants.length + (await tx.gameReservation.count({ where: { gameId } })) >= game.spotsTotal) {
-        throw new ConflictException('Game is full');
+      const holds = await tx.gameReservation.findMany({
+        where: { gameId },
+        orderBy: { createdAt: 'asc' },
+        select: { id: true },
+      });
+      const players = game.participants.length;
+      if (players + holds.length >= game.spotsTotal) {
+        // Only a pending direct invite may take one booked seat.
+        if (!directInvite || holds.length === 0 || players >= game.spotsTotal) {
+          throw new ConflictException('Game is full');
+        }
+        await tx.gameReservation.delete({ where: { id: holds[0].id } });
       }
 
       await tx.gameParticipant.create({ data: { gameId, userId: me.id } });
@@ -605,6 +650,21 @@ export class GamesService {
         data: { gameId, userId: me.id, kind: 'JOINED' },
       });
       tracked = 'join';
+
+      if (directInvite) {
+        await tx.gameInvitation.update({
+          where: { id: directInvite.id },
+          data: {
+            status: 'ACCEPTED',
+            respondedAt: new Date(),
+            readAt: directInvite.readAt ?? new Date(),
+          },
+        });
+        await tx.gameJoinRequest.deleteMany({
+          where: { gameId, userId: me.id, status: 'PENDING' },
+        });
+        acceptedInviteId = directInvite.id;
+      }
 
       const updated = await tx.game.findUnique({
         where: { id: gameId },
@@ -626,6 +686,10 @@ export class GamesService {
 
       return this.findOne(gameId);
     });
+
+    if (acceptedInviteId) {
+      await this.invitations.notifyDirectInviteJoined(acceptedInviteId).catch(() => undefined);
+    }
 
     if (tracked === 'join') {
       void this.analytics.trackEvent(me.id, 'game_join', {

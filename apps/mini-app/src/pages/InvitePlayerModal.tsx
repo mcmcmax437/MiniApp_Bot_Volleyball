@@ -159,10 +159,16 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
 
   const statusLabel = (inv: GameSentInvitation) => {
     const gameStatus = gameQ.data?.status;
+    const players = gameQ.data?.participantsCount ?? 0;
+    const reserved = gameQ.data?.reservedCount ?? 0;
+    const spots = gameQ.data?.spotsTotal ?? 0;
+    const holdCanBeClaimed = reserved > 0 && players < spots;
     if (
       inv.status === 'PENDING' &&
       gameStatus &&
-      (gameStatus === 'FULL' || gameStatus === 'CANCELLED' || gameStatus === 'FINISHED')
+      (gameStatus === 'CANCELLED' ||
+        gameStatus === 'FINISHED' ||
+        (gameStatus === 'FULL' && !holdCanBeClaimed))
     ) {
       return t('invite.statusInactive');
     }

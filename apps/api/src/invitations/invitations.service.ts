@@ -27,14 +27,22 @@ export class InvitationsService {
       include: { venue: { select: { name: true, address: true } } },
     });
     if (!game) throw new NotFoundException('Game not found');
-    if (game.hostId !== me.id) {
+    if (game.hostId !== me.id && me.role !== 'ADMIN') {
       throw new ForbiddenException('Only the host can invite players');
     }
     if (game.status !== 'OPEN' && game.status !== 'FULL') {
       throw new BadRequestException(`Cannot invite to a ${game.status} game`);
     }
     if (game.status === 'FULL') {
-      throw new BadRequestException('Game is full — invites are inactive');
+      const [players, reserved] = await Promise.all([
+        this.prisma.gameParticipant.count({ where: { gameId } }),
+        this.prisma.gameReservation.count({ where: { gameId } }),
+      ]);
+      // A full roster of real players cannot take more invites.
+      // A booked seat can still be offered as a direct invite.
+      if (reserved < 1 || players >= game.spotsTotal) {
+        throw new BadRequestException('Game is full — invites are inactive');
+      }
     }
     if (game.endAt.getTime() <= Date.now()) {
       throw new BadRequestException('Game has already ended');
@@ -261,23 +269,26 @@ export class InvitationsService {
     }
 
     // Host already invited this person — seat them even on closed lobbies.
-    // Invites are inactive once the lobby is full, finished, or cancelled.
-    if (inv.game.status !== 'OPEN') {
-      throw new BadRequestException(
-        inv.game.status === 'FULL'
-          ? 'Game is full — this invite is inactive'
-          : `Game is ${inv.game.status} — this invite is inactive`,
-      );
+    // A direct invite stays active on a full game when a booked seat can be taken.
+    if (inv.game.status !== 'OPEN' && inv.game.status !== 'FULL') {
+      throw new BadRequestException(`Game is ${inv.game.status} — this invite is inactive`);
     }
     if (inv.game.endAt.getTime() <= Date.now()) {
       throw new BadRequestException('Game has already ended — this invite is inactive');
     }
 
     await this.prisma.$transaction(async (tx) => {
-      const reserved = await tx.gameReservation.count({ where: { gameId: inv.gameId } });
+      const holds = await tx.gameReservation.findMany({
+        where: { gameId: inv.gameId },
+        orderBy: { createdAt: 'asc' },
+        select: { id: true },
+      });
       const count = await tx.gameParticipant.count({ where: { gameId: inv.gameId } });
-      if (count + reserved >= inv.game.spotsTotal) {
-        throw new ConflictException('Game is full');
+      if (count + holds.length >= inv.game.spotsTotal) {
+        if (holds.length === 0 || count >= inv.game.spotsTotal) {
+          throw new ConflictException('Game is full');
+        }
+        await tx.gameReservation.delete({ where: { id: holds[0].id } });
       }
 
       await tx.gameParticipant.upsert({
@@ -287,7 +298,8 @@ export class InvitationsService {
       });
 
       const after = await tx.gameParticipant.count({ where: { gameId: inv.gameId } });
-      if (after + reserved >= inv.game.spotsTotal) {
+      const reservedLeft = await tx.gameReservation.count({ where: { gameId: inv.gameId } });
+      if (after + reservedLeft >= inv.game.spotsTotal) {
         await tx.game.update({
           where: { id: inv.gameId },
           data: { status: 'FULL' },
@@ -404,14 +416,45 @@ export class InvitationsService {
       .catch(() => undefined);
   }
 
+  /**
+   * The invitee joined from the game link, which already marked the invite
+   * accepted. Tell the host the same way an in-app Accept does.
+   */
+  async notifyDirectInviteJoined(invitationId: string) {
+    const inv = await this.prisma.gameInvitation.findUnique({
+      where: { id: invitationId },
+      include: {
+        game: { include: { venue: { select: { name: true, address: true } } } },
+        invitee: true,
+      },
+    });
+    if (!inv || inv.status !== 'ACCEPTED') return;
+
+    await this.notifyInviterOfResponse(inv.inviterId, {
+      invitationId: inv.id,
+      gameId: inv.gameId,
+      outcome: 'accepted',
+      invitee: inv.invitee,
+      venueName: inv.game.venue.name,
+      venueAddress: inv.game.venue.address,
+      startAt: inv.game.startAt,
+    });
+    void this.analytics.trackEvent(inv.inviteeId, 'invite_accept', {
+      screen: `/games/${inv.gameId}`,
+      target: invitationId,
+      meta: { via: 'game_link' },
+    });
+  }
+
   /** Pending invites the current user has received (actionable only). */
   async listMinePending(me: User) {
     const rows = await this.prisma.gameInvitation.findMany({
       where: {
         inviteeId: me.id,
         status: 'PENDING',
-        // Full / finished / cancelled games leave invites inactive.
-        game: { status: 'OPEN' },
+        // Finished / cancelled games leave invites inactive.
+        // FULL stays visible when a booked seat can still be claimed.
+        game: { status: { in: ['OPEN', 'FULL'] } },
       },
       orderBy: { createdAt: 'desc' },
       include: {
@@ -434,12 +477,16 @@ export class InvitationsService {
       },
     });
 
-    // Hide invites for lobbies that are already at capacity.
+    // Hide invites that cannot seat the player.
+    // A direct invite stays when the only full seats are admin holds.
     return rows
-      .filter(
-        (inv) =>
-          inv.game._count.participants + inv.game._count.reservations < inv.game.spotsTotal,
-      )
+      .filter((inv) => {
+        const players = inv.game._count.participants;
+        const reserved = inv.game._count.reservations;
+        const spots = inv.game.spotsTotal;
+        if (players + reserved < spots) return true;
+        return reserved > 0 && players < spots;
+      })
       .map(({ game, ...rest }) => {
         const { _count, ...gameRest } = game;
         return { ...rest, game: gameRest };

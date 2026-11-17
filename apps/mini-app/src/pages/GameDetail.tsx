@@ -478,7 +478,7 @@ export function GameDetailPage() {
                 {g.addressHint ? ` · ${g.addressHint}` : ''}
               </span>
             </div>
-            {!isJoined && isFull && !isClosed && (
+            {!isJoined && isFull && !g.canClaimReservedSpot && !isClosed && (
               <button
                 type="button"
                 className={`detailHero-notify${waitlistQ.data?.onWaitlist ? ' isOn' : ' isPulse'}`}
@@ -787,6 +787,16 @@ export function GameDetailPage() {
               >
                 <Icon name="user-account" size={14} /> {t('game.reserve')}
               </button>
+              {!isHost && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-ghost"
+                  onClick={() => setShowInvite(true)}
+                  data-analytics-label="game-invite"
+                >
+                  <Icon name="mail-01" size={14} /> {t('game.invitePlayers')}
+                </button>
+              )}
               {addReserveMut.isError && (
                 <div className="error">{(addReserveMut.error as Error).message}</div>
               )}
@@ -1033,6 +1043,15 @@ export function GameDetailPage() {
           ) : myJoinRequest ? (
             <button className="btn btn-sm detailActions-primary detailActions-full" disabled>
               <Icon name="clock-01" size={14} /> {t('game.requestPending')}
+            </button>
+          ) : isFull && g.canClaimReservedSpot ? (
+            <button
+              className="btn btn-sm detailActions-primary detailActions-full"
+              onClick={handleJoinClick}
+              disabled={joinMut.isLoading}
+              data-analytics-label="game-join-reserved"
+            >
+              {t('game.join')}
             </button>
           ) : isFull ? (
             <button className="btn btn-sm detailActions-primary detailActions-full" disabled>
