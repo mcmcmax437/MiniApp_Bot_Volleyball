@@ -391,14 +391,20 @@ export function InvitePlayerModal({ open, gameId, onClose }: Props) {
                 </div>
                 <button
                   type="button"
-                  className={`inviteAdd${btnState}`}
+                  className={`inviteAdd${btnState}${pendingInv && !isSent ? ' isResend' : ''}`}
                   onClick={() => sendInvite(u, !!pendingInv)}
                   disabled={isSent || inviteMut.isLoading}
-                  aria-label={t('invite.inviteAction', { name: u.firstName })}
-                  data-analytics-label="invite-add"
+                  aria-label={
+                    pendingInv && !isSent
+                      ? t('invite.resendAria', { name: u.firstName })
+                      : t('invite.inviteAction', { name: u.firstName })
+                  }
+                  data-analytics-label={pendingInv && !isSent ? 'invite-resend' : 'invite-add'}
                 >
                   {isSent ? (
                     <Icon name="checkmark-square-01" size={16} />
+                  ) : pendingInv ? (
+                    <Icon name="refresh" size={16} />
                   ) : (
                     <Icon name="plus-sign" size={16} />
                   )}
